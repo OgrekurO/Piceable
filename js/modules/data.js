@@ -36,6 +36,10 @@ function buildFolderTree(folders, prefix = '') {
 
 // 为文件夹节点生成唯一标识符
 function generateFolderColumnId(folderPath) {
+    // 处理根路径的特殊情况
+    if (folderPath === '') {
+        return 'folder_root';
+    }
     // 将路径转换为合法的字段名
     return 'folder_' + folderPath.replace(/[^a-zA-Z0-9]/g, '_');
 }
@@ -151,7 +155,7 @@ async function loadEagleItems() {
                     if (folderPath) {
                         // 获取文件夹路径的所有父路径
                         const pathParts = folderPath.split('/');
-                        // 只有当路径有至少两层时才处理
+                        // 只有当路径有多层时才处理
                         if (pathParts.length >= 2) {
                             // 获取倒数第二层路径（父文件夹）
                             const parentPath = pathParts.slice(0, -1).join('/');
@@ -166,9 +170,8 @@ async function loadEagleItems() {
                                 dynamicData[columnId] = innerFolderName;
                             }
                         } else if (pathParts.length === 1) {
-                            // 根文件夹的情况，我们需要一个特殊的处理方式
-                            // 为根文件夹创建一个特殊的列
-                            const columnId = generateFolderColumnId('ROOT_FOLDER');
+                            // 根文件夹的情况，直接在根节点下显示
+                            const columnId = generateFolderColumnId('');
                             if (dynamicData[columnId]) {
                                 dynamicData[columnId] += ', ' + pathParts[0];
                             } else {
