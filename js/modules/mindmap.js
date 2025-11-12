@@ -279,11 +279,34 @@ function applySemicircleLayout() {
     
     // 重新渲染
     // 使用MindElixir的正确API来更新布局
+    let positionsUpdated = false;
     if (typeof window.mind.setNodePosition === 'function') {
         // 如果有setNodePosition方法，逐个更新节点位置
         allNodes.forEach(node => {
             if (node.x !== undefined && node.y !== undefined) {
                 window.mind.setNodePosition(node, node.x, node.y);
+                positionsUpdated = true;
+            }
+        });
+    }
+    
+    // 如果没有setNodePosition方法，尝试直接修改DOM元素位置
+    if (!positionsUpdated) {
+        allNodes.forEach(node => {
+            if (node.x !== undefined && node.y !== undefined) {
+                // 查找节点对应的DOM元素并直接设置位置
+                const nodeElement = document.querySelector(`[nodeid="${node.id}"]`);
+                if (nodeElement) {
+                    // 获取节点容器元素
+                    const parentElement = nodeElement.closest('me-parent');
+                    if (parentElement) {
+                        // 设置节点位置
+                        parentElement.style.position = 'absolute';
+                        parentElement.style.left = `${node.x}px`;
+                        parentElement.style.top = `${node.y}px`;
+                        positionsUpdated = true;
+                    }
+                }
             }
         });
     }
@@ -291,6 +314,13 @@ function applySemicircleLayout() {
     // 调用layout方法更新视图
     if (typeof window.mind.layout === 'function') {
         window.mind.layout();
+    }
+    
+    // 如果以上方法都不行，尝试强制刷新
+    if (!positionsUpdated) {
+        console.warn('[MINDMAP] 无法通过API更新节点位置，尝试强制刷新');
+        // 触发窗口大小变化事件，可能促使MindElixir重新计算布局
+        window.dispatchEvent(new Event('resize'));
     }
     
     console.log('[MINDMAP] 半圆弧布局应用完成');
@@ -324,26 +354,31 @@ function getAllNodes(nodeData) {
 
 // 计算半圆弧布局位置
 function calculateSemicirclePositions(nodes, mind) {
+    console.log('[MINDMAP] 开始计算半圆弧布局位置，节点数:', nodes.length);
     if (nodes.length <= 1) return;
     
     // 获取根节点
     const rootNode = nodes[0];
+    console.log('[MINDMAP] 根节点:', rootNode);
     
     // 设置根节点位置在中心
     rootNode.root = true;
     rootNode.x = mind.container.offsetWidth / 2;
     rootNode.y = mind.container.offsetHeight / 2;
+    console.log('[MINDMAP] 根节点位置:', rootNode.x, rootNode.y);
     
     // 处理子节点
     if (rootNode.children && rootNode.children.length > 0) {
         const childNodes = rootNode.children;
         const totalChildren = childNodes.length;
+        console.log('[MINDMAP] 子节点数量:', totalChildren);
         
         // 如果只有一个子节点，放置在正上方
         if (totalChildren === 1) {
             const childNode = childNodes[0];
             childNode.x = rootNode.x;
             childNode.y = rootNode.y - 150;
+            console.log('[MINDMAP] 单个子节点位置:', childNode.x, childNode.y);
             
             // 递归处理孙子节点
             if (childNode.children && childNode.children.length > 0) {
@@ -359,6 +394,7 @@ function calculateSemicirclePositions(nodes, mind) {
                 const childNode = childNodes[i];
                 childNode.x = rootNode.x + radius * Math.cos(angle);
                 childNode.y = rootNode.y - radius * Math.sin(angle); // 负号使弧线向上
+                console.log(`[MINDMAP] 子节点${i}位置:`, childNode.x, childNode.y);
                 
                 // 递归处理孙子节点
                 if (childNode.children && childNode.children.length > 0) {
@@ -367,10 +403,16 @@ function calculateSemicirclePositions(nodes, mind) {
             }
         }
     }
+    
+    // 输出所有节点的位置信息
+    nodes.forEach((node, index) => {
+        console.log(`[MINDMAP] 节点${index} (${node.topic}):`, node.x, node.y);
+    });
 }
 
 // 在半圆弧中定位孙子节点
 function positionGrandChildrenInSemicircle(children, parentNode, radius) {
+    console.log(`[MINDMAP] 定位${children.length}个孙子节点，父节点:`, parentNode.topic, `半径:`, radius);
     const totalChildren = children.length;
     
     // 如果只有一个子节点，放置在正下方
@@ -378,6 +420,7 @@ function positionGrandChildrenInSemicircle(children, parentNode, radius) {
         const childNode = children[0];
         childNode.x = parentNode.x;
         childNode.y = parentNode.y + radius;
+        console.log('[MINDMAP] 单个孙子节点位置:', childNode.x, childNode.y);
         return;
     }
     
@@ -388,6 +431,7 @@ function positionGrandChildrenInSemicircle(children, parentNode, radius) {
         const childNode = children[i];
         childNode.x = parentNode.x + (radius * 0.8) * Math.cos(angle);
         childNode.y = parentNode.y + (radius * 0.8) * Math.sin(angle); // 正号使弧线向下
+        console.log(`[MINDMAP] 孙子节点${i}位置:`, childNode.x, childNode.y);
         
         // 递归处理更深层的节点
         if (childNode.children && childNode.children.length > 0) {
