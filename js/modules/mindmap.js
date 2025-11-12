@@ -280,36 +280,26 @@ function applySemicircleLayout() {
     // 重新渲染
     // 使用MindElixir的正确API来更新布局
     let positionsUpdated = false;
-    if (typeof window.mind.setNodePosition === 'function') {
-        // 如果有setNodePosition方法，逐个更新节点位置
-        allNodes.forEach(node => {
-            if (node.x !== undefined && node.y !== undefined) {
-                window.mind.setNodePosition(node, node.x, node.y);
-                positionsUpdated = true;
-            }
-        });
-    }
     
-    // 如果没有setNodePosition方法，尝试直接修改DOM元素位置
-    if (!positionsUpdated) {
-        allNodes.forEach(node => {
-            if (node.x !== undefined && node.y !== undefined) {
-                // 查找节点对应的DOM元素并直接设置位置
-                const nodeElement = document.querySelector(`[nodeid="${node.id}"]`);
-                if (nodeElement) {
-                    // 获取节点容器元素
-                    const parentElement = nodeElement.closest('me-parent');
-                    if (parentElement) {
-                        // 设置节点位置
-                        parentElement.style.position = 'absolute';
-                        parentElement.style.left = `${node.x}px`;
-                        parentElement.style.top = `${node.y}px`;
-                        positionsUpdated = true;
-                    }
+    // 尝试直接修改nodeData中的节点位置信息
+    // MindElixir在layout时会读取这些位置信息
+    allNodes.forEach(node => {
+        if (node.x !== undefined && node.y !== undefined) {
+            // 查找并更新DOM元素位置
+            const nodeElement = document.querySelector(`[data-nodeid="me${node.id}"]`);
+            if (nodeElement) {
+                // 获取节点容器元素
+                const parentElement = nodeElement.closest('me-parent');
+                if (parentElement) {
+                    // 设置节点位置
+                    parentElement.style.position = 'absolute';
+                    parentElement.style.left = `${node.x}px`;
+                    parentElement.style.top = `${node.y}px`;
+                    positionsUpdated = true;
                 }
             }
-        });
-    }
+        }
+    });
     
     // 调用layout方法更新视图
     if (typeof window.mind.layout === 'function') {
