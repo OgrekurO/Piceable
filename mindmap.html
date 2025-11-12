@@ -228,7 +228,7 @@
                 initializeMindMapWhenReady();
             } else {
                 // 如果 opener 没有数据，尝试通过插件 API 获取
-                await getLibraryInfoFromPluginAPI();
+                getLibraryInfoFromPluginAPI();
             }
             
             // 如果仍然没有数据，显示错误消息
@@ -238,18 +238,21 @@
         });
         
         // 通过插件 API 获取数据
-        async function getLibraryInfoFromPluginAPI() {
+        function getLibraryInfoFromPluginAPI() {
             if (typeof window.eagle !== 'undefined') {
-                try {
-                    // 直接调用 library.info() 方法获取数据
-                    window.libraryInfo = await window.eagle.library.info();
-                    console.log('[MINDMAP PAGE] 通过插件 API 获取到 libraryInfo 数据');
-                    // 数据获取成功后初始化思维导图
-                    initializeMindMapWhenReady();
-                } catch (error) {
-                    console.error('[MINDMAP PAGE] 通过插件 API 获取数据失败:', error);
-                    showErrorMessage('通过插件 API 获取数据失败: ' + error.message);
-                }
+                // 监听 plugin-create 事件，确保插件完全初始化后再调用API
+                window.eagle.onPluginCreate(async () => {
+                    try {
+                        // 插件创建完成后调用 library.info() 方法获取数据
+                        window.libraryInfo = await window.eagle.library.info();
+                        console.log('[MINDMAP PAGE] 通过插件 API 获取到 libraryInfo 数据');
+                        // 数据获取成功后初始化思维导图
+                        initializeMindMapWhenReady();
+                    } catch (error) {
+                        console.error('[MINDMAP PAGE] 通过插件 API 获取数据失败:', error);
+                        showErrorMessage('通过插件 API 获取数据失败: ' + error.message);
+                    }
+                });
             }
         }
         
