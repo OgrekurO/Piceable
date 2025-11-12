@@ -1,5 +1,29 @@
 // 思维导图模块 - 用于可视化和管理文件夹结构
 
+// 动态加载Regenerator Runtime
+function loadRegeneratorRuntime() {
+    return new Promise((resolve, reject) => {
+        // 检查是否已经加载
+        if (typeof regeneratorRuntime !== 'undefined') {
+            resolve();
+            return;
+        }
+        
+        // 加载Regenerator Runtime
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/regenerator-runtime@0.13.9/runtime.min.js';
+        script.onload = () => {
+            console.log('[MINDMAP] Regenerator Runtime加载完成');
+            resolve();
+        };
+        script.onerror = () => {
+            console.error('[MINDMAP] Regenerator Runtime加载失败');
+            reject(new Error('Failed to load Regenerator Runtime'));
+        };
+        document.head.appendChild(script);
+    });
+}
+
 // 初始化思维导图功能
 async function initMindMap() {
     console.log('[MINDMAP] 初始化思维导图功能');
@@ -43,7 +67,15 @@ function createMindMapUI() {
 }
 
 // 动态加载Mind Elixir库
-function loadMindElixir() {
+async function loadMindElixir() {
+    // 首先确保Regenerator Runtime已加载
+    try {
+        await loadRegeneratorRuntime();
+    } catch (error) {
+        console.error('[MINDMAP] 加载Regenerator Runtime失败:', error);
+        throw error;
+    }
+    
     return new Promise((resolve, reject) => {
         // 检查是否已经加载
         if (window.MindElixir) {

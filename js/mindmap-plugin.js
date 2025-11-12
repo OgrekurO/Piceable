@@ -76,6 +76,12 @@ function bindFilterEvents() {
             }
         });
     }
+    
+    // 恢复之前保存的筛选条件
+    const savedFilter = localStorage.getItem('mindmapFolderFilter');
+    if (savedFilter && filterInput) {
+        filterInput.value = savedFilter;
+    }
 }
 
 // 应用文件夹筛选
