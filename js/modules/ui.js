@@ -328,7 +328,7 @@ function initializeTable() {
         }
     });
     
-    console.log('[UI] 表格初始化完成');
+    console.log('[UI] 表格初始化完成，Tabulator实例:', window.table);
 }
 
 // 触发同步的函数

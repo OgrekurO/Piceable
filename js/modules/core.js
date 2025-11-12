@@ -48,9 +48,22 @@ eagle.onPluginRun(async () => {
     await initializeApp();
 });
 
+let isPluginInitialized = false;
+
 // 插件显示时的回调
 eagle.onPluginShow(async () => {
     console.log('[CORE] Eagle插件已显示');
+    
+    // 如果插件还没有初始化，则进行初始化
+    if (!isPluginInitialized) {
+        await initializeApp();
+        isPluginInitialized = true;
+    }
+    
+    // 如果表格已经存在，则刷新数据
+    if (window.table) {
+        window.table.setData(window.tableData);
+    }
 });
 
 // 插件隐藏时的回调
@@ -62,64 +75,35 @@ eagle.onPluginHide(() => {
 async function initializeApp() {
     console.log('[CORE] 开始初始化应用');
     
-    // 如果在Eagle环境中，加载真实数据；否则加载演示数据
-    if (typeof eagle !== 'undefined') {
-        try {
-            console.log('[CORE] 检测到Eagle环境，加载真实数据');
-            await loadEagleItems();
-            
-            // 等待Tabulator加载完成
-            if (typeof Tabulator === 'undefined') {
-                try {
-                    console.log('[CORE] 开始加载Tabulator库');
-                    await loadTabulator();
-                    console.log('[CORE] Tabulator库加载完成');
-                } catch (error) {
-                    console.error('[CORE] Tabulator库加载失败:', error);
-                    showStatus('界面库加载失败: ' + error.message, 'error');
-                    return;
-                }
+    try {
+        // 加载数据（无论是否在Eagle环境中）
+        console.log('[CORE] 开始加载项目数据');
+        await loadEagleItems();
+        
+        // 确保Tabulator库已加载
+        if (typeof Tabulator === 'undefined') {
+            try {
+                console.log('[CORE] 开始加载Tabulator库');
+                await loadTabulator();
+                console.log('[CORE] Tabulator库加载完成');
+            } catch (error) {
+                console.error('[CORE] Tabulator库加载失败:', error);
+                showStatus('界面库加载失败: ' + error.message, 'error');
+                return;
             }
-            
-            initUI();
-            bindEvents();
-            initializeTable();
-            return;
-        } catch (error) {
-            console.error('[CORE] 加载Eagle数据失败:', error);
-            showStatus('加载数据失败: ' + error.message, 'error');
-            return;
         }
+        
+        // 最后初始化UI组件
+        initUI();
+        bindEvents();
+        initializeTable();
+        
+        console.log('[CORE] 应用初始化完成');
+    } catch (error) {
+        console.error('[CORE] 初始化应用失败:', error);
+        showStatus('初始化失败: ' + error.message, 'error');
+        return;
     }
-    
-    // 等待Tabulator加载完成
-    if (typeof Tabulator === 'undefined') {
-        try {
-            console.log('[CORE] 开始加载Tabulator库');
-            await loadTabulator();
-            console.log('[CORE] Tabulator库加载完成');
-        } catch (error) {
-            console.error('[CORE] Tabulator库加载失败:', error);
-            showStatus('界面库加载失败: ' + error.message, 'error');
-            return;
-        }
-    }
-    
-    // 加载数据
-    console.log('[CORE] 开始加载Eagle项目数据');
-    await loadEagleItems();
-    
-    // 初始化UI
-    initUI();
-    
-    // 绑定事件
-    bindEvents();
-    
-    // 初始化表格
-    console.log('[CORE] 初始化表格');
-    initializeTable();
-    
-    console.log('[CORE] 应用初始化完成');
 }
 
 // 加载演示数据（用于非Eagle环境下的演示）
