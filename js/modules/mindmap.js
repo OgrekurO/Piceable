@@ -270,9 +270,12 @@ class SemicircleLayout {
             return;
         }
         
+        console.log('[MINDMAP] 开始计算节点位置，nodeData:', this.mind.nodeData);
+        
         // 计算画布中心点
         this.centerX = this.mind.container.offsetWidth / 2;
         this.centerY = this.mind.container.offsetHeight / 2;
+        console.log('[MINDMAP] 画布中心点:', this.centerX, this.centerY);
         
         // 计算节点位置
         this.calculatePositions(this.mind.nodeData, 0, 0, 0);
@@ -285,13 +288,17 @@ class SemicircleLayout {
     
     // 递归计算节点位置
     calculatePositions(node, level, index, totalSiblings) {
+        console.log(`[MINDMAP] 计算节点位置: ${node.topic}, level: ${level}, index: ${index}, totalSiblings: ${totalSiblings}`);
+        
         // 根节点放在中心
         if (level === 0) {
             node._offsetX = this.centerX;
             node._offsetY = this.centerY;
+            console.log(`[MINDMAP] 根节点位置: ${node._offsetX}, ${node._offsetY}`);
             
             // 处理子节点
             if (node.children && node.children.length > 0) {
+                console.log(`[MINDMAP] 根节点有 ${node.children.length} 个子节点`);
                 node.children.forEach((child, i) => {
                     this.calculatePositions(child, level + 1, i, node.children.length);
                 });
@@ -299,6 +306,7 @@ class SemicircleLayout {
         } else {
             // 子节点和孙子节点按半圆弧分布
             const currentRadius = this.radius + (level - 1) * 100;
+            console.log(`[MINDMAP] 当前层级 ${level} 半径: ${currentRadius}`);
             
             if (level === 1) {
                 // 第一层子节点（围绕根节点的上半圆弧）
@@ -306,13 +314,15 @@ class SemicircleLayout {
                 const angle = Math.PI - (index / Math.max(1, totalSiblings - 1)) * Math.PI;
                 node._offsetX = this.centerX + currentRadius * Math.cos(angle);
                 node._offsetY = this.centerY - currentRadius * Math.sin(angle);
+                console.log(`[MINDMAP] 第一层子节点位置: ${node._offsetX}, ${node._offsetY}, angle: ${angle}`);
             } else {
                 // 更深层节点（相对父节点进行角度偏移）
-                // 使用相对角度偏移而不是固定下半圆，使深层节点布局更有序
+                // 使用相对父节点的角度偏移而不是固定下半圆，使深层节点布局更有序
                 const parentAngle = Math.atan2(
                     node.parent._offsetY - this.centerY,
                     node.parent._offsetX - this.centerX
                 );
+                console.log(`[MINDMAP] 父节点角度: ${parentAngle}`);
                 
                 // 计算相对于父节点的角度偏移
                 const angleOffset = (index / Math.max(1, totalSiblings - 1) - 0.5) * Math.PI * 0.7;
@@ -320,10 +330,12 @@ class SemicircleLayout {
                 
                 node._offsetX = node.parent._offsetX + currentRadius * 0.8 * Math.cos(angle);
                 node._offsetY = node.parent._offsetY + currentRadius * 0.8 * Math.sin(angle);
+                console.log(`[MINDMAP] 深层节点位置: ${node._offsetX}, ${node._offsetY}, angle: ${angle}`);
             }
             
             // 处理子节点
             if (node.children && node.children.length > 0) {
+                console.log(`[MINDMAP] 节点 ${node.topic} 有 ${node.children.length} 个子节点`);
                 node.children.forEach((child, i) => {
                     child.parent = node; // 设置父节点引用
                     this.calculatePositions(child, level + 1, i, node.children.length);
@@ -331,34 +343,53 @@ class SemicircleLayout {
             }
         }
         
-        console.log(`[MINDMAP] 节点 ${node.topic} 位置:`, node._offsetX, node._offsetY);
+        console.log(`[MINDMAP] 节点 ${node.topic} 最终位置:`, node._offsetX, node._offsetY);
     }
     
     // 应用布局到DOM
     applyLayout() {
+        console.log('[MINDMAP] 开始应用布局到DOM');
+        
         // 检查MindElixir实例是否仍然存在
         if (!this.mind) {
             console.warn('[MINDMAP] MindElixir实例不存在，无法应用布局');
             return;
         }
         
+        // 检查是否有节点数据
+        if (!this.mind.nodeData) {
+            console.warn('[MINDMAP] MindElixir nodeData不存在，无法应用布局');
+            return;
+        }
+        
+        console.log('[MINDMAP] nodeData:', this.mind.nodeData);
+        
         // 重写layout方法，使用正确的重绘方式
         this.mind.layout = () => {
+            console.log('[MINDMAP] 调用自定义layout方法');
+            
             // 应用自定义节点位置
             this.applyCustomNodePositions();
             
             // 重绘节点和连线
             if (typeof this.mind.draw === 'function') {
+                console.log('[MINDMAP] 调用mind.draw()');
                 this.mind.draw();
+            } else {
+                console.warn('[MINDMAP] mind.draw 方法不存在');
             }
             
             // 重绘连线
             if (this.mind.line && typeof this.mind.line.draw === 'function') {
+                console.log('[MINDMAP] 调用mind.line.draw()');
                 this.mind.line.draw();
+            } else {
+                console.warn('[MINDMAP] mind.line.draw 方法不存在');
             }
         };
         
         // 立即调用一次layout来应用布局
+        console.log('[MINDMAP] 立即调用layout方法');
         this.mind.layout();
     }
     
@@ -368,12 +399,18 @@ class SemicircleLayout {
         
         const traverseAndApply = (node) => {
             if (node._offsetX !== undefined && node._offsetY !== undefined) {
+                console.log(`[MINDMAP] 设置节点 ${node.topic} 位置: ${node._offsetX}, ${node._offsetY}`);
+                
                 // 根据MindElixir新版DOM结构查找节点元素
                 const nodeElement = document.querySelector(`me-node[data-nodeid="${node.id}"]`);
                 if (nodeElement) {
+                    console.log(`[MINDMAP] 找到节点元素:`, nodeElement);
                     nodeElement.style.position = 'absolute';
                     nodeElement.style.left = `${node._offsetX}px`;
                     nodeElement.style.top = `${node._offsetY}px`;
+                    console.log(`[MINDMAP] 设置样式完成`);
+                } else {
+                    console.warn(`[MINDMAP] 未找到节点元素: ${node.id}`);
                 }
             }
             
@@ -393,6 +430,9 @@ function applySemicircleLayout() {
         console.warn('[MINDMAP] MindElixir实例不存在，无法应用布局');
         return;
     }
+    
+    console.log('[MINDMAP] MindElixir实例:', window.mind);
+    console.log('[MINDMAP] nodeData:', window.mind.nodeData);
     
     // 使用新的半圆弧布局类
     const layout = new SemicircleLayout(window.mind);
