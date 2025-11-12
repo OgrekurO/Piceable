@@ -253,6 +253,133 @@ function loadFolderDataToMindMap() {
     }
 }
 
+// 半圆弧布局类，用于计算和应用半圆弧布局
+class SemicircleLayout {
+    constructor(mind) {
+        this.mind = mind;
+        this.centerX = 0;
+        this.centerY = 0;
+        this.radius = 200;
+    }
+    
+    // 应用半圆弧布局
+    apply() {
+        console.log('[MINDMAP] 应用半圆弧布局');
+        if (!this.mind || !this.mind.nodeData) {
+            console.warn('[MINDMAP] MindElixir实例或nodeData不存在，无法应用布局');
+            return;
+        }
+        
+        // 计算画布中心点
+        this.centerX = this.mind.container.offsetWidth / 2;
+        this.centerY = this.mind.container.offsetHeight / 2;
+        
+        // 计算节点位置
+        this.calculatePositions(this.mind.nodeData, 0, 0, 0);
+        
+        // 应用布局
+        this.applyLayout();
+    }
+    
+    // 递归计算节点位置
+    calculatePositions(node, level, index, totalSiblings) {
+        // 根节点放在中心
+        if (level === 0) {
+            node._offsetX = this.centerX;
+            node._offsetY = this.centerY;
+            
+            // 处理子节点
+            if (node.children && node.children.length > 0) {
+                node.children.forEach((child, i) => {
+                    this.calculatePositions(child, level + 1, i, node.children.length);
+                });
+            }
+        } else {
+            // 子节点和孙子节点按半圆弧分布
+            const currentRadius = this.radius + (level - 1) * 100;
+            
+            if (level === 1) {
+                // 第一层子节点（围绕根节点的上半圆弧）
+                const angle = Math.PI - (index / (totalSiblings - 1)) * Math.PI;
+                node._offsetX = this.centerX + currentRadius * Math.cos(angle);
+                node._offsetY = this.centerY - currentRadius * Math.sin(angle);
+            } else {
+                // 更深层节点（在父节点下方的下半圆弧）
+                const angle = Math.PI + (index / (totalSiblings - 1)) * Math.PI;
+                node._offsetX = node.parent._offsetX + (currentRadius * 0.8) * Math.cos(angle);
+                node._offsetY = node.parent._offsetY + (currentRadius * 0.8) * Math.sin(angle);
+            }
+            
+            // 处理子节点
+            if (node.children && node.children.length > 0) {
+                node.children.forEach((child, i) => {
+                    child.parent = node; // 设置父节点引用
+                    this.calculatePositions(child, level + 1, i, node.children.length);
+                });
+            }
+        }
+        
+        console.log(`[MINDMAP] 节点 ${node.topic} 位置:`, node._offsetX, node._offsetY);
+    }
+    
+    // 应用布局到DOM
+    applyLayout() {
+        // 重写createParent方法来控制节点位置
+        if (!this.mind._originalCreateParent) {
+            this.mind._originalCreateParent = this.mind.createParent;
+        }
+        
+        this.mind.createParent = (nodeObj) => {
+            // 调用原始方法创建节点
+            const result = this.mind._originalCreateParent.call(this.mind, nodeObj);
+            
+            // 如果我们有自定义位置信息，则应用它
+            if (nodeObj._offsetX !== undefined && nodeObj._offsetY !== undefined) {
+                result.p.style.position = 'absolute';
+                result.p.style.left = nodeObj._offsetX + 'px';
+                result.p.style.top = nodeObj._offsetY + 'px';
+            }
+            
+            return result;
+        };
+        
+        // 应用自定义节点位置
+        this.applyCustomNodePositions();
+        
+        // 调用原始layout方法确保连接线正确更新
+        if (typeof this.mind._originalLayout === 'function') {
+            this.mind._originalLayout.call(this.mind);
+        } else {
+            this.mind.layout();
+        }
+    }
+    
+    // 应用自定义节点位置
+    applyCustomNodePositions() {
+        console.log('[MINDMAP] 应用自定义节点位置');
+        
+        const traverseAndApply = (node) => {
+            if (node._offsetX !== undefined && node._offsetY !== undefined) {
+                const nodeElement = document.querySelector(`[data-nodeid="me${node.id}"]`);
+                if (nodeElement) {
+                    const parentElement = nodeElement.closest('me-parent');
+                    if (parentElement) {
+                        parentElement.style.position = 'absolute';
+                        parentElement.style.left = `${node._offsetX}px`;
+                        parentElement.style.top = `${node._offsetY}px`;
+                    }
+                }
+            }
+            
+            if (node.children) {
+                node.children.forEach(traverseAndApply);
+            }
+        };
+        
+        traverseAndApply(this.mind.nodeData);
+    }
+}
+
 // 应用半圆弧布局
 function applySemicircleLayout() {
     console.log('[MINDMAP] 开始应用半圆弧布局');
@@ -261,186 +388,11 @@ function applySemicircleLayout() {
         return;
     }
     
-    console.log('[MINDMAP] 当前nodeData:', window.mind.nodeData);
-    
-    // 检查nodeData是否存在
-    if (!window.mind.nodeData) {
-        console.warn('[MINDMAP] nodeData不存在，无法应用布局');
-        return;
-    }
-    
-    // 计算半圆弧布局位置
-    calculateSemicirclePositions(window.mind);
-    
-    // 重写节点定位逻辑
-    overrideNodePositioning();
-    
-    // 调用layout方法更新视图
-    if (typeof window.mind.layout === 'function') {
-        window.mind.layout();
-    }
+    // 使用新的半圆弧布局类
+    const layout = new SemicircleLayout(window.mind);
+    layout.apply();
     
     console.log('[MINDMAP] 半圆弧布局应用完成');
-}
-
-// 重写节点定位逻辑
-function overrideNodePositioning() {
-    console.log('[MINDMAP] 重写节点定位逻辑');
-    
-    // 保存原始的createParent方法
-    if (!window.mind._originalCreateParent) {
-        window.mind._originalCreateParent = window.mind.createParent;
-    }
-    
-    // 重写createParent方法来控制节点位置
-    window.mind.createParent = function(nodeObj) {
-        // 调用原始方法创建节点
-        const result = window.mind._originalCreateParent.call(this, nodeObj);
-        
-        // 如果我们有自定义位置信息，则应用它
-        if (nodeObj._offsetX !== undefined && nodeObj._offsetY !== undefined) {
-            // 设置节点的自定义位置样式
-            result.p.style.position = 'absolute';
-            result.p.style.left = nodeObj._offsetX + 'px';
-            result.p.style.top = nodeObj._offsetY + 'px';
-        }
-        
-        return result;
-    };
-    
-    // 保存原始的layout方法
-    if (!window.mind._originalLayout) {
-        window.mind._originalLayout = window.mind.layout;
-    }
-    
-    // 重写layout方法
-    window.mind.layout = function() {
-        // 首先调用原始布局方法
-        window.mind._originalLayout.call(this);
-        
-        // 然后应用自定义位置
-        applyCustomNodePositions();
-    };
-}
-
-// 应用自定义节点位置
-function applyCustomNodePositions() {
-    console.log('[MINDMAP] 应用自定义节点位置');
-    
-    // 遍历所有节点数据，应用自定义位置
-    function traverseAndApply(node) {
-        if (node._offsetX !== undefined && node._offsetY !== undefined) {
-            const nodeElement = document.querySelector(`[data-nodeid="me${node.id}"]`);
-            if (nodeElement) {
-                const parentElement = nodeElement.closest('me-parent');
-                if (parentElement) {
-                    parentElement.style.position = 'absolute';
-                    parentElement.style.left = `${node._offsetX}px`;
-                    parentElement.style.top = `${node._offsetY}px`;
-                }
-            }
-        }
-        
-        if (node.children) {
-            node.children.forEach(traverseAndApply);
-        }
-    }
-    
-    traverseAndApply(window.mind.nodeData);
-}
-
-// 计算半圆弧布局位置
-function calculateSemicirclePositions(mind) {
-    console.log('[MINDMAP] 开始计算半圆弧布局位置');
-    
-    // 获取根节点
-    const rootNode = mind.nodeData;
-    console.log('[MINDMAP] 根节点:', rootNode);
-    
-    // 设置根节点位置在中心
-    rootNode.root = true;
-    rootNode._offsetX = mind.container.offsetWidth / 2;
-    rootNode._offsetY = mind.container.offsetHeight / 2;
-    console.log('[MINDMAP] 根节点位置:', rootNode._offsetX, rootNode._offsetY);
-    
-    // 处理子节点
-    if (rootNode.children && rootNode.children.length > 0) {
-        const childNodes = rootNode.children;
-        const totalChildren = childNodes.length;
-        console.log('[MINDMAP] 子节点数量:', totalChildren);
-        
-        // 如果只有一个子节点，放置在正上方
-        if (totalChildren === 1) {
-            const childNode = childNodes[0];
-            childNode._offsetX = rootNode._offsetX;
-            childNode._offsetY = rootNode._offsetY - 150;
-            console.log('[MINDMAP] 单个子节点位置:', childNode._offsetX, childNode._offsetY);
-            
-            // 递归处理孙子节点
-            if (childNode.children && childNode.children.length > 0) {
-                positionGrandChildrenInSemicircle(childNode.children, childNode, 100);
-            }
-        } else {
-            // 计算半圆弧上的位置（从左到右排列）
-            for (let i = 0; i < totalChildren; i++) {
-                // 从π到0的弧度范围（半圆，开口向上）
-                const angle = Math.PI - (i / (totalChildren - 1)) * Math.PI;
-                const radius = 200; // 半径
-                
-                const childNode = childNodes[i];
-                childNode._offsetX = rootNode._offsetX + radius * Math.cos(angle);
-                childNode._offsetY = rootNode._offsetY - radius * Math.sin(angle); // 负号使弧线向上
-                console.log(`[MINDMAP] 子节点${i}位置:`, childNode._offsetX, childNode._offsetY);
-                
-                // 递归处理孙子节点
-                if (childNode.children && childNode.children.length > 0) {
-                    positionGrandChildrenInSemicircle(childNode.children, childNode, 100);
-                }
-            }
-        }
-    }
-    
-    // 输出所有节点的位置信息
-    function logAllNodes(node, index = 0) {
-        console.log(`[MINDMAP] 节点${index} (${node.topic}):`, node._offsetX, node._offsetY);
-        if (node.children) {
-            node.children.forEach((child, childIndex) => {
-                logAllNodes(child, `${index}-${childIndex}`);
-            });
-        }
-    }
-    
-    logAllNodes(rootNode);
-}
-
-// 在半圆弧中定位孙子节点
-function positionGrandChildrenInSemicircle(children, parentNode, radius) {
-    console.log(`[MINDMAP] 定位${children.length}个孙子节点，父节点:`, parentNode.topic, `半径:`, radius);
-    const totalChildren = children.length;
-    
-    // 如果只有一个子节点，放置在正下方
-    if (totalChildren === 1) {
-        const childNode = children[0];
-        childNode._offsetX = parentNode._offsetX;
-        childNode._offsetY = parentNode._offsetY + radius;
-        console.log('[MINDMAP] 单个孙子节点位置:', childNode._offsetX, childNode._offsetY);
-        return;
-    }
-    
-    // 多个子节点时，在父节点下方半圆弧排列
-    for (let i = 0; i < totalChildren; i++) {
-        // 从π到0的弧度范围（半圆，开口向下）
-        const angle = Math.PI - (i / (totalChildren - 1)) * Math.PI;
-        const childNode = children[i];
-        childNode._offsetX = parentNode._offsetX + (radius * 0.8) * Math.cos(angle);
-        childNode._offsetY = parentNode._offsetY + (radius * 0.8) * Math.sin(angle); // 正号使弧线向下
-        console.log(`[MINDMAP] 孙子节点${i}位置:`, childNode._offsetX, childNode._offsetY);
-        
-        // 递归处理更深层的节点
-        if (childNode.children && childNode.children.length > 0) {
-            positionGrandChildrenInSemicircle(childNode.children, childNode, radius * 0.7);
-        }
-    }
 }
 
 // 文件夹筛选功能（专用于思维导图）
