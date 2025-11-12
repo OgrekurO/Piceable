@@ -277,8 +277,10 @@ class SemicircleLayout {
         // 计算节点位置
         this.calculatePositions(this.mind.nodeData, 0, 0, 0);
         
-        // 应用布局
-        this.applyLayout();
+        // 延迟应用布局，确保MindElixir完成DOM渲染
+        setTimeout(() => {
+            this.applyLayout();
+        }, 100);
     }
     
     // 递归计算节点位置
@@ -324,6 +326,12 @@ class SemicircleLayout {
     
     // 应用布局到DOM
     applyLayout() {
+        // 检查MindElixir实例是否仍然存在
+        if (!this.mind) {
+            console.warn('[MINDMAP] MindElixir实例不存在，无法应用布局');
+            return;
+        }
+        
         // 保存原始layout方法
         if (!this.mind._originalLayout) {
             this.mind._originalLayout = this.mind.layout;
