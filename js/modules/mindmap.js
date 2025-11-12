@@ -372,19 +372,27 @@ class SemicircleLayout {
             this.applyCustomNodePositions();
             
             // 重绘节点和连线
+            // 检查不同的可能方法
             if (typeof this.mind.draw === 'function') {
                 console.log('[MINDMAP] 调用mind.draw()');
                 this.mind.draw();
+            } else if (typeof this.mind.refresh === 'function') {
+                console.log('[MINDMAP] 调用mind.refresh()');
+                // 使用空参数调用refresh以触发重绘
+                this.mind.refresh();
             } else {
-                console.warn('[MINDMAP] mind.draw 方法不存在');
+                console.warn('[MINDMAP] mind.draw 和 mind.refresh 方法都不存在');
             }
             
             // 重绘连线
             if (this.mind.line && typeof this.mind.line.draw === 'function') {
                 console.log('[MINDMAP] 调用mind.line.draw()');
                 this.mind.line.draw();
+            } else if (this.mind.linkDiv && typeof this.mind.linkDiv === 'function') {
+                console.log('[MINDMAP] 调用mind.linkDiv()');
+                this.mind.linkDiv();
             } else {
-                console.warn('[MINDMAP] mind.line.draw 方法不存在');
+                console.warn('[MINDMAP] mind.line.draw 和 mind.linkDiv 方法都不存在');
             }
         };
         
@@ -402,7 +410,13 @@ class SemicircleLayout {
                 console.log(`[MINDMAP] 设置节点 ${node.topic} 位置: ${node._offsetX}, ${node._offsetY}`);
                 
                 // 根据MindElixir新版DOM结构查找节点元素
-                const nodeElement = document.querySelector(`me-node[data-nodeid="${node.id}"]`);
+                // 使用正确的ID格式，添加"me"前缀
+                let nodeElement = document.querySelector(`me-node[data-nodeid="me${node.id}"]`);
+                if (!nodeElement) {
+                    // 尝试其他可能的选择器
+                    nodeElement = document.querySelector(`[data-nodeid="me${node.id}"]`);
+                }
+                
                 if (nodeElement) {
                     console.log(`[MINDMAP] 找到节点元素:`, nodeElement);
                     nodeElement.style.position = 'absolute';
@@ -410,7 +424,10 @@ class SemicircleLayout {
                     nodeElement.style.top = `${node._offsetY}px`;
                     console.log(`[MINDMAP] 设置样式完成`);
                 } else {
-                    console.warn(`[MINDMAP] 未找到节点元素: ${node.id}`);
+                    console.warn(`[MINDMAP] 未找到节点元素: me${node.id}`);
+                    // 输出所有可能相关的元素用于调试
+                    const allNodes = document.querySelectorAll('[data-nodeid]');
+                    console.log('[MINDMAP] 页面上所有带data-nodeid的元素:', allNodes);
                 }
             }
             
