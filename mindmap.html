@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>Eagle Ontology Manager</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eagle 文件夹结构思维导图</title>
     
     <!-- 引入Tabulator样式 -->
     <link href="https://unpkg.com/tabulator-tables@5.4.4/dist/css/tabulator.min.css" rel="stylesheet">
@@ -39,6 +39,9 @@
             padding: 15px 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
         .header h1 {
@@ -110,26 +113,52 @@
             background: #d33b2c;
         }
         
-        .table-container {
+        .filter-section {
+            background: white;
+            padding: 10px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .filter-input {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            width: 250px;
+        }
+        
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+        }
+        
+        #mindmap-container {
             flex: 1;
             background: white;
-            padding: 20px;
-            overflow: auto;
             margin: 10px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
         
-        #item-table {
-            border: none;
-            width: 100%;
+        #mindmap-header {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
-        .thumbnail {
-            width: 50px;
-            height: 50px;
-            object-fit: cover;
-            border-radius: 4px;
+        #mindmap {
+            flex: 1;
+            overflow: hidden;
         }
         
         .status-bar {
@@ -166,61 +195,55 @@
             border: 1px solid #bee5eb;
         }
         
-        .search-box {
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            font-size: 14px;
-            width: 250px;
-        }
-        
-        .search-box:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
-        }
-        
         .flex-space {
             flex: 1;
+        }
+        
+        .back-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 
 <body>
     <div class="header">
-        <h1>Eagle Ontology Manager</h1>
+        <h1>🧠 Eagle 文件夹结构思维导图</h1>
+        <a href="index.html" class="back-link">🔙 返回主界面</a>
     </div>
     
     <div class="toolbar">
         <div class="toolbar-group">
-            <button id="refresh-btn">🔄 刷新数据</button>
-            <button id="export-csv-btn">📤 导出CSV</button>
+            <button id="mindmap-save-btn">💾 保存更改</button>
+            <button id="mindmap-refresh-btn">🔄 刷新数据</button>
         </div>
-        
-        <div class="toolbar-group">
-            <button id="template-btn">🧱 属性模板</button>
-            <button id="visualization-btn" disabled>📊 数据可视化</button>
-        </div>
-        
-        <div class="flex-space"></div>
-        
-        <div class="toolbar-group">
-            <input type="text" class="search-box" id="search-box" placeholder="搜索图片名称、标签或注释...">
-        </div>
+    </div>
+    
+    <div class="filter-section">
+        <input type="text" class="filter-input" id="folder-filter" placeholder="输入要排除的文件夹名称，用逗号分隔（如：temp,cache,备份）">
+        <button id="apply-filter">应用查看</button>
     </div>
     
     <div class="status-message" id="status-message"></div>
     
-    <div id="app-container">
-        <div class="table-container">
-            <div id="item-table"></div>
+    <div id="mindmap-container">
+        <div id="mindmap-header">
+            <h3>文件夹结构视图</h3>
         </div>
+        <div id="mindmap"></div>
     </div>
     
     <div class="status-bar" id="status-bar">
         就绪
     </div>
     
-    <script type="text/javascript" src="js/plugin.js"></script>
+    <script type="text/javascript" src="js/mindmap-plugin.js"></script>
 </body>
 </html>
