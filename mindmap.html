@@ -224,33 +224,83 @@
             if (window.opener && !window.opener.closed && window.opener.libraryInfo) {
                 window.libraryInfo = window.opener.libraryInfo;
                 console.log('[MINDMAP PAGE] 从 opener 窗口获取到 libraryInfo 数据');
-            }
-            
-            // 如果 opener 没有数据，尝试通过插件 API 获取
-            if (typeof window.libraryInfo === 'undefined' && typeof window.eagle !== 'undefined') {
-                try {
-                    window.libraryInfo = await window.eagle.library.info();
-                    console.log('[MINDMAP PAGE] 通过插件 API 获取到 libraryInfo 数据');
-                } catch (error) {
-                    console.error('[MINDMAP PAGE] 通过插件 API 获取数据失败:', error);
-                }
+                // 数据获取成功后初始化思维导图
+                initializeMindMapWhenReady();
+            } else {
+                // 如果 opener 没有数据，尝试通过插件 API 获取
+                await getLibraryInfoFromPluginAPI();
             }
             
             // 如果仍然没有数据，显示错误消息
             if (typeof window.libraryInfo === 'undefined') {
-                const statusMessage = document.getElementById('status-message');
-                const statusBar = document.getElementById('status-bar');
-                if (statusMessage) {
-                    statusMessage.textContent = '无法获取文件夹数据，请返回主界面刷新数据后重试';
-                    statusMessage.className = 'status-message error';
-                    statusMessage.style.display = 'block';
-                }
-                if (statusBar) {
-                    statusBar.textContent = '数据加载失败';
-                }
-                console.error('[MINDMAP PAGE] 无法获取 libraryInfo 数据');
+                showErrorMessage('无法获取文件夹数据，请返回主界面刷新数据后重试');
             }
         });
+        
+        // 通过插件 API 获取数据
+        async function getLibraryInfoFromPluginAPI() {
+            if (typeof window.eagle !== 'undefined') {
+                try {
+                    // 监听 plugin-create 事件，确保插件完全初始化
+                    if (window.eagle.isReady) {
+                        // 插件已经就绪，直接获取数据
+                        window.libraryInfo = await window.eagle.library.info();
+                        console.log('[MINDMAP PAGE] 通过插件 API 获取到 libraryInfo 数据');
+                        // 数据获取成功后初始化思维导图
+                        initializeMindMapWhenReady();
+                    } else {
+                        // 插件未就绪，等待 plugin-create 事件
+                        window.eagle.once('plugin-create', async () => {
+                            try {
+                                window.libraryInfo = await window.eagle.library.info();
+                                console.log('[MINDMAP PAGE] 通过插件 API 获取到 libraryInfo 数据');
+                                // 数据获取成功后初始化思维导图
+                                initializeMindMapWhenReady();
+                            } catch (error) {
+                                console.error('[MINDMAP PAGE] 通过插件 API 获取数据失败:', error);
+                                showErrorMessage('通过插件 API 获取数据失败: ' + error.message);
+                            }
+                        });
+                    }
+                } catch (error) {
+                    console.error('[MINDMAP PAGE] 通过插件 API 获取数据失败:', error);
+                    showErrorMessage('通过插件 API 获取数据失败: ' + error.message);
+                }
+            }
+        }
+        
+        // 当数据准备好时初始化思维导图
+        function initializeMindMapWhenReady() {
+            // 确保思维导图模块已加载
+            if (typeof initMindMapPage === 'function') {
+                initMindMapPage();
+            } else {
+                // 如果模块尚未加载，等待一段时间后重试
+                setTimeout(() => {
+                    if (typeof initMindMapPage === 'function') {
+                        initMindMapPage();
+                    } else {
+                        console.error('[MINDMAP PAGE] 思维导图模块未正确加载');
+                        showErrorMessage('思维导图模块未正确加载');
+                    }
+                }, 1000);
+            }
+        }
+        
+        // 显示错误消息
+        function showErrorMessage(message) {
+            const statusMessage = document.getElementById('status-message');
+            const statusBar = document.getElementById('status-bar');
+            if (statusMessage) {
+                statusMessage.textContent = message;
+                statusMessage.className = 'status-message error';
+                statusMessage.style.display = 'block';
+            }
+            if (statusBar) {
+                statusBar.textContent = '数据加载失败';
+            }
+            console.error('[MINDMAP PAGE] ' + message);
+        }
     </script>
 </body>
 </html>
