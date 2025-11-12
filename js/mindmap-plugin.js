@@ -53,11 +53,6 @@ async function initializeMindMapPage() {
         await getLibraryInfoFromPluginAPI();
     }
     
-    // 如果仍然没有数据，显示错误消息
-    if (typeof window.libraryInfo === 'undefined') {
-        console.log('[MINDMAP PLUGIN] 仍未获取到数据，尝试初始化');
-        initializeMindMapWhenReady();
-    }
 }
 
 // 绑定筛选功能事件

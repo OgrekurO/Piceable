@@ -177,7 +177,7 @@ function loadFolderDataToMindMap() {
     
     // 应用文件夹筛选
     folderTree = filterFolders(folderTree);
-    console.log('[MINDMAP] 筛选后的文件夹树:', folderMap);
+    console.log('[MINDMAP] 筛选后的文件夹树:', folderTree);
     
     // 转换为思维导图数据结构
     const mindMapData = convertFolderTreeToMindMapData(folderTree);
@@ -227,9 +227,73 @@ function convertFolderTreeToMindMapData(folderTree) {
     
     if (folderTree.length === 0) {
         // 返回默认数据结构
-        const defaultData = window.MindElixir.new('根文件夹');
+        const defaultData = {
+            nodeData: {
+                topic: '根文件夹',
+                id: 'root_' + Date.now(),
+                children: [],
+                expanded: true,
+                root: true
+            }
+        };
         console.log('[MINDMAP] 文件夹树为空，返回默认数据:', defaultData);
         return defaultData;
+    }
+```
+
+/Users/ug/Documents/产业图谱/Piceable/js/modules/mindmap.js
+```javascript
+<<<<<<< SEARCH
+    function buildNodeObj(node) {
+        // 验证节点数据
+        if (!node || !node.name) {
+            console.warn('[MINDMAP] 无效的节点数据，跳过:', node);
+            return null;
+        }
+        
+        const nodeObj = {
+            topic: node.name,
+            id: node.id || generateUniqueId(),
+            created: Date.now()
+        };
+        
+        // 处理子节点
+        if (node.children && Array.isArray(node.children) && node.children.length > 0) {
+            const validChildren = node.children
+                .map(buildNodeObj)
+                .filter(child => child !== null);
+            
+            if (validChildren.length > 0) {
+                nodeObj.children = validChildren;
+            }
+        }
+        
+        return nodeObj;
+    }
+    function buildNodeObj(node) {
+        // 验证节点数据
+        if (!node || !node.name) {
+            console.warn('[MINDMAP] 无效的节点数据，跳过:', node);
+            return null;
+        }
+        
+        const nodeObj = {
+            topic: node.name,
+            id: node.id || generateUniqueId()
+        };
+        
+        // 处理子节点
+        if (node.children && Array.isArray(node.children) && node.children.length > 0) {
+            const validChildren = node.children
+                .map(buildNodeObj)
+                .filter(child => child !== null);
+            
+            if (validChildren.length > 0) {
+                nodeObj.children = validChildren;
+            }
+        }
+        
+        return nodeObj;
     }
     
     // 构建节点对象
