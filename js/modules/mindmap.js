@@ -174,8 +174,11 @@ function loadFolderDataToMindMap() {
     const mindMapData = convertFolderTreeToMindMapData(folderTree);
     
     // 初始化思维导图
-    if (window.mind) {
-        window.mind.init(mindMapData);
+    if (window.mind && mindMapData) {
+        // 确保使用正确的数据格式初始化
+        window.mind.init({
+            nodeData: mindMapData.nodeData || mindMapData
+        });
         
         // 应用半圆弧布局
         applySemicircleLayout();
@@ -184,7 +187,14 @@ function loadFolderDataToMindMap() {
 
 // 将文件夹树结构转换为思维导图数据结构
 function convertFolderTreeToMindMapData(folderTree, isRoot = true) {
+    // 确保MindElixir已定义
+    if (!window.MindElixir) {
+        console.error('[MINDMAP] MindElixir未定义，无法创建思维导图数据');
+        return null;
+    }
+    
     if (folderTree.length === 0) {
+        // 确保返回统一的数据格式
         return {
             nodeData: {
                 topic: '根文件夹',
@@ -215,6 +225,9 @@ function convertFolderTreeToMindMapData(folderTree, isRoot = true) {
             }
         };
     }
+    
+    // 对于非根情况，直接返回节点数组
+    return folderTree.map(convertNode);
 }
 
 // 应用半圆弧布局
