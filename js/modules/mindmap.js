@@ -176,9 +176,7 @@ function loadFolderDataToMindMap() {
     // 初始化思维导图
     if (window.mind && mindMapData) {
         // 确保使用正确的数据格式初始化
-        window.mind.init({
-            nodeData: mindMapData.nodeData || mindMapData
-        });
+        window.mind.init(mindMapData);
         
         // 应用半圆弧布局
         applySemicircleLayout();
@@ -190,7 +188,15 @@ function convertFolderTreeToMindMapData(folderTree, isRoot = true) {
     // 确保MindElixir已定义
     if (!window.MindElixir) {
         console.error('[MINDMAP] MindElixir未定义，无法创建思维导图数据');
-        return null;
+        // 返回默认数据结构
+        return {
+            nodeData: {
+                topic: '根文件夹',
+                id: 'root',
+                children: [],
+                expanded: true
+            }
+        };
     }
     
     if (folderTree.length === 0) {
@@ -226,8 +232,15 @@ function convertFolderTreeToMindMapData(folderTree, isRoot = true) {
         };
     }
     
-    // 对于非根情况，直接返回节点数组
-    return folderTree.map(convertNode);
+    // 对于非根情况，返回包含nodeData的对象
+    return {
+        nodeData: {
+            topic: '根文件夹',
+            id: 'root',
+            children: folderTree.map(convertNode),
+            expanded: true
+        }
+    };
 }
 
 // 应用半圆弧布局
