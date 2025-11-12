@@ -42,15 +42,16 @@ function createMindMapUI() {
     }
 }
 
-// 动态加载Mind Elixir库（使用官方推荐的ES模块方式）
-async function loadMindElixir() {
-    // 检查是否已经加载
-    if (window.MindElixir) {
-        return;
-    }
-    
+// 动态加载Mind Elixir库
+function loadMindElixir() {
     return new Promise((resolve, reject) => {
-        // 创建样式链接
+        // 检查是否已经加载
+        if (window.MindElixir) {
+            resolve();
+            return;
+        }
+        
+        // 加载CSS样式
         const cssLink = document.createElement('link');
         cssLink.rel = 'stylesheet';
         cssLink.href = 'https://cdn.jsdelivr.net/npm/mind-elixir/dist/style.css';
@@ -59,26 +60,24 @@ async function loadMindElixir() {
         };
         document.head.appendChild(cssLink);
         
-        // 动态导入MindElixir模块
+        // 加载JS库 - 使用UMD版本确保全局访问
         const script = document.createElement('script');
-        script.type = 'module';
-        script.textContent = `
-            import MindElixir from 'https://cdn.jsdelivr.net/npm/mind-elixir/dist/MindElixir.js';
-            window.MindElixir = MindElixir;
-            document.dispatchEvent(new CustomEvent('mindelixir-loaded'));
-        `;
-        
-        // 监听加载完成事件
-        document.addEventListener('mindelixir-loaded', () => {
+        script.src = 'https://cdn.jsdelivr.net/npm/mind-elixir/dist/mind-elixir.js';
+        script.onload = () => {
             console.log('[MINDMAP] MindElixir库加载完成');
-            resolve();
-        }, { once: true });
-        
+            // 等待一段时间确保库完全初始化
+            setTimeout(() => {
+                if (window.MindElixir) {
+                    resolve();
+                } else {
+                    reject(new Error('MindElixir loaded but not available in global scope'));
+                }
+            }, 200);
+        };
         script.onerror = () => {
             console.error('[MINDMAP] MindElixir库加载失败');
             reject(new Error('Failed to load MindElixir'));
         };
-        
         document.head.appendChild(script);
     });
 }
@@ -112,7 +111,7 @@ async function initializeMindMapInstance() {
     // 思维导图配置
     const options = {
         el: '#mindmap',
-        direction: window.MindElixir.RIGHT, // 使用官方常量
+        direction: 2, // RIGHT (使用数字常量而不是MindElixir.RIGHT以避免作用域问题)
         draggable: true,
         editable: true,
         contextMenu: true,
@@ -132,37 +131,36 @@ async function initializeMindMapInstance() {
 function loadFolderDataToMindMap() {
     console.log('[MINDMAP] 加载文件夹数据到思维导图');
     
-    // 确保MindElixir已定义
-    if (!window.MindElixir) {
-        console.error('[MINDMAP] MindElixir未定义');
-        return;
-    }
-    
     // 获取文件夹树结构
     const libraryInfo = window.libraryInfo || { folders: [] };
-    const folderTree = buildFolderTree(libraryInfo.folders || []);
+    let folderTree = buildFolderTree(libraryInfo.folders || []);
+    
+    // 应用文件夹筛选
+    folderTree = filterFolders(folderTree);
     
     // 转换为思维导图数据结构
     const mindMapData = convertFolderTreeToMindMapData(folderTree);
     
     // 初始化思维导图
-    if (window.mind && mindMapData) {
-        // 使用正确的数据格式初始化
+    if (window.mind) {
         window.mind.init(mindMapData);
+        
+        // 应用半圆弧布局
+        applySemicircleLayout();
     }
 }
 
 // 将文件夹树结构转换为思维导图数据结构
 function convertFolderTreeToMindMapData(folderTree, isRoot = true) {
-    // 确保MindElixir已定义
-    if (!window.MindElixir) {
-        console.error('[MINDMAP] MindElixir未定义，无法创建思维导图数据');
-        return null;
-    }
-    
     if (folderTree.length === 0) {
-        // 使用官方方法创建新数据
-        return window.MindElixir.new('根文件夹');
+        return {
+            nodeData: {
+                topic: '根文件夹',
+                id: 'root',
+                children: [],
+                expanded: true
+            }
+        };
     }
     
     function convertNode(node) {
@@ -184,17 +182,143 @@ function convertFolderTreeToMindMapData(folderTree, isRoot = true) {
                 expanded: true
             }
         };
-    } else {
-        // 处理非根节点情况
-        return {
-            nodeData: {
-                topic: '文件夹结构',
-                id: 'root',
-                children: folderTree.map(convertNode),
-                expanded: true
-            }
-        };
     }
+}
+
+// 应用半圆弧布局
+function applySemicircleLayout() {
+    if (!window.mind) return;
+    
+    // 获取所有节点
+    const allNodes = getAllNodes(window.mind.nodeData);
+    
+    // 计算半圆弧布局
+    calculateSemicirclePositions(allNodes, window.mind);
+    
+    // 重新渲染
+    window.mind.layout();
+}
+
+// 获取所有节点
+function getAllNodes(nodeData) {
+    const nodes = [];
+    
+    function traverse(node) {
+        nodes.push(node);
+        if (node.children) {
+            node.children.forEach(traverse);
+        }
+    }
+    
+    traverse(nodeData);
+    return nodes;
+}
+
+// 计算半圆弧布局位置
+function calculateSemicirclePositions(nodes, mind) {
+    if (nodes.length <= 1) return;
+    
+    // 获取根节点
+    const rootNode = nodes[0];
+    
+    // 设置根节点位置在中心
+    rootNode.root = true;
+    rootNode.x = mind.container.offsetWidth / 2;
+    rootNode.y = mind.container.offsetHeight / 2;
+    
+    // 处理子节点
+    if (rootNode.children && rootNode.children.length > 0) {
+        const childNodes = rootNode.children;
+        const totalChildren = childNodes.length;
+        
+        // 如果只有一个子节点，放置在正上方
+        if (totalChildren === 1) {
+            const childNode = childNodes[0];
+            childNode.x = rootNode.x;
+            childNode.y = rootNode.y - 150;
+            
+            // 递归处理孙子节点
+            if (childNode.children && childNode.children.length > 0) {
+                positionGrandChildrenInSemicircle(childNode.children, childNode, 100);
+            }
+        } else {
+            // 计算半圆弧上的位置（从左到右排列）
+            for (let i = 0; i < totalChildren; i++) {
+                // 从π到0的弧度范围（半圆，开口向上）
+                const angle = Math.PI - (i / (totalChildren - 1)) * Math.PI;
+                const radius = 200; // 半径
+                
+                const childNode = childNodes[i];
+                childNode.x = rootNode.x + radius * Math.cos(angle);
+                childNode.y = rootNode.y - radius * Math.sin(angle); // 负号使弧线向上
+                
+                // 递归处理孙子节点
+                if (childNode.children && childNode.children.length > 0) {
+                    positionGrandChildrenInSemicircle(childNode.children, childNode, 100);
+                }
+            }
+        }
+    }
+}
+
+// 在半圆弧中定位孙子节点
+function positionGrandChildrenInSemicircle(children, parentNode, radius) {
+    const totalChildren = children.length;
+    
+    // 如果只有一个子节点，放置在正下方
+    if (totalChildren === 1) {
+        const childNode = children[0];
+        childNode.x = parentNode.x;
+        childNode.y = parentNode.y + radius;
+        return;
+    }
+    
+    // 多个子节点时，在父节点下方半圆弧排列
+    for (let i = 0; i < totalChildren; i++) {
+        // 从π到0的弧度范围（半圆，开口向下）
+        const angle = Math.PI - (i / (totalChildren - 1)) * Math.PI;
+        const childNode = children[i];
+        childNode.x = parentNode.x + (radius * 0.8) * Math.cos(angle);
+        childNode.y = parentNode.y + (radius * 0.8) * Math.sin(angle); // 正号使弧线向下
+        
+        // 递归处理更深层的节点
+        if (childNode.children && childNode.children.length > 0) {
+            positionGrandChildrenInSemicircle(childNode.children, childNode, radius * 0.7);
+        }
+    }
+}
+
+// 文件夹筛选功能
+function filterFolders(folderTree) {
+    // 获取用户定义的筛选条件
+    let excludedFolders = [];
+    const savedFilter = localStorage.getItem('mindmapFolderFilter');
+    if (savedFilter) {
+        excludedFolders = savedFilter.split(',').map(name => name.trim().toLowerCase());
+    } else {
+        // 默认需要排除的文件夹名称列表
+        excludedFolders = ['_预览', '_备份', 'temp', 'temporary', 'cache'];
+    }
+    
+    function filterNode(node) {
+        // 如果节点名称在排除列表中，则过滤掉
+        if (excludedFolders.includes(node.name.toLowerCase())) {
+            return null;
+        }
+        
+        // 递归处理子节点
+        if (node.children) {
+            node.children = node.children
+                .map(filterNode)
+                .filter(child => child !== null);
+        }
+        
+        return node;
+    }
+    
+    return folderTree
+        .map(filterNode)
+        .filter(node => node !== null);
 }
 
 // 绑定思维导图相关事件（用于主页面）

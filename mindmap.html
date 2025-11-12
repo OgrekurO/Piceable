@@ -113,6 +113,30 @@
             background: #d33b2c;
         }
         
+        .filter-section {
+            background: white;
+            padding: 10px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .filter-input {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            width: 250px;
+        }
+        
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+        }
+        
         #mindmap-container {
             flex: 1;
             background: white;
@@ -200,6 +224,11 @@
             <button id="mindmap-save-btn">💾 保存更改</button>
             <button id="mindmap-refresh-btn">🔄 刷新数据</button>
         </div>
+    </div>
+    
+    <div class="filter-section">
+        <input type="text" class="filter-input" id="folder-filter" placeholder="输入要排除的文件夹名称，用逗号分隔（如：temp,cache,备份）">
+        <button id="apply-filter">应用查看</button>
     </div>
     
     <div class="status-message" id="status-message"></div>

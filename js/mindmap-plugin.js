@@ -39,6 +39,9 @@ function initializeMindMapPlugin() {
 async function initializeMindMapPage() {
     console.log('[MINDMAP PLUGIN] 初始化思维导图页面');
     
+    // 绑定筛选功能事件
+    bindFilterEvents();
+    
     // 首先尝试从 opener 窗口获取 libraryInfo 数据
     if (window.opener && !window.opener.closed && window.opener.libraryInfo) {
         window.libraryInfo = window.opener.libraryInfo;
@@ -53,6 +56,45 @@ async function initializeMindMapPage() {
     // 如果仍然没有数据，显示错误消息
     if (typeof window.libraryInfo === 'undefined') {
         showErrorMessage('无法获取文件夹数据，请返回主界面刷新数据后重试');
+    }
+}
+
+// 绑定筛选功能事件
+function bindFilterEvents() {
+    // 应用筛选按钮点击事件
+    const applyFilterButton = document.getElementById('apply-filter');
+    if (applyFilterButton) {
+        applyFilterButton.addEventListener('click', applyFolderFilter);
+    }
+    
+    // 回车键应用筛选
+    const filterInput = document.getElementById('folder-filter');
+    if (filterInput) {
+        filterInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                applyFolderFilter();
+            }
+        });
+    }
+}
+
+// 应用文件夹筛选
+function applyFolderFilter() {
+    const filterInput = document.getElementById('folder-filter');
+    if (filterInput) {
+        const filterText = filterInput.value.trim();
+        if (filterText) {
+            // 保存筛选条件到localStorage
+            localStorage.setItem('mindmapFolderFilter', filterText);
+        } else {
+            // 清除筛选条件
+            localStorage.removeItem('mindmapFolderFilter');
+        }
+        
+        // 重新加载思维导图
+        if (typeof window.mind !== 'undefined') {
+            loadFolderDataToMindMap();
+        }
     }
 }
 
