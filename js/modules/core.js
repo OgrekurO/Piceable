@@ -67,6 +67,20 @@ async function initializeApp() {
         try {
             console.log('[CORE] 检测到Eagle环境，加载真实数据');
             await loadEagleItems();
+            
+            // 等待Tabulator加载完成
+            if (typeof Tabulator === 'undefined') {
+                try {
+                    console.log('[CORE] 开始加载Tabulator库');
+                    await loadTabulator();
+                    console.log('[CORE] Tabulator库加载完成');
+                } catch (error) {
+                    console.error('[CORE] Tabulator库加载失败:', error);
+                    showStatus('界面库加载失败: ' + error.message, 'error');
+                    return;
+                }
+            }
+            
             initUI();
             bindEvents();
             initializeTable();
