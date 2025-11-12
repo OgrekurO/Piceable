@@ -48,7 +48,7 @@ function generateFolderColumnId(folderPath) {
 function generateDynamicColumns(folderTree) {
     console.log('[DATA] 开始生成动态列定义，文件夹树:', folderTree);
     
-    // 为非叶子节点创建列（即有子文件夹的节点）
+    // 为所有节点创建列（包括根节点）
     function processFolderNode(node) {
         const columnId = generateFolderColumnId(node.path);
         console.log(`[DATA] 处理节点: ${node.name}, 路径: ${node.path}, ID: ${columnId}`);
@@ -66,9 +66,14 @@ function generateDynamicColumns(folderTree) {
                 columns: columns
             };
         } else {
-            // 叶子节点不创建列
-            console.log(`[DATA] 节点 ${node.name} 是叶子节点，不创建列`);
-            return null;
+            // 对于叶子节点，也要创建列（特别是根节点的叶子节点）
+            console.log(`[DATA] 为叶子节点 ${node.name} 创建列`);
+            return {
+                title: node.name,
+                field: columnId,
+                editor: "input",
+                width: 150
+            };
         }
     }
     
@@ -172,12 +177,11 @@ async function loadEagleItems() {
                                 dynamicData[columnId] = innerFolderName;
                             }
                         } else if (pathParts.length === 1) {
-                            // 根文件夹的情况，直接在根节点下显示
-                            const columnId = generateFolderColumnId('');
-                            if (dynamicData[columnId]) {
-                                dynamicData[columnId] += ', ' + pathParts[0];
-                            } else {
-                                dynamicData[columnId] = pathParts[0];
+                            // 根文件夹的情况，创建对应的列但值为空
+                            const columnId = generateFolderColumnId(folderPath);
+                            // 不设置值，保持单元格为空
+                            if (!dynamicData[columnId]) {
+                                dynamicData[columnId] = '';
                             }
                         }
                     }
