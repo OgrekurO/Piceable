@@ -215,7 +215,7 @@
         就绪
     </div>
     
-    <script type="text/javascript" src="js/plugin.js"></script>
+    <script type="text/javascript" src="js/mindmap-plugin.js"></script>
     
     <script>
         // 页面加载完成后初始化思维导图
@@ -235,17 +235,6 @@
                     console.error('[MINDMAP PAGE] 通过插件 API 获取数据失败:', error);
                 }
             }
-            
-            // 加载思维导图模块
-            const mindMapScript = document.createElement('script');
-            mindMapScript.type = 'module';
-            mindMapScript.src = 'js/modules/mindmap.js';
-            mindMapScript.onload = function() {
-                if (typeof initMindMapPage === 'function') {
-                    initMindMapPage();
-                }
-            };
-            document.head.appendChild(mindMapScript);
         });
     </script>
 </body>
