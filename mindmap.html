@@ -241,27 +241,11 @@
         async function getLibraryInfoFromPluginAPI() {
             if (typeof window.eagle !== 'undefined') {
                 try {
-                    // 监听 plugin-create 事件，确保插件完全初始化
-                    if (window.eagle.isReady) {
-                        // 插件已经就绪，直接获取数据
-                        window.libraryInfo = await window.eagle.library.info();
-                        console.log('[MINDMAP PAGE] 通过插件 API 获取到 libraryInfo 数据');
-                        // 数据获取成功后初始化思维导图
-                        initializeMindMapWhenReady();
-                    } else {
-                        // 插件未就绪，等待 plugin-create 事件
-                        window.eagle.once('plugin-create', async () => {
-                            try {
-                                window.libraryInfo = await window.eagle.library.info();
-                                console.log('[MINDMAP PAGE] 通过插件 API 获取到 libraryInfo 数据');
-                                // 数据获取成功后初始化思维导图
-                                initializeMindMapWhenReady();
-                            } catch (error) {
-                                console.error('[MINDMAP PAGE] 通过插件 API 获取数据失败:', error);
-                                showErrorMessage('通过插件 API 获取数据失败: ' + error.message);
-                            }
-                        });
-                    }
+                    // 直接调用 library.info() 方法获取数据
+                    window.libraryInfo = await window.eagle.library.info();
+                    console.log('[MINDMAP PAGE] 通过插件 API 获取到 libraryInfo 数据');
+                    // 数据获取成功后初始化思维导图
+                    initializeMindMapWhenReady();
                 } catch (error) {
                     console.error('[MINDMAP PAGE] 通过插件 API 获取数据失败:', error);
                     showErrorMessage('通过插件 API 获取数据失败: ' + error.message);
