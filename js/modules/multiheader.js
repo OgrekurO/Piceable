@@ -189,7 +189,29 @@ function loadMultiHeaderConfig() {
         const savedConfig = localStorage.getItem('eagle-ontology-multiheader-config');
         if (savedConfig) {
             console.log('[MULTIHEADER] 多级表头配置已加载');
-            return JSON.parse(savedConfig);
+            const config = JSON.parse(savedConfig);
+            
+            // 确保动态列始终是最新的
+            const dynamicColumnGroupIndex = config.findIndex(group => group.title === "文件夹结构");
+            if (window.dynamicColumns && window.dynamicColumns.length > 0) {
+                const dynamicColumnGroup = {
+                    title: "文件夹结构",
+                    columns: window.dynamicColumns
+                };
+                
+                if (dynamicColumnGroupIndex >= 0) {
+                    // 更新现有的文件夹结构组
+                    config[dynamicColumnGroupIndex] = dynamicColumnGroup;
+                } else {
+                    // 添加新的文件夹结构组
+                    config.push(dynamicColumnGroup);
+                }
+            } else if (dynamicColumnGroupIndex >= 0) {
+                // 如果没有动态列但配置中有文件夹结构组，则移除它
+                config.splice(dynamicColumnGroupIndex, 1);
+            }
+            
+            return config;
         }
     } catch (error) {
         console.error('[MULTIHEADER] 加载多级表头配置失败:', error);
