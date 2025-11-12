@@ -67,7 +67,7 @@ function loadMindElixir() {
         };
         document.head.appendChild(cssLink);
         
-        // 加载JS库 - 使用非模块方式确保全局访问
+        // 加载JS库 - 使用UMD版本确保全局访问
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/mind-elixir/dist/mind-elixir.js';
         script.onload = () => {
@@ -118,7 +118,7 @@ async function initializeMindMapInstance() {
     // 思维导图配置
     const options = {
         el: '#mindmap',
-        direction: window.MindElixir.RIGHT,
+        direction: 2, // RIGHT (使用数字常量而不是MindElixir.RIGHT以避免作用域问题)
         draggable: true,
         editable: true,
         contextMenu: true,
