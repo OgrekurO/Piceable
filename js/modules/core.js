@@ -60,10 +60,7 @@ eagle.onPluginShow(async () => {
         isPluginInitialized = true;
     }
     
-    // 如果表格已经存在，则刷新数据
-    if (window.table) {
-        window.table.setData(window.tableData);
-    }
+    // 如果表格已经存在，则在tableBuilt事件中刷新数据
 });
 
 // 插件隐藏时的回调

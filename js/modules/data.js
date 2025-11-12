@@ -55,13 +55,21 @@ function generateDynamicColumns(folderTree) {
         
         // 如果有子文件夹，创建组
         if (node.children && node.children.length > 0) {
-            const columns = node.children.map(processFolderNode);
+            const columns = node.children.map(processFolderNode).filter(col => col !== null);
             console.log(`[DATA] 节点 ${node.name} 的子列:`, columns);
-            return {
-                title: node.name,
-                field: columnId,
-                columns: columns
-            };
+            // 只有当有非空子列时才创建列组
+            if (columns.length > 0) {
+                return {
+                    title: node.name,
+                    field: columnId,
+                    columns: columns
+                };
+            } else {
+                // 如果子列都为空，说明子节点都是叶子节点，这种情况下我们需要创建一个列来显示这些叶子节点
+                // 但我们不创建列组，而是直接返回null
+                console.log(`[DATA] 节点 ${node.name} 的子节点都是叶子节点，不创建列组`);
+                return null;
+            }
         } else {
             // 叶子节点不创建列
             console.log(`[DATA] 节点 ${node.name} 是叶子节点，不创建列`);
