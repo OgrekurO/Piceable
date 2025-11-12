@@ -48,29 +48,55 @@ function generateFolderColumnId(folderPath) {
 function generateDynamicColumns(folderTree) {
     console.log('[DATA] 开始生成动态列定义，文件夹树:', folderTree);
     
-    // 只为非叶子节点创建列（即文件夹路径的倒数第二层）
-    function processFolderNode(node) {
+    // 存储列字段到文件夹路径的映射关系
+    window.columnPathMap = window.columnPathMap || {};
+    
+    // 为所有层级创建列，不仅仅是非叶子节点
+    function processFolderNode(node, depth = 0) {
         const columnId = generateFolderColumnId(node.path);
-        console.log(`[DATA] 处理节点: ${node.name}, 路径: ${node.path}, ID: ${columnId}`);
+        console.log(`[DATA] 处理节点: ${node.name}, 路径: ${node.path}, ID: ${columnId}, 深度: ${depth}`);
+        
+        // 记录列字段到文件夹路径的映射
+        window.columnPathMap[columnId] = node.path;
         
         // 如果有子文件夹，创建组
         if (node.children && node.children.length > 0) {
-            const columns = node.children.map(processFolderNode).filter(col => col !== null);
+            const columns = node.children.map(child => processFolderNode(child, depth + 1)).filter(col => col !== null);
             console.log(`[DATA] 节点 ${node.name} 的子列:`, columns);
+            
+            // 对于深度大于等于1的节点（即非根节点），如果子节点中有叶子节点，
+            // 则添加一个"其他"列来显示这些叶子节点
+            if (depth >= 1 && node.children.some(child => !child.children || child.children.length === 0)) {
+                const otherColumnId = columnId + "_other";
+                window.columnPathMap[otherColumnId] = node.path; // "其他"列也映射到父路径
+                
+                columns.push({
+                    title: "其他",
+                    field: otherColumnId,
+                    editor: "input",
+                    width: 150
+                });
+            }
+            
             return {
                 title: node.name,
                 field: columnId,
                 columns: columns
             };
         } else {
-            // 叶子节点不创建列
-            console.log(`[DATA] 节点 ${node.name} 是叶子节点，不创建列`);
-            return null;
+            // 叶子节点创建普通列
+            console.log(`[DATA] 为叶子节点 ${node.name} 创建列`);
+            return {
+                title: node.name,
+                field: columnId,
+                editor: "input",
+                width: 150
+            };
         }
     }
     
     // 为每个根文件夹生成列定义，并过滤掉null值
-    const columns = folderTree.map(processFolderNode).filter(col => col !== null);
+    const columns = folderTree.map(rootNode => processFolderNode(rootNode, 0)).filter(col => col !== null);
     console.log('[DATA] 生成的动态列定义:', columns);
     
     return columns;
@@ -147,6 +173,12 @@ async function loadEagleItems() {
             
             // 构建动态列数据
             const dynamicData = {};
+            // 添加分组字段
+            const groupingData = {
+                countryGroup: '',  // 国家级分组字段
+                regionGroup: ''    // 地区分组字段
+            };
+            
             if (item.folders && Array.isArray(item.folders)) {
                 // 为每个项目所属的文件夹在对应列中填写最内层文件夹名称
                 item.folders.forEach(folderId => {
@@ -154,26 +186,56 @@ async function loadEagleItems() {
                     if (folderPath) {
                         // 获取文件夹路径的所有父路径
                         const pathParts = folderPath.split('/');
-                        // 只有当路径有多层时才处理
+                        
+                        // 设置分组字段
+                        if (pathParts.length >= 1) {
+                            groupingData.countryGroup = pathParts[0];  // 第一层作为国家分组
+                        }
                         if (pathParts.length >= 2) {
-                            // 获取倒数第二层路径（父文件夹）
-                            const parentPath = pathParts.slice(0, -1).join('/');
-                            // 获取最内层文件夹名称
-                            const innerFolderName = pathParts[pathParts.length - 1];
-                            // 为父文件夹对应的列设置最内层文件夹名称
-                            const columnId = generateFolderColumnId(parentPath);
-                            // 如果该列已存在值，则追加新的文件夹名称
-                            if (dynamicData[columnId]) {
-                                dynamicData[columnId] += ', ' + innerFolderName;
-                            } else {
-                                dynamicData[columnId] = innerFolderName;
-                            }
-                        } else if (pathParts.length === 1) {
-                            // 根文件夹的情况，创建对应的列但值为空
+                            groupingData.regionGroup = pathParts[1];   // 第二层作为地区分组
+                        }
+                        
+                        // 根据路径长度处理不同情况
+                        if (pathParts.length === 1) {
+                            // 单层路径，如"国外"
                             const columnId = generateFolderColumnId(folderPath);
-                            // 不设置值，保持单元格为空
                             if (!dynamicData[columnId]) {
                                 dynamicData[columnId] = '';
+                            }
+                        } else if (pathParts.length === 2) {
+                            // 两层路径，如"国外/@英国V&A博物馆"
+                            const parentPath = pathParts[0];  // "国外"
+                            const leafName = pathParts[1];    // "@英国V&A博物馆"
+                            const columnId = generateFolderColumnId(parentPath);
+                            if (dynamicData[columnId]) {
+                                dynamicData[columnId] += ', ' + leafName;
+                            } else {
+                                dynamicData[columnId] = leafName;
+                            }
+                        } else if (pathParts.length >= 3) {
+                            // 三层或更多层路径，如"国外/德国/德国埃森，世界文化遗产佐尔维尔矿区"
+                            const parentPath = pathParts.slice(0, -1).join('/');  // "国外/德国"
+                            const grandParentPath = pathParts.slice(0, -2).join('/'); // "国外"
+                            const leafName = pathParts[pathParts.length - 1];         // "德国埃森，世界文化遗产佐尔维尔矿区"
+                            
+                            // 检查父路径是否有对应的列
+                            const parentColumnId = generateFolderColumnId(parentPath);
+                            if (window.dynamicColumns && 
+                                JSON.stringify(window.dynamicColumns).includes(parentColumnId)) {
+                                // 父路径列存在，直接放入
+                                if (dynamicData[parentColumnId]) {
+                                    dynamicData[parentColumnId] += ', ' + leafName;
+                                } else {
+                                    dynamicData[parentColumnId] = leafName;
+                                }
+                            } else {
+                                // 父路径列不存在，放入祖父路径的"其他"列
+                                const otherColumnId = generateFolderColumnId(grandParentPath) + "_other";
+                                if (dynamicData[otherColumnId]) {
+                                    dynamicData[otherColumnId] += ', ' + leafName;
+                                } else {
+                                    dynamicData[otherColumnId] = leafName;
+                                }
                             }
                         }
                     }
@@ -189,6 +251,7 @@ async function loadEagleItems() {
                 tags: tags,
                 annotation: item.annotation || '',
                 lastModified: item.lastModified ? new Date(item.lastModified).toLocaleString() : '',
+                ...groupingData,   // 合并分组数据
                 ...dynamicData // 合并动态列数据
             };
             
@@ -227,16 +290,23 @@ function parseFolderInput(folderInput) {
         .map(name => name.trim())
         .filter(name => name.length > 0);
     
-    // 查找对应的文件夹ID
-    const folderIds = [];
-    for (const folderName of folderNames) {
-        const folderId = window.folderIdMap[folderName];
-        if (folderId) {
-            folderIds.push(folderId);
-        } else {
-            console.warn(`[DATA] 未找到文件夹 "${folderName}" 的ID`);
+    // 将文件夹名称转换为ID
+    const folderIds = folderNames.map(name => {
+        // 先直接查找精确匹配
+        let folderId = window.folderIdMap[name];
+        
+        // 如果找不到，尝试模糊匹配
+        if (!folderId) {
+            const matchedName = Object.keys(window.folderIdMap).find(key => 
+                key.includes(name) || name.includes(key)
+            );
+            if (matchedName) {
+                folderId = window.folderIdMap[matchedName];
+            }
         }
-    }
+        
+        return folderId;
+    }).filter(id => id); // 过滤掉未找到的ID
     
     return folderIds;
 }

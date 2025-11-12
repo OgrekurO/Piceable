@@ -111,79 +111,23 @@ async function syncDataToEagle() {
                     const folderIds = [];
                     
                     for (const folderName of folderNames) {
-                        // 直接在当前的文件夹ID映射中查找
-                        let folderId = window.folderIdMap[folderName];
-                        
-                        // 如果找不到文件夹ID，尝试创建新文件夹
-                        if (!folderId) {
-                            console.log(`[SYNC] 未找到: 未找到文件夹 "${folderName}" 的ID，尝试创建新文件夹`);
+                        try {
+                            // 直接在当前的文件夹ID映射中查找
+                            let folderId = window.folderIdMap[folderName];
                             
-                            try {
-                                // 解析文件夹路径，检查是否是子文件夹
-                                const pathParts = folderName.split('/');
-                                
-                                if (pathParts.length === 1) {
-                                    // 检查是否已经创建过同名根文件夹
-                                    if (!window.createdFolders) window.createdFolders = new Map();
-                                    
-                                    if (!window.createdFolders.has(folderName)) {
-                                        console.log(`[SYNC] 创建根文件夹: ${folderName}`);
-                                        const newFolder = await eagle.folder.create({
-                                            name: folderName
-                                        });
-                                        folderId = newFolder.id;
-                                        console.log(`[SYNC] 成功创建根文件夹，ID: ${folderId}`);
-                                        
-                                        // 更新文件夹映射
-                                        window.folderMap[folderId] = folderName;
-                                        window.folderIdMap[folderName] = folderId;
-                                        
-                                        // 记录已创建的文件夹
-                                        window.createdFolders.set(folderName, folderId);
-                                    } else {
-                                        folderId = window.createdFolders.get(folderName);
-                                        console.log(`[SYNC] 根文件夹 "${folderName}" 已创建过，ID: ${folderId}`);
-                                    }
-                                } else {
-                                    // 处理子文件夹
-                                    const parentPath = pathParts.slice(0, -1).join('/');
-                                    const folderNameOnly = pathParts[pathParts.length - 1];
-                                    
-                                    const parentId = window.folderIdMap[parentPath];
-                                    if (parentId) {
-                                        // 检查是否已经创建过同名子文件夹
-                                        if (!window.createdFolders) window.createdFolders = new Map();
-                                        const fullPath = `${parentPath}/${folderNameOnly}`;
-                                        
-                                        if (!window.createdFolders.has(fullPath)) {
-                                            console.log(`[SYNC] 创建子文件夹: ${folderNameOnly} 在父文件夹: ${parentPath}`);
-                                            const newFolder = await eagle.folder.createSubfolder(parentId, {
-                                                name: folderNameOnly
-                                            });
-                                            folderId = newFolder.id;
-                                            console.log(`[SYNC] 成功创建子文件夹，ID: ${folderId}`);
-                                            
-                                            // 更新文件夹映射
-                                            window.folderMap[folderId] = fullPath;
-                                            window.folderIdMap[fullPath] = folderId;
-                                            
-                                            // 记录已创建的文件夹
-                                            window.createdFolders.set(fullPath, folderId);
-                                        } else {
-                                            folderId = window.createdFolders.get(fullPath);
-                                            console.log(`[SYNC] 子文件夹 "${fullPath}" 已创建过，ID: ${folderId}`);
-                                        }
-                                    }
-                                }
-                            } catch (createError) {
-                                console.error(`[SYNC] 创建文件夹 "${folderName}" 失败:`, createError);
-                                showStatus(`创建文件夹 "${folderName}" 失败: ${createError.message}`, 'error');
-                                continue;
+                            // 如果找不到文件夹ID，尝试创建新文件夹
+                            if (!folderId) {
+                                console.log(`[SYNC] 未找到文件夹 "${folderName}" 的ID，尝试创建新文件夹`);
+                                folderId = await createFolderPath(folderName);
                             }
-                        }
-                        
-                        if (folderId) {
-                            folderIds.push(folderId);
+                            
+                            if (folderId) {
+                                folderIds.push(folderId);
+                            }
+                        } catch (createError) {
+                            console.error(`[SYNC] 处理文件夹 "${folderName}" 失败:`, createError);
+                            showStatus(`处理文件夹 "${folderName}" 失败: ${createError.message}`, 'error');
+                            continue;
                         }
                     }
                     
@@ -192,13 +136,17 @@ async function syncDataToEagle() {
                     needSave = true;
                 }
                 
-                // 处理动态列数据（自定义元数据）
+                // 处理动态列数据（自定义元数据和文件夹操作）
                 if (window.dynamicColumns && Array.isArray(window.dynamicColumns)) {
                     if (!originalItem.metaData) {
                         originalItem.metaData = {};
                     }
                     
                     let metaChanged = false;
+                    let folderOperationNeeded = false;
+                    const newFolderPaths = []; // 存储需要添加到的新文件夹路径
+                    
+                    // 处理每个动态列
                     for (const column of window.dynamicColumns) {
                         const columnName = column.field;
                         if (rowData.hasOwnProperty(columnName) && originalItem.metaData[columnName] !== rowData[columnName]) {
@@ -206,7 +154,54 @@ async function syncDataToEagle() {
                             originalItem.metaData[columnName] = rowData[columnName];
                             metaChanged = true;
                             needSave = true;
+                            
+                            // 检查是否需要执行文件夹操作
+                            // 如果该列有对应的文件夹路径映射，且值不为空，则需要执行文件夹操作
+                            if (window.columnPathMap && window.columnPathMap[columnName]) {
+                                const columnPath = window.columnPathMap[columnName];
+                                const cellValue = rowData[columnName];
+                                
+                                if (cellValue && cellValue.trim() !== '') {
+                                    // 解析单元格中的文件夹名称（可能包含多个，用逗号分隔）
+                                    const folderNames = cellValue.split(',').map(name => name.trim()).filter(name => name);
+                                    folderNames.forEach(folderName => {
+                                        // 构造完整文件夹路径
+                                        const fullPath = columnPath ? `${columnPath}/${folderName}` : folderName;
+                                        newFolderPaths.push(fullPath);
+                                        folderOperationNeeded = true;
+                                    });
+                                }
+                            }
                         }
+                    }
+                    
+                    // 如果需要执行文件夹操作
+                    if (folderOperationNeeded) {
+                        console.log(`[SYNC] 需要执行文件夹操作，新文件夹路径:`, newFolderPaths);
+                        
+                        // 获取当前项目所在的文件夹ID列表
+                        let currentFolderIds = [...(originalItem.folders || [])];
+                        
+                        // 为每个新文件夹路径查找或创建文件夹
+                        for (const folderPath of newFolderPaths) {
+                            let folderId = window.folderIdMap[folderPath];
+                            
+                            // 如果找不到文件夹ID，尝试创建新文件夹
+                            if (!folderId) {
+                                console.log(`[SYNC] 未找到文件夹 "${folderPath}" 的ID，尝试创建新文件夹`);
+                                folderId = await createFolderPath(folderPath);
+                            }
+                            
+                            // 将文件夹ID添加到项目中（避免重复添加）
+                            if (folderId && !currentFolderIds.includes(folderId)) {
+                                currentFolderIds.push(folderId);
+                            }
+                        }
+                        
+                        // 更新项目的文件夹列表
+                        originalItem.folders = currentFolderIds;
+                        needSave = true;
+                        console.log(`[SYNC] 项目文件夹列表已更新:`, currentFolderIds);
                     }
                     
                     if (metaChanged) {
@@ -264,4 +259,77 @@ function getFolderNames(folderIds) {
         .filter(name => name !== '')
         .join(', ');
     return result;
+}
+
+// 递归创建文件夹路径的辅助函数
+async function createFolderPath(folderPath) {
+    console.log(`[SYNC] 创建文件夹路径: ${folderPath}`);
+    
+    // 检查文件夹是否已存在
+    if (window.folderIdMap[folderPath]) {
+        console.log(`[SYNC] 文件夹路径 "${folderPath}" 已存在，ID: ${window.folderIdMap[folderPath]}`);
+        return window.folderIdMap[folderPath];
+    }
+    
+    // 检查是否已经创建过但尚未刷新映射表
+    if (window.createdFolders && window.createdFolders.has(folderPath)) {
+        console.log(`[SYNC] 文件夹路径 "${folderPath}" 已创建过，ID: ${window.createdFolders.get(folderPath)}`);
+        return window.createdFolders.get(folderPath);
+    }
+    
+    const pathParts = folderPath.split('/');
+    
+    if (pathParts.length === 1) {
+        // 根文件夹
+        try {
+            console.log(`[SYNC] 创建根文件夹: ${folderPath}`);
+            const newFolder = await eagle.folder.create({
+                name: folderPath
+            });
+            
+            // 更新文件夹映射
+            window.folderMap[newFolder.id] = folderPath;
+            window.folderIdMap[folderPath] = newFolder.id;
+            
+            // 记录已创建的文件夹
+            if (!window.createdFolders) window.createdFolders = new Map();
+            window.createdFolders.set(folderPath, newFolder.id);
+            
+            console.log(`[SYNC] 成功创建根文件夹 "${folderPath}"，ID: ${newFolder.id}`);
+            return newFolder.id;
+        } catch (error) {
+            console.error(`[SYNC] 创建根文件夹 "${folderPath}" 失败:`, error);
+            throw error;
+        }
+    } else {
+        // 子文件夹
+        const parentPath = pathParts.slice(0, -1).join('/');
+        const folderName = pathParts[pathParts.length - 1];
+        
+        // 递归创建父文件夹
+        const parentId = await createFolderPath(parentPath);
+        
+        try {
+            console.log(`[SYNC] 创建子文件夹: ${folderName} 在父文件夹: ${parentPath} (ID: ${parentId})`);
+            const newFolder = await eagle.folder.createSubfolder(parentId, {
+                name: folderName
+            });
+            
+            const fullPath = `${parentPath}/${folderName}`;
+            
+            // 更新文件夹映射
+            window.folderMap[newFolder.id] = fullPath;
+            window.folderIdMap[fullPath] = newFolder.id;
+            
+            // 记录已创建的文件夹
+            if (!window.createdFolders) window.createdFolders = new Map();
+            window.createdFolders.set(fullPath, newFolder.id);
+            
+            console.log(`[SYNC] 成功创建子文件夹 "${fullPath}"，ID: ${newFolder.id}`);
+            return newFolder.id;
+        } catch (error) {
+            console.error(`[SYNC] 创建子文件夹 "${folderName}" 失败:`, error);
+            throw error;
+        }
+    }
 }

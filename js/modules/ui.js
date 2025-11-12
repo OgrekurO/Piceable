@@ -1,48 +1,52 @@
 // 初始化UI
 function initUI() {
-    console.log('[UI] 开始初始化UI');
+    console.log('[UI] 初始化UI');
     
-    // 创建主容器
-    let container = document.getElementById('eagle-ontology-manager');
+    // 确保必要的DOM元素存在
+    const container = document.getElementById('app-container');
     if (!container) {
-        container = document.createElement('div');
-        container.id = 'eagle-ontology-manager';
-        document.body.appendChild(container);
-        console.log('[UI] 创建了新的容器元素');
+        console.error('[UI] 找不到app-container元素');
+        return;
     }
     
-    // 清空容器
-    container.innerHTML = '';
-    
-    // 创建顶部工具栏
-    const toolbar = document.createElement('div');
-    toolbar.className = 'toolbar';
-    toolbar.innerHTML = `
-        <button id="refresh-btn" class="btn-primary">
-            <i class="icon-refresh"></i>
-            刷新
-        </button>
-        <div class="spacer"></div>
-        <div class="search-box">
-            <input type="text" id="search-input" placeholder="搜索项目...">
-            <i class="icon-search"></i>
+    // 创建UI元素
+    const uiHTML = `
+        <div id="main-ui" style="padding: 20px;">
+            <div id="header-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                <div id="status-bar" style="flex: 1; min-width: 200px;">
+                    就绪 - 未加载数据
+                </div>
+                
+                <div id="grouping-controls" style="display: flex; gap: 10px; align-items: center;">
+                    <label for="grouping-select">分组方式:</label>
+                    <select id="grouping-select" style="padding: 5px; border-radius: 4px; border: 1px solid #ccc;">
+                        <option value="">无分组</option>
+                        <option value="countryGroup">按国家分组</option>
+                        <option value="regionGroup">按地区分组</option>
+                    </select>
+                </div>
+                
+                <div id="action-buttons" style="display: flex; gap: 10px;">
+                    <button id="sync-button" style="padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;" disabled>
+                        同步到Eagle
+                    </button>
+                    <button id="export-button" style="padding: 8px 16px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        导出CSV
+                    </button>
+                    <button id="multiheader-button" style="padding: 8px 16px; background: #FF9800; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        多级表头管理
+                    </button>
+                </div>
+            </div>
+            
+            <div id="table-container" style="height: calc(100vh - 120px);">
+                <div id="item-table"></div>
+            </div>
         </div>
     `;
     
-    container.appendChild(toolbar);
-    
-    // 创建表格容器
-    const tableContainer = document.createElement('div');
-    tableContainer.id = 'table-container';
-    tableContainer.className = 'table-container';
-    container.appendChild(tableContainer);
-    
-    // 创建状态栏
-    const statusBar = document.createElement('div');
-    statusBar.id = 'status-bar';
-    statusBar.className = 'status-bar';
-    statusBar.textContent = '就绪';
-    container.appendChild(statusBar);
+    // 清空容器并添加新元素
+    container.innerHTML = uiHTML;
     
     console.log('[UI] UI元素创建完成');
 }
@@ -329,6 +333,33 @@ function initializeTable() {
     });
     
     console.log('[UI] 表格初始化完成，Tabulator实例:', window.table);
+    
+    // 绑定分组控制事件
+    bindGroupingControlEvents();
+}
+
+// 绑定分组控制事件
+function bindGroupingControlEvents() {
+    const groupingSelect = document.getElementById('grouping-select');
+    if (groupingSelect && window.table) {
+        groupingSelect.addEventListener('change', function() {
+            const selectedValue = this.value;
+            console.log('[UI] 分组方式更改:', selectedValue);
+            
+            if (selectedValue) {
+                // 设置分组
+                window.table.setGroupBy(selectedValue);
+                
+                // 设置自定义组头
+                window.table.setGroupHeader(function(value, count, data, group) {
+                    return value + "<span style='color:#d00; margin-left:10px;'>(" + count + " 项)</span>";
+                });
+            } else {
+                // 清除分组
+                window.table.setGroupBy(false);
+            }
+        });
+    }
 }
 
 // 触发同步的函数
