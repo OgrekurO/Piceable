@@ -48,28 +48,23 @@ function generateFolderColumnId(folderPath) {
 function generateDynamicColumns(folderTree) {
     console.log('[DATA] 开始生成动态列定义，文件夹树:', folderTree);
     
-    // 为非叶子节点创建列（即文件夹路径的倒数第二层）
+    // 为非叶子节点创建列（即有子文件夹的节点）
     function processFolderNode(node) {
         const columnId = generateFolderColumnId(node.path);
         console.log(`[DATA] 处理节点: ${node.name}, 路径: ${node.path}, ID: ${columnId}`);
         
         // 如果有子文件夹，创建组
         if (node.children && node.children.length > 0) {
+            // 处理所有子节点
             const columns = node.children.map(processFolderNode).filter(col => col !== null);
             console.log(`[DATA] 节点 ${node.name} 的子列:`, columns);
-            // 只有当有非空子列时才创建列组
-            if (columns.length > 0) {
-                return {
-                    title: node.name,
-                    field: columnId,
-                    columns: columns
-                };
-            } else {
-                // 如果子列都为空，说明子节点都是叶子节点，这种情况下我们需要创建一个列来显示这些叶子节点
-                // 但我们不创建列组，而是直接返回null
-                console.log(`[DATA] 节点 ${node.name} 的子节点都是叶子节点，不创建列组`);
-                return null;
-            }
+            
+            // 创建列组（即使子列为空也要创建，因为父节点本身需要显示其直接子文件夹）
+            return {
+                title: node.name,
+                field: columnId,
+                columns: columns
+            };
         } else {
             // 叶子节点不创建列
             console.log(`[DATA] 节点 ${node.name} 是叶子节点，不创建列`);
