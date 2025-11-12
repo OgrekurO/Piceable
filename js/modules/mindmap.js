@@ -231,6 +231,16 @@ function convertFolderTreeToMindMapData(folderTree, isRoot = true) {
                 expanded: true
             }
         };
+    } else {
+        // 处理非根节点情况
+        return {
+            nodeData: {
+                topic: '文件夹结构',
+                id: 'root',
+                children: folderTree.map(convertNode),
+                expanded: true
+            }
+        };
     }
 }
 
