@@ -311,20 +311,19 @@ function initializeTable() {
         tableBuilt: function() {
             // 表格构建完成后添加动态列（基于文件夹结构）
             console.log('[UI] 表格构建完成，添加动态列');
+            console.log('[UI] 当前window.dynamicColumns:', window.dynamicColumns);
             if (window.dynamicColumns && window.dynamicColumns.length > 0) {
                 // 获取当前列定义
-                const currentColumns = this.getColumns(true).map(col => {
-                    return {
-                        title: col.getDefinition().title,
-                        field: col.getDefinition().field,
-                        columns: col.getDefinition().columns
-                    };
-                });
+                const currentColumns = this.getColumnDefinitions();
+                console.log('[UI] 当前列定义:', currentColumns);
                 
                 // 添加动态列
                 const allColumns = [...currentColumns, ...window.dynamicColumns];
+                console.log('[UI] 合并后的列定义:', allColumns);
                 this.setColumns(allColumns);
                 console.log('[UI] 动态列添加完成');
+            } else {
+                console.log('[UI] 没有动态列需要添加');
             }
         }
     });

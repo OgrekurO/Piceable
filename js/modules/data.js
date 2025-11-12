@@ -46,33 +46,32 @@ function generateFolderColumnId(folderPath) {
 
 // 生成基于文件夹结构的动态列定义
 function generateDynamicColumns(folderTree) {
-    // 只为非叶子节点创建列（即文件夹路径的倒数第二层）
+    console.log('[DATA] 开始生成动态列定义，文件夹树:', folderTree);
+    
+    // 为非叶子节点创建列（即文件夹路径的倒数第二层）
     function processFolderNode(node) {
         const columnId = generateFolderColumnId(node.path);
+        console.log(`[DATA] 处理节点: ${node.name}, 路径: ${node.path}, ID: ${columnId}`);
         
         // 如果有子文件夹，创建组
         if (node.children && node.children.length > 0) {
+            const columns = node.children.map(processFolderNode);
+            console.log(`[DATA] 节点 ${node.name} 的子列:`, columns);
             return {
                 title: node.name,
                 field: columnId,
-                columns: node.children.map(processFolderNode).filter(col => col !== null)
+                columns: columns
             };
         } else {
-            // 叶子节点不创建列，但返回null以便过滤
+            // 叶子节点不创建列
+            console.log(`[DATA] 节点 ${node.name} 是叶子节点，不创建列`);
             return null;
         }
     }
     
     // 为每个根文件夹生成列定义，并过滤掉null值
     const columns = folderTree.map(processFolderNode).filter(col => col !== null);
-    
-    // 添加一个特殊的根文件夹列来处理直接在根目录下的文件夹
-    columns.push({
-        title: "根文件夹",
-        field: generateFolderColumnId('ROOT_FOLDER'),
-        editor: "input",
-        width: 150
-    });
+    console.log('[DATA] 生成的动态列定义:', columns);
     
     return columns;
 }
