@@ -164,7 +164,7 @@ async function initializeMindMapInstance() {
         toolBar: true,
         nodeMenu: true,
         keypress: true,
-        data: defaultData // 在初始化时提供默认数据
+        data: defaultData // 提供默认数据
     };
     
     // 创建思维导图实例
@@ -179,50 +179,31 @@ async function initializeMindMapInstance() {
 
 // 将文件夹数据加载到思维导图中
 function loadFolderDataToMindMap() {
-    console.log('[MINDMAP] 加载文件夹数据到思维导图');
-    
     // 获取文件夹树结构
     const libraryInfo = window.libraryInfo || { folders: [] };
-    console.log('[MINDMAP] libraryInfo:', libraryInfo);
     
     if (!libraryInfo.folders) {
-        console.warn('[MINDMAP] libraryInfo中缺少folders字段，使用空数组');
         libraryInfo.folders = [];
     }
     
-    let folderTree = buildFolderTree(libraryInfo.folders || []);
-    console.log('[MINDMAP] folderTree:', folderTree);
-    
-    // 应用文件夹筛选
-    folderTree = filterFolders(folderTree);
-    console.log('[MINDMAP] 筛选后的folderTree:', folderTree);
+    // 构建并筛选文件夹树
+    let folderTree = filterFolders(buildFolderTree(libraryInfo.folders));
     
     // 转换为思维导图数据结构
     const mindMapData = convertFolderTreeToMindMapData(folderTree);
-    console.log('[MINDMAP] mindMapData:', mindMapData);
     
     // 初始化思维导图
     if (window.mind && mindMapData) {
-        console.log('[MINDMAP] 准备初始化思维导图，实例:', window.mind, '数据:', mindMapData);
         try {
-            // 使用正确的数据格式初始化
+            // 使用init方法初始化数据
             window.mind.init(mindMapData);
-            console.log('[MINDMAP] 思维导图初始化成功');
             
             // 应用半圆弧布局
             applySemicircleLayout();
-            console.log('[MINDMAP] 半圆弧布局应用完成');
         } catch (error) {
-            console.error('[MINDMAP] 初始化思维导图时发生错误:', error);
             showStatus('思维导图初始化失败: ' + error.message, 'error');
         }
     } else {
-        console.error('[MINDMAP] 无法初始化思维导图，原因：', {
-            hasMindInstance: !!window.mind,
-            hasMindMapData: !!mindMapData,
-            mindInstance: window.mind,
-            mindMapData: mindMapData
-        });
         showStatus('思维导图初始化失败：缺少实例或数据', 'error');
     }
 }
