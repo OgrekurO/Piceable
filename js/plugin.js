@@ -19,6 +19,7 @@ async function loadAllModules() {
         await loadModule('js/modules/ui.js');
         await loadModule('js/modules/template.js');
         await loadModule('js/modules/multiheader.js');
+        await loadModule('js/modules/mindmap.js');
         
     } catch (error) {
         console.error('[ERROR] 模块加载失败:', error);

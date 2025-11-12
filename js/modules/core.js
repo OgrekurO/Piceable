@@ -23,6 +23,7 @@ window.folderIdMap = window.folderIdMap || {}; // 用于存储文件夹名称到
 window.originalItems = window.originalItems || {}; // 用于存储原始项目数据，便于更新时查找
 window.isPluginReady = window.isPluginReady || false; // 标记插件是否已准备就绪
 window.templates = window.templates || []; // 用于存储属性模板
+window.libraryInfo = window.libraryInfo || {}; // 用于存储库信息
 
 // 插件创建时的回调
 eagle.onPluginCreate(async (plugin) => {
@@ -70,6 +71,7 @@ async function initializeApp() {
         initUI();
         bindEvents();
         initializeTable();
+        initMindMap();
         return;
     }
     
@@ -100,7 +102,18 @@ async function initializeApp() {
     console.log('[CORE] 初始化表格');
     initializeTable();
     
+    // 初始化思维导图
+    console.log('[CORE] 初始化思维导图');
+    initMindMap();
+    
     console.log('[CORE] 应用初始化完成');
+}
+
+// 初始化思维导图
+function initMindMap() {
+    console.log('[CORE] 思维导图初始化函数被调用');
+    // TODO: 此处将实现实时渲染当前数据集文件夹结构的思维导图
+    // 需要创建或调用一个专门处理mindmap的模块
 }
 
 // 加载演示数据（用于非Eagle环境下的演示）
@@ -130,6 +143,33 @@ function loadDemoData() {
         }
     ];
     
+    // 模拟库信息
+    window.libraryInfo = {
+        folders: [
+            {
+                id: "folder1",
+                name: "示例文件夹1",
+                children: []
+            },
+            {
+                id: "folder2",
+                name: "示例文件夹2",
+                children: [
+                    {
+                        id: "subfolder1",
+                        name: "子文件夹",
+                        children: []
+                    }
+                ]
+            }
+        ]
+    };
+    
+    // 构建文件夹映射表
+    const {map, idMap} = buildFolderMap(window.libraryInfo.folders);
+    window.folderMap = map;
+    window.folderIdMap = idMap;
+    
     showStatus(`已加载 ${window.tableData.length} 条演示数据`, 'success');
     const statusBarEl = document.getElementById('status-bar');
     if (statusBarEl) {
@@ -154,76 +194,58 @@ function bindEvents() {
     console.log('[CORE] 绑定事件');
 }
 
-// 加载Eagle项目数据
+// 从Eagle加载项目数据
 async function loadEagleItems() {
-    showStatus('正在加载项目数据...', 'info');
-    
     try {
-        // 获取所有文件夹
-        const foldersResponse = await eagle.api.getFolders();
-        if (foldersResponse.status === "success") {
-            // 构建文件夹映射
-            window.folderMap = {};
-            window.folderIdMap = {};
-            foldersResponse.data.forEach(folder => {
-                buildFolderMap(folder, "");
-            });
-        }
+        showStatus('正在加载Eagle项目数据...', 'info');
+        
+        // 获取库信息（包括文件夹结构）
+        console.log('[CORE] 获取库信息');
+        window.libraryInfo = await eagle.library.info();
+        console.log('[CORE] 库信息获取完成:', window.libraryInfo);
+        
+        // 构建文件夹映射表
+        const {map, idMap} = buildFolderMap(window.libraryInfo.folders || []);
+        window.folderMap = map;
+        window.folderIdMap = idMap;
+        console.log('[CORE] 文件夹映射表构建完成，映射表大小:', Object.keys(window.folderMap).length);
         
         // 获取所有项目
-        const itemsResponse = await eagle.api.v1.item.list({
-            limit: 9999,
-            type: "image"
+        console.log('[CORE] 获取所有项目');
+        const items = await eagle.item.list({
+            limit: 999999  // 获取所有项目
+        });
+        console.log('[CORE] 项目获取完成，共', items.length, '个项目');
+        
+        // 转换数据格式
+        window.tableData = items.map(item => {
+            // 存储原始项目数据，便于后续更新时查找
+            window.originalItems[item.id] = item;
+            
+            return {
+                id: item.id,
+                name: item.name,
+                url: item.url,
+                thumbnail: item.thumbnail,
+                folders: getFolderNames(item.folders || []),
+                tags: (item.tags || []).join(', '),
+                annotation: item.annotation || '',
+                lastModified: new Date(item.lastModified).toLocaleString(),
+                // 动态列字段将在此处添加
+            };
         });
         
-        if (itemsResponse.status === "success") {
-            window.originalItems = {};
-            window.tableData = itemsResponse.data.items.map(item => {
-                // 存储原始项目数据
-                window.originalItems[item.id] = item;
-                
-                return {
-                    id: item.id,
-                    name: item.name,
-                    url: item.url || "",
-                    thumbnail: item.thumbnail,
-                    folders: getFolderPath(item.folderId),
-                    tags: item.tags ? item.tags.join(",") : "",
-                    annotation: item.annotation || "",
-                    lastModified: new Date(item.modifyTime).toLocaleString()
-                };
-            });
-            
-            showStatus(`成功加载 ${window.tableData.length} 个项目`, 'success');
-        } else {
-            throw new Error(itemsResponse.message || "获取项目失败");
-        }
+        showStatus(`数据加载完成，共 ${items.length} 个项目`, 'success');
     } catch (error) {
-        console.error('[CORE] 加载数据失败:', error);
-        showStatus('加载数据失败: ' + error.message, 'error');
-        // 在非Eagle环境中使用演示数据
-        if (typeof eagle === 'undefined') {
-            loadDemoData();
-        }
+        console.error('[CORE] 加载Eagle项目数据失败:', error);
+        showStatus('数据加载失败: ' + error.message, 'error');
     }
 }
 
-// 构建文件夹路径映射
-function buildFolderMap(folder, parentPath) {
-    const currentPath = parentPath ? `${parentPath}/${folder.name}` : folder.name;
-    window.folderMap[folder.id] = currentPath;
-    window.folderIdMap[currentPath] = folder.id;
-    
-    if (folder.children && folder.children.length > 0) {
-        folder.children.forEach(child => {
-            buildFolderMap(child, currentPath);
-        });
-    }
-}
 
-// 根据文件夹ID获取完整路径
-function getFolderPath(folderId) {
-    return window.folderMap[folderId] || "未分类";
+// 根据文件夹ID数组获取名称列表
+function getFolderNames(folderIds = []) {
+    return folderIds.map(id => window.folderMap[id] || id).join(', ');
 }
 
 // 显示状态消息
@@ -244,6 +266,27 @@ function showStatus(message, type = 'info') {
             timeout: type === 'error' ? 0 : 3000
         });
     }
+}
+
+// 构建文件夹映射表
+function buildFolderMap(folders, parentPath = "") {
+    const map = {};
+    const idMap = {};
+    
+    function traverse(nodes, path) {
+        for (const node of nodes) {
+            const currentPath = path ? `${path}/${node.name}` : node.name;
+            map[node.id] = currentPath;
+            idMap[currentPath] = node.id;
+            
+            if (node.children && node.children.length > 0) {
+                traverse(node.children, currentPath);
+            }
+        }
+    }
+    
+    traverse(folders, parentPath);
+    return { map, idMap };
 }
 
 // 初始化表格
