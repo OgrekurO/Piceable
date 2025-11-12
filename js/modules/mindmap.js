@@ -175,7 +175,7 @@ function loadFolderDataToMindMap() {
     
     // 初始化思维导图
     if (window.mind && mindMapData) {
-        // 确保使用正确的数据格式初始化
+        // 使用正确的数据格式初始化
         window.mind.init(mindMapData);
         
         // 应用半圆弧布局
@@ -184,60 +184,50 @@ function loadFolderDataToMindMap() {
 }
 
 // 将文件夹树结构转换为思维导图数据结构
-function convertFolderTreeToMindMapData(folderTree, isRoot = true) {
+function convertFolderTreeToMindMapData(folderTree) {
     // 确保MindElixir已定义
     if (!window.MindElixir) {
         console.error('[MINDMAP] MindElixir未定义，无法创建思维导图数据');
-        // 返回默认数据结构
-        return {
-            nodeData: {
-                topic: '根文件夹',
-                id: 'root',
-                children: [],
-                expanded: true
-            }
-        };
+        return null;
     }
     
     if (folderTree.length === 0) {
-        // 确保返回统一的数据格式
-        return {
-            nodeData: {
-                topic: '根文件夹',
-                id: 'root',
-                children: [],
-                expanded: true
-            }
-        };
+        // 返回默认数据结构
+        return window.MindElixir.new('根文件夹');
     }
     
-    function convertNode(node) {
-        return {
+    // 构建节点对象
+    function buildNodeObj(node) {
+        const nodeObj = {
             topic: node.name,
-            id: node.id,
-            children: node.children ? node.children.map(convertNode) : [],
-            expanded: true
+            id: node.id
         };
+        
+        // 处理子节点
+        if (node.children && node.children.length > 0) {
+            nodeObj.children = node.children.map(buildNodeObj);
+        }
+        
+        return nodeObj;
     }
     
-    if (isRoot) {
-        // 创建一个根节点包含所有根文件夹
-        return {
-            nodeData: {
-                topic: 'Eagle文件夹结构',
-                id: 'root',
-                children: folderTree.map(convertNode),
-                expanded: true
-            }
-        };
+    // 创建根节点
+    const rootNode = {
+        topic: 'Eagle文件夹结构',
+        id: 'root'
+    };
+    
+    // 添加子节点
+    if (folderTree.length > 0) {
+        rootNode.children = folderTree.map(buildNodeObj);
     }
     
-    // 对于非根情况，返回包含nodeData的对象
+    // 构造符合MindElixir要求的数据结构
     return {
         nodeData: {
-            topic: '根文件夹',
-            id: 'root',
-            children: folderTree.map(convertNode),
+            id: 'mindmap-root',
+            topic: rootNode.topic,
+            children: rootNode.children || [],
             expanded: true
         }
     };
