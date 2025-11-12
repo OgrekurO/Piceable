@@ -324,34 +324,22 @@ class SemicircleLayout {
     
     // 应用布局到DOM
     applyLayout() {
-        // 重写createParent方法来控制节点位置
-        if (!this.mind._originalCreateParent) {
-            this.mind._originalCreateParent = this.mind.createParent;
+        // 保存原始layout方法
+        if (!this.mind._originalLayout) {
+            this.mind._originalLayout = this.mind.layout;
         }
         
-        this.mind.createParent = (nodeObj) => {
-            // 调用原始方法创建节点
-            const result = this.mind._originalCreateParent.call(this.mind, nodeObj);
+        // 重写layout方法，在其中应用自定义节点位置
+        this.mind.layout = () => {
+            // 首先应用自定义节点位置
+            this.applyCustomNodePositions();
             
-            // 如果我们有自定义位置信息，则应用它
-            if (nodeObj._offsetX !== undefined && nodeObj._offsetY !== undefined) {
-                result.p.style.position = 'absolute';
-                result.p.style.left = nodeObj._offsetX + 'px';
-                result.p.style.top = nodeObj._offsetY + 'px';
-            }
-            
-            return result;
+            // 然后调用原始layout方法确保连接线正确更新
+            this.mind._originalLayout.call(this.mind);
         };
         
-        // 应用自定义节点位置
-        this.applyCustomNodePositions();
-        
-        // 调用原始layout方法确保连接线正确更新
-        if (typeof this.mind._originalLayout === 'function') {
-            this.mind._originalLayout.call(this.mind);
-        } else {
-            this.mind.layout();
-        }
+        // 立即调用一次layout来应用布局
+        this.mind.layout();
     }
     
     // 应用自定义节点位置
