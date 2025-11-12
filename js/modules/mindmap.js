@@ -151,6 +151,10 @@ async function initializeMindMapInstance() {
         return;
     }
     
+    // 创建默认数据
+    const defaultData = window.MindElixir.new('Eagle文件夹结构');
+    console.log('[MINDMAP] 创建默认数据:', defaultData);
+    
     // 思维导图配置
     const options = {
         el: '#mindmap',
@@ -160,7 +164,8 @@ async function initializeMindMapInstance() {
         contextMenu: true,
         toolBar: true,
         nodeMenu: true,
-        keypress: true
+        keypress: true,
+        data: defaultData // 提供默认数据
     };
     
     console.log('[MINDMAP] MindElixir配置:', options);
