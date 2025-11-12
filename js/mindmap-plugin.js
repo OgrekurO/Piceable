@@ -53,6 +53,8 @@ async function initializeMindMapPage() {
         await getLibraryInfoFromPluginAPI();
     }
     
+    // 如果仍然没有数据，会在 getLibraryInfoFromPluginAPI 或其他数据源中处理初始化
+    // 这里不再主动初始化，避免重复初始化
 }
 
 // 绑定筛选功能事件
@@ -118,6 +120,8 @@ async function getLibraryInfoFromPluginAPI() {
         });
     } else {
         console.log('[MINDMAP PLUGIN] window.eagle 未定义');
+        // 即使没有eagle，也尝试初始化
+        initializeMindMapWhenReady();
     }
 }
 

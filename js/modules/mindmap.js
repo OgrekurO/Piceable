@@ -1,5 +1,8 @@
 // 思维导图模块 - 用于可视化和管理文件夹结构
 
+// 添加一个标志来跟踪MindElixir是否已经初始化
+let mindElixirInitialized = false;
+
 // 动态加载Regenerator Runtime
 function loadRegeneratorRuntime() {
     return new Promise((resolve, reject) => {
@@ -38,6 +41,14 @@ async function initMindMap() {
 // 为新页面初始化思维导图功能
 async function initMindMapPage() {
     console.log('[MINDMAP] 初始化思维导图页面');
+    
+    // 检查是否已经初始化过
+    if (mindElixirInitialized) {
+        console.log('[MINDMAP] MindElixir已经初始化，刷新数据');
+        // 如果已经初始化，则只刷新数据
+        loadFolderDataToMindMap();
+        return;
+    }
     
     // 绑定页面事件
     bindMindMapPageEvents();
@@ -155,33 +166,36 @@ async function initializeMindMapInstance() {
     // 创建思维导图实例
     window.mind = new window.MindElixir(options);
     
+    // 标记为已初始化
+    mindElixirInitialized = true;
+    
     // 加载文件夹数据
     loadFolderDataToMindMap();
 }
 
 // 将文件夹数据加载到思维导图中
 function loadFolderDataToMindMap() {
-    console.log('[MINDMAP] 开始加载文件夹数据到思维导图');
+    console.log('[MINDMAP] 加载文件夹数据到思维导图');
     
     // 获取文件夹树结构
     const libraryInfo = window.libraryInfo || { folders: [] };
-    console.log('[MINDMAP] 获取到libraryInfo:', libraryInfo);
+    console.log('[MINDMAP] libraryInfo:', libraryInfo);
     
     if (!libraryInfo.folders) {
         console.warn('[MINDMAP] libraryInfo中缺少folders字段，使用空数组');
         libraryInfo.folders = [];
     }
     
-    let folderTree = buildFolderTree(libraryInfo.folders);
-    console.log('[MINDMAP] 构建的文件夹树:', folderTree);
+    let folderTree = buildFolderTree(libraryInfo.folders || []);
+    console.log('[MINDMAP] folderTree:', folderTree);
     
     // 应用文件夹筛选
     folderTree = filterFolders(folderTree);
-    console.log('[MINDMAP] 筛选后的文件夹树:', folderTree);
+    console.log('[MINDMAP] 筛选后的folderTree:', folderTree);
     
     // 转换为思维导图数据结构
     const mindMapData = convertFolderTreeToMindMapData(folderTree);
-    console.log('[MINDMAP] 转换后的思维导图数据:', mindMapData);
+    console.log('[MINDMAP] mindMapData:', mindMapData);
     
     // 初始化思维导图
     if (window.mind && mindMapData) {
@@ -227,73 +241,9 @@ function convertFolderTreeToMindMapData(folderTree) {
     
     if (folderTree.length === 0) {
         // 返回默认数据结构
-        const defaultData = {
-            nodeData: {
-                topic: '根文件夹',
-                id: 'root_' + Date.now(),
-                children: [],
-                expanded: true,
-                root: true
-            }
-        };
+        const defaultData = window.MindElixir.new('根文件夹');
         console.log('[MINDMAP] 文件夹树为空，返回默认数据:', defaultData);
         return defaultData;
-    }
-```
-
-/Users/ug/Documents/产业图谱/Piceable/js/modules/mindmap.js
-```javascript
-<<<<<<< SEARCH
-    function buildNodeObj(node) {
-        // 验证节点数据
-        if (!node || !node.name) {
-            console.warn('[MINDMAP] 无效的节点数据，跳过:', node);
-            return null;
-        }
-        
-        const nodeObj = {
-            topic: node.name,
-            id: node.id || generateUniqueId(),
-            created: Date.now()
-        };
-        
-        // 处理子节点
-        if (node.children && Array.isArray(node.children) && node.children.length > 0) {
-            const validChildren = node.children
-                .map(buildNodeObj)
-                .filter(child => child !== null);
-            
-            if (validChildren.length > 0) {
-                nodeObj.children = validChildren;
-            }
-        }
-        
-        return nodeObj;
-    }
-    function buildNodeObj(node) {
-        // 验证节点数据
-        if (!node || !node.name) {
-            console.warn('[MINDMAP] 无效的节点数据，跳过:', node);
-            return null;
-        }
-        
-        const nodeObj = {
-            topic: node.name,
-            id: node.id || generateUniqueId()
-        };
-        
-        // 处理子节点
-        if (node.children && Array.isArray(node.children) && node.children.length > 0) {
-            const validChildren = node.children
-                .map(buildNodeObj)
-                .filter(child => child !== null);
-            
-            if (validChildren.length > 0) {
-                nodeObj.children = validChildren;
-            }
-        }
-        
-        return nodeObj;
     }
     
     // 构建节点对象
