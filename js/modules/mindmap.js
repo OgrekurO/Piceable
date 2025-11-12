@@ -151,6 +151,9 @@ async function initializeMindMapInstance() {
         return;
     }
     
+    // 创建默认数据
+    const defaultData = window.MindElixir.new('Eagle文件夹结构');
+    
     // 思维导图配置
     const options = {
         el: '#mindmap',
@@ -160,7 +163,8 @@ async function initializeMindMapInstance() {
         contextMenu: true,
         toolBar: true,
         nodeMenu: true,
-        keypress: true
+        keypress: true,
+        data: defaultData // 在初始化时提供默认数据
     };
     
     // 创建思维导图实例
@@ -240,8 +244,8 @@ function convertFolderTreeToMindMapData(folderTree) {
     }
     
     if (folderTree.length === 0) {
-        // 返回默认数据结构
-        const defaultData = window.MindElixir.new('根文件夹');
+        // 使用MindElixir.new()创建默认数据结构
+        const defaultData = window.MindElixir.new('Eagle文件夹结构');
         console.log('[MINDMAP] 文件夹树为空，返回默认数据:', defaultData);
         return defaultData;
     }
@@ -257,7 +261,7 @@ function convertFolderTreeToMindMapData(folderTree) {
         const nodeObj = {
             topic: node.name,
             id: node.id || generateUniqueId(),
-            created: Date.now()
+            expanded: true
         };
         
         // 处理子节点
@@ -282,8 +286,9 @@ function convertFolderTreeToMindMapData(folderTree) {
     // 创建根节点
     const rootNode = {
         topic: 'Eagle文件夹结构',
-        id: 'root_' + Date.now(),
-        created: Date.now()
+        id: 'root',
+        expanded: true,
+        root: true
     };
     
     // 添加子节点
@@ -297,19 +302,8 @@ function convertFolderTreeToMindMapData(folderTree) {
         }
     }
     
-    // 构造符合MindElixir要求的数据结构
-    const result = {
-        nodeData: {
-            topic: rootNode.topic,
-            id: rootNode.id,
-            children: rootNode.children || [],
-            expanded: true,
-            root: true
-        }
-    };
-    
-    console.log('[MINDMAP] 成功转换文件夹树结构，输出:', result);
-    return result;
+    console.log('[MINDMAP] 成功转换文件夹树结构，输出:', rootNode);
+    return rootNode;
 }
 
 // 应用半圆弧布局
