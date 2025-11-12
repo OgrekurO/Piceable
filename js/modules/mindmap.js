@@ -49,48 +49,15 @@ function createMindMapUI() {
     }
 }
 
-// 动态加载Regenerator Runtime
-function loadRegeneratorRuntime() {
-    return new Promise((resolve, reject) => {
-        // 检查是否已经加载
-        if (window.regeneratorRuntime) {
-            resolve();
-            return;
-        }
-        
-        // 加载Regenerator Runtime
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/regenerator-runtime/runtime.js';
-        script.onload = () => {
-            console.log('[MINDMAP] Regenerator Runtime加载完成');
-            resolve();
-        };
-        script.onerror = () => {
-            console.error('[MINDMAP] Regenerator Runtime加载失败');
-            reject(new Error('Failed to load Regenerator Runtime'));
-        };
-        document.head.appendChild(script);
-    });
-}
-
-// 动态加载Mind Elixir库
+// 动态加载Mind Elixir库（使用官方推荐的ES模块方式）
 async function loadMindElixir() {
-    // 首先确保Regenerator Runtime已加载
-    try {
-        await loadRegeneratorRuntime();
-    } catch (error) {
-        console.error('[MINDMAP] 加载Regenerator Runtime失败:', error);
-        throw error;
+    // 检查是否已经加载
+    if (window.MindElixir) {
+        return;
     }
     
     return new Promise((resolve, reject) => {
-        // 检查是否已经加载
-        if (window.MindElixir) {
-            resolve();
-            return;
-        }
-        
-        // 加载CSS样式
+        // 创建样式链接
         const cssLink = document.createElement('link');
         cssLink.rel = 'stylesheet';
         cssLink.href = 'https://cdn.jsdelivr.net/npm/mind-elixir/dist/style.css';
@@ -99,24 +66,26 @@ async function loadMindElixir() {
         };
         document.head.appendChild(cssLink);
         
-        // 加载JS库 - 使用UMD版本确保全局访问
+        // 动态导入MindElixir模块
         const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/mind-elixir/dist/mind-elixir.js';
-        script.onload = () => {
+        script.type = 'module';
+        script.textContent = `
+            import MindElixir from 'https://cdn.jsdelivr.net/npm/mind-elixir/dist/MindElixir.js';
+            window.MindElixir = MindElixir;
+            document.dispatchEvent(new CustomEvent('mindelixir-loaded'));
+        `;
+        
+        // 监听加载完成事件
+        document.addEventListener('mindelixir-loaded', () => {
             console.log('[MINDMAP] MindElixir库加载完成');
-            // 等待一段时间确保库完全初始化
-            setTimeout(() => {
-                if (window.MindElixir) {
-                    resolve();
-                } else {
-                    reject(new Error('MindElixir loaded but not available in global scope'));
-                }
-            }, 200);
-        };
+            resolve();
+        }, { once: true });
+        
         script.onerror = () => {
             console.error('[MINDMAP] MindElixir库加载失败');
             reject(new Error('Failed to load MindElixir'));
         };
+        
         document.head.appendChild(script);
     });
 }
@@ -150,7 +119,7 @@ async function initializeMindMapInstance() {
     // 思维导图配置
     const options = {
         el: '#mindmap',
-        direction: 2, // RIGHT (使用数字常量而不是MindElixir.RIGHT以避免作用域问题)
+        direction: window.MindElixir.RIGHT, // 使用官方常量
         draggable: true,
         editable: true,
         contextMenu: true,
@@ -186,9 +155,7 @@ function loadFolderDataToMindMap() {
     // 初始化思维导图
     if (window.mind && mindMapData) {
         // 使用正确的数据格式初始化
-        window.mind.init({
-            nodeData: mindMapData.nodeData
-        });
+        window.mind.init(mindMapData);
     }
 }
 
@@ -201,15 +168,8 @@ function convertFolderTreeToMindMapData(folderTree, isRoot = true) {
     }
     
     if (folderTree.length === 0) {
-        // 确保返回统一的数据格式
-        return {
-            nodeData: {
-                topic: '根文件夹',
-                id: 'root',
-                children: [],
-                expanded: true
-            }
-        };
+        // 使用官方方法创建新数据
+        return window.MindElixir.new('根文件夹');
     }
     
     function convertNode(node) {
