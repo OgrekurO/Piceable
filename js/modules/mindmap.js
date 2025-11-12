@@ -302,14 +302,24 @@ class SemicircleLayout {
             
             if (level === 1) {
                 // 第一层子节点（围绕根节点的上半圆弧）
-                const angle = Math.PI - (index / (totalSiblings - 1)) * Math.PI;
+                // 优化角度计算，避免除零错误
+                const angle = Math.PI - (index / Math.max(1, totalSiblings - 1)) * Math.PI;
                 node._offsetX = this.centerX + currentRadius * Math.cos(angle);
                 node._offsetY = this.centerY - currentRadius * Math.sin(angle);
             } else {
-                // 更深层节点（在父节点下方的下半圆弧）
-                const angle = Math.PI + (index / (totalSiblings - 1)) * Math.PI;
-                node._offsetX = node.parent._offsetX + (currentRadius * 0.8) * Math.cos(angle);
-                node._offsetY = node.parent._offsetY + (currentRadius * 0.8) * Math.sin(angle);
+                // 更深层节点（相对父节点进行角度偏移）
+                // 使用相对角度偏移而不是固定下半圆，使深层节点布局更有序
+                const parentAngle = Math.atan2(
+                    node.parent._offsetY - this.centerY,
+                    node.parent._offsetX - this.centerX
+                );
+                
+                // 计算相对于父节点的角度偏移
+                const angleOffset = (index / Math.max(1, totalSiblings - 1) - 0.5) * Math.PI * 0.7;
+                const angle = parentAngle + angleOffset;
+                
+                node._offsetX = node.parent._offsetX + currentRadius * 0.8 * Math.cos(angle);
+                node._offsetY = node.parent._offsetY + currentRadius * 0.8 * Math.sin(angle);
             }
             
             // 处理子节点
@@ -332,18 +342,20 @@ class SemicircleLayout {
             return;
         }
         
-        // 保存原始layout方法
-        if (!this.mind._originalLayout) {
-            this.mind._originalLayout = this.mind.layout;
-        }
-        
-        // 重写layout方法，在其中应用自定义节点位置
+        // 重写layout方法，使用正确的重绘方式
         this.mind.layout = () => {
-            // 首先应用自定义节点位置
+            // 应用自定义节点位置
             this.applyCustomNodePositions();
             
-            // 然后调用原始layout方法确保连接线正确更新
-            this.mind._originalLayout.call(this.mind);
+            // 重绘节点和连线
+            if (typeof this.mind.draw === 'function') {
+                this.mind.draw();
+            }
+            
+            // 重绘连线
+            if (this.mind.line && typeof this.mind.line.draw === 'function') {
+                this.mind.line.draw();
+            }
         };
         
         // 立即调用一次layout来应用布局
