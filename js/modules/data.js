@@ -21,9 +21,10 @@ function buildFolderMap(folders, prefix = '') {
 
 // 构建文件夹树结构
 function buildFolderTree(folders, prefix = '') {
-    return folders.map(folder => {
+    console.log('[DATA] 构建文件夹树结构，输入folders:', folders, 'prefix:', prefix);
+    const result = folders.map(folder => {
         const folderPath = prefix ? `${prefix}/${folder.name}` : folder.name;
-        return {
+        const folderObj = {
             id: folder.id,
             name: folder.name,
             path: folderPath,
@@ -31,7 +32,10 @@ function buildFolderTree(folders, prefix = '') {
                 ? buildFolderTree(folder.children, folderPath)
                 : []
         };
+        return folderObj;
     });
+    console.log('[DATA] 构建文件夹树结构结果:', result);
+    return result;
 }
 
 // 为文件夹节点生成唯一标识符
@@ -309,4 +313,128 @@ function parseFolderInput(folderInput) {
     }).filter(id => id); // 过滤掉未找到的ID
     
     return folderIds;
+}
+
+// 将文件夹树结构转换为思维导图数据结构
+function convertFolderTreeToMindMapData(folderTree) {
+    console.log('[DATA] 开始转换文件夹树结构为思维导图数据，输入:', folderTree);
+    
+    // 验证输入数据
+    if (!folderTree || !Array.isArray(folderTree)) {
+        console.warn('[DATA] 无效的folderTree输入，使用默认值');
+        folderTree = [];
+    }
+    
+    console.log('[DATA] folderTree长度:', folderTree.length);
+    if (folderTree.length > 0) {
+        console.log('[DATA] folderTree[0]:', folderTree[0]);
+        if (folderTree[0].children) {
+            console.log('[DATA] folderTree[0].children长度:', folderTree[0].children.length);
+            console.log('[DATA] folderTree[0].children:', folderTree[0].children);
+        }
+    }
+    
+    // 构建节点对象
+    function buildNodeObj(node) {
+        // 验证节点数据
+        if (!node || !node.name) {
+            console.warn('[DATA] 无效的节点数据，跳过:', node);
+            return null;
+        }
+        
+        const nodeObj = {
+            topic: node.name,
+            id: node.id || generateUniqueId(),
+            expanded: true
+        };
+        
+        console.log('[DATA] 构建节点对象:', nodeObj, '原始节点:', node);
+        
+        // 处理子节点
+        if (node.children && Array.isArray(node.children) && node.children.length > 0) {
+            const validChildren = node.children
+                .map(buildNodeObj)
+                .filter(child => child !== null);
+            
+            console.log('[DATA] 节点的子节点:', node.name, validChildren);
+            
+            if (validChildren.length > 0) {
+                nodeObj.children = validChildren;
+            }
+        }
+        
+        return nodeObj;
+    }
+    
+    // 生成唯一ID的辅助函数
+    function generateUniqueId() {
+        return 'node_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+    
+    // 如果folderTree不为空，使用第一个文件夹作为根节点
+    if (folderTree.length > 0 && folderTree[0].name) {
+        const rootFolder = folderTree[0];
+        const rootNode = {
+            topic: rootFolder.name,
+            id: rootFolder.id || 'root',
+            expanded: true,
+            children: []
+        };
+        
+        console.log('[DATA] 创建根节点:', rootNode, '原始根文件夹:', rootFolder);
+        
+        // 添加子节点（如果有）
+        if (rootFolder.children && rootFolder.children.length > 0) {
+            const validNodes = rootFolder.children
+                .map(buildNodeObj)
+                .filter(node => node !== null);
+            
+            console.log('[DATA] 根节点的子节点:', validNodes);
+            
+            if (validNodes.length > 0) {
+                rootNode.children = validNodes;
+            }
+        }
+        
+        console.log('[DATA] 成功转换文件夹树结构，输出:', rootNode);
+        // 直接返回节点数据对象
+        return rootNode;
+    } else {
+        // 如果没有文件夹数据，返回null，让调用者处理默认情况
+        console.log('[DATA] 文件夹树为空，返回null');
+        return null;
+    }
+}
+
+// 文件夹筛选功能
+function filterFoldersForMindMap(folderTree) {
+    // 获取用户定义的筛选条件
+    let excludedFolders = [];
+    const savedFilter = localStorage.getItem('mindmapFolderFilter');
+    if (savedFilter) {
+        excludedFolders = savedFilter.split(',').map(name => name.trim().toLowerCase());
+    } else {
+        // 默认需要排除的文件夹名称列表
+        excludedFolders = ['_预览', '_备份', 'temp', 'temporary', 'cache'];
+    }
+    
+    function filterNode(node) {
+        // 如果节点名称在排除列表中，则过滤掉
+        if (excludedFolders.includes(node.name.toLowerCase())) {
+            return null;
+        }
+        
+        // 递归处理子节点
+        if (node.children) {
+            node.children = node.children
+                .map(filterNode)
+                .filter(child => child !== null);
+        }
+        
+        return node;
+    }
+    
+    return folderTree
+        .map(filterNode)
+        .filter(node => node !== null);
 }
