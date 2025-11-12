@@ -322,7 +322,7 @@ function initializeTable() {
                     }
                 ]
             }
-            // 动态列将在表格初始化后添加
+            // 动态列将在tableBuilt事件中添加
         ],
         cellEdited: function(cell) {
             console.log('[CORE] 单元格编辑完成:', cell.getField(), cell.getValue());
@@ -333,24 +333,27 @@ function initializeTable() {
             if (syncBtn) {
                 syncBtn.disabled = false;
             }
+        },
+        tableBuilt: function() {
+            // 表格构建完成后添加动态列（基于文件夹结构）
+            console.log('[CORE] 表格构建完成，添加动态列');
+            if (window.dynamicColumns && window.dynamicColumns.length > 0) {
+                // 获取当前列定义
+                const currentColumns = this.getColumns(true).map(col => {
+                    return {
+                        title: col.getDefinition().title,
+                        field: col.getDefinition().field,
+                        columns: col.getDefinition().columns
+                    };
+                });
+                
+                // 添加动态列
+                const allColumns = [...currentColumns, ...window.dynamicColumns];
+                this.setColumns(allColumns);
+                console.log('[CORE] 动态列添加完成');
+            }
         }
     });
-    
-    // 添加动态列（基于文件夹结构）
-    if (window.dynamicColumns && window.dynamicColumns.length > 0) {
-        // 获取当前列定义
-        const currentColumns = window.table.getColumns(true).map(col => {
-            return {
-                title: col.getDefinition().title,
-                field: col.getDefinition().field,
-                columns: col.getDefinition().columns
-            };
-        });
-        
-        // 添加动态列
-        const allColumns = [...currentColumns, ...window.dynamicColumns];
-        window.table.setColumns(allColumns);
-    }
     
     console.log('[CORE] 表格初始化完成');
 }
