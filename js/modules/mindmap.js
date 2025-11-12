@@ -11,7 +11,18 @@ async function initMindMap() {
     bindMindMapEvents();
 }
 
-// 创建思维导图UI元素
+// 为新页面初始化思维导图功能
+async function initMindMapPage() {
+    console.log('[MINDMAP] 初始化思维导图页面');
+    
+    // 绑定页面事件
+    bindMindMapPageEvents();
+    
+    // 初始化思维导图实例
+    await initializeMindMapInstance();
+}
+
+// 创建思维导图UI元素（用于主页面）
 function createMindMapUI() {
     console.log('[MINDMAP] 创建思维导图UI');
     
@@ -23,29 +34,11 @@ function createMindMapUI() {
         mindMapButton.textContent = '🧠 文件夹结构';
         mindMapButton.style.marginLeft = '10px';
         toolbar.appendChild(mindMapButton);
-    }
-    
-    // 创建思维导图容器
-    const appContainer = document.getElementById('app-container');
-    if (appContainer) {
-        const mindMapContainer = document.createElement('div');
-        mindMapContainer.id = 'mindmap-container';
-        mindMapContainer.style.height = 'calc(100vh - 150px)';
-        mindMapContainer.style.display = 'none';
-        mindMapContainer.style.margin = '10px';
-        mindMapContainer.style.border = '1px solid #ddd';
-        mindMapContainer.style.borderRadius = '8px';
-        mindMapContainer.innerHTML = `
-            <div style="padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-                <h3>文件夹结构视图</h3>
-                <div>
-                    <button id="mindmap-back-btn">🔙 返回表格</button>
-                    <button id="mindmap-save-btn" style="margin-left: 10px;">💾 保存更改</button>
-                </div>
-            </div>
-            <div id="mindmap" style="height: calc(100% - 50px);"></div>
-        `;
-        appContainer.appendChild(mindMapContainer);
+        
+        // 绑定跳转事件
+        mindMapButton.addEventListener('click', () => {
+            window.location.href = 'mindmap.html';
+        });
     }
 }
 
@@ -204,52 +197,51 @@ function convertFolderTreeToMindMapData(folderTree, isRoot = true) {
     }
 }
 
-// 绑定思维导图相关事件
+// 绑定思维导图相关事件（用于主页面）
 function bindMindMapEvents() {
     console.log('[MINDMAP] 绑定思维导图事件');
     
     // 思维导图按钮点击事件
     const mindMapButton = document.getElementById('mindmap-btn');
     if (mindMapButton) {
-        mindMapButton.addEventListener('click', showMindMap);
+        mindMapButton.addEventListener('click', () => {
+            window.location.href = 'mindmap.html';
+        });
     }
-    
-    // 返回表格按钮点击事件
-    const backButton = document.getElementById('mindmap-back-btn');
-    if (backButton) {
-        backButton.addEventListener('click', hideMindMap);
-    }
+}
+
+// 绑定思维导图相关事件（用于新页面）
+function bindMindMapPageEvents() {
+    console.log('[MINDMAP] 绑定思维导图页面事件');
     
     // 保存更改按钮点击事件
     const saveButton = document.getElementById('mindmap-save-btn');
     if (saveButton) {
         saveButton.addEventListener('click', saveMindMapChanges);
     }
+    
+    // 刷新数据按钮点击事件
+    const refreshButton = document.getElementById('mindmap-refresh-btn');
+    if (refreshButton) {
+        refreshButton.addEventListener('click', refreshMindMapData);
+    }
 }
 
-// 显示思维导图视图
-async function showMindMap() {
-    console.log('[MINDMAP] 显示思维导图视图');
+// 刷新思维导图数据
+async function refreshMindMapData() {
+    console.log('[MINDMAP] 刷新思维导图数据');
+    showStatus('刷新数据中...', 'info');
     
-    const tableContainer = document.querySelector('.table-container');
-    const mindMapContainer = document.getElementById('mindmap-container');
-    
-    if (tableContainer) tableContainer.style.display = 'none';
-    if (mindMapContainer) mindMapContainer.style.display = 'block';
-    
-    // 初始化思维导图实例
-    await initializeMindMapInstance();
-}
-
-// 隐藏思维导图视图
-function hideMindMap() {
-    console.log('[MINDMAP] 隐藏思维导图视图');
-    
-    const tableContainer = document.querySelector('.table-container');
-    const mindMapContainer = document.getElementById('mindmap-container');
-    
-    if (tableContainer) tableContainer.style.display = 'block';
-    if (mindMapContainer) mindMapContainer.style.display = 'none';
+    try {
+        // 重新加载数据
+        await refreshLibraryData();
+        // 重新加载文件夹数据到思维导图
+        loadFolderDataToMindMap();
+        showStatus('数据刷新成功', 'success');
+    } catch (error) {
+        console.error('[MINDMAP] 刷新数据失败:', error);
+        showStatus('数据刷新失败: ' + error.message, 'error');
+    }
 }
 
 // 保存思维导图更改
@@ -262,4 +254,39 @@ function saveMindMapChanges() {
 function handleMindMapOperation(operation) {
     console.log('[MINDMAP] 思维导图操作:', operation);
     // 这里可以处理添加、删除、编辑节点等操作
+}
+
+// 显示状态消息
+function showStatus(message, type) {
+    const statusMessage = document.getElementById('status-message');
+    if (statusMessage) {
+        statusMessage.textContent = message;
+        statusMessage.className = 'status-message ' + type;
+        statusMessage.style.display = 'block';
+        
+        // 3秒后自动隐藏
+        setTimeout(() => {
+            statusMessage.style.display = 'none';
+        }, 3000);
+    }
+    
+    // 同时更新状态栏
+    const statusBar = document.getElementById('status-bar');
+    if (statusBar) {
+        statusBar.textContent = message;
+    }
+}
+
+// 刷新库数据的函数（如果不存在则创建一个）
+async function refreshLibraryData() {
+    // 如果在新页面中，尝试从主页面获取数据或重新加载
+    if (typeof window.libraryInfo === 'undefined' && typeof window.parent !== 'undefined' && window.parent.libraryInfo) {
+        window.libraryInfo = window.parent.libraryInfo;
+    }
+    
+    // 如果仍然没有数据，尝试重新加载
+    if (typeof window.libraryInfo === 'undefined') {
+        // 这里可以添加重新加载数据的逻辑
+        console.log('[MINDMAP] 需要重新加载库数据');
+    }
 }
