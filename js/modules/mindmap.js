@@ -7,12 +7,6 @@ async function initMindMap() {
     // 创建思维导图UI
     createMindMapUI();
     
-    // 加载Mind Elixir库
-    await loadMindElixir();
-    
-    // 初始化思维导图实例
-    initializeMindMapInstance();
-    
     // 绑定事件
     bindMindMapEvents();
 }
@@ -59,7 +53,7 @@ function createMindMapUI() {
 function loadMindElixir() {
     return new Promise((resolve, reject) => {
         // 检查是否已经加载
-        if (typeof MindElixir !== 'undefined') {
+        if (window.MindElixir) {
             resolve();
             return;
         }
@@ -68,33 +62,35 @@ function loadMindElixir() {
         const cssLink = document.createElement('link');
         cssLink.rel = 'stylesheet';
         cssLink.href = 'https://cdn.jsdelivr.net/npm/mind-elixir/dist/style.css';
-        cssLink.onload = () => {
-            // 加载JS库
-            const script = document.createElement('script');
-            script.type = 'module';
-            script.src = 'https://cdn.jsdelivr.net/npm/mind-elixir/dist/MindElixir.js';
-            script.onload = () => {
-                // 等待模块加载完成
-                setTimeout(() => {
-                    resolve();
-                }, 500);
-            };
-            script.onerror = () => reject(new Error('Failed to load MindElixir JS'));
-            document.head.appendChild(script);
-        };
-        cssLink.onerror = () => reject(new Error('Failed to load MindElixir CSS'));
         document.head.appendChild(cssLink);
+        
+        // 加载JS库 - 使用非模块方式确保全局访问
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/mind-elixir/dist/MindElixir.min.js';
+        script.onload = () => {
+            console.log('[MINDMAP] MindElixir库加载完成');
+            resolve();
+        };
+        script.onerror = () => {
+            console.error('[MINDMAP] MindElixir库加载失败');
+            reject(new Error('Failed to load MindElixir'));
+        };
+        document.head.appendChild(script);
     });
 }
 
 // 初始化思维导图实例
 async function initializeMindMapInstance() {
-    // 等待MindElixir加载完成
-    while (typeof MindElixir === 'undefined') {
-        await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    
     console.log('[MINDMAP] 初始化思维导图实例');
+    
+    // 确保MindElixir已加载
+    try {
+        await loadMindElixir();
+    } catch (error) {
+        console.error('[MINDMAP] 加载MindElixir失败:', error);
+        showStatus('思维导图库加载失败: ' + error.message, 'error');
+        return;
+    }
     
     const mindmapContainer = document.getElementById('mindmap');
     if (!mindmapContainer) {
@@ -105,7 +101,7 @@ async function initializeMindMapInstance() {
     // 思维导图配置
     const options = {
         el: '#mindmap',
-        direction: MindElixir.RIGHT,
+        direction: 2, // RIGHT
         draggable: true,
         editable: true,
         contextMenu: true,
@@ -115,7 +111,7 @@ async function initializeMindMapInstance() {
     };
     
     // 创建思维导图实例
-    window.mind = new MindElixir(options);
+    window.mind = new window.MindElixir(options);
     
     // 加载文件夹数据
     loadFolderDataToMindMap();
@@ -124,6 +120,12 @@ async function initializeMindMapInstance() {
 // 将文件夹数据加载到思维导图中
 function loadFolderDataToMindMap() {
     console.log('[MINDMAP] 加载文件夹数据到思维导图');
+    
+    // 确保MindElixir已定义
+    if (!window.MindElixir) {
+        console.error('[MINDMAP] MindElixir未定义');
+        return;
+    }
     
     // 获取文件夹树结构
     const libraryInfo = window.libraryInfo || { folders: [] };
@@ -140,8 +142,14 @@ function loadFolderDataToMindMap() {
 
 // 将文件夹树结构转换为思维导图数据结构
 function convertFolderTreeToMindMapData(folderTree, isRoot = true) {
+    // 确保MindElixir已定义
+    if (!window.MindElixir) {
+        console.error('[MINDMAP] MindElixir未定义，无法创建思维导图数据');
+        return null;
+    }
+    
     if (folderTree.length === 0) {
-        return MindElixir.new('根文件夹');
+        return window.MindElixir.new('根文件夹');
     }
     
     function convertNode(node) {
@@ -187,15 +195,10 @@ function bindMindMapEvents() {
     if (saveButton) {
         saveButton.addEventListener('click', saveMindMapChanges);
     }
-    
-    // 监听思维导图操作事件
-    if (window.mind) {
-        window.mind.bus.addListener('operation', handleMindMapOperation);
-    }
 }
 
 // 显示思维导图视图
-function showMindMap() {
+async function showMindMap() {
     console.log('[MINDMAP] 显示思维导图视图');
     
     const tableContainer = document.querySelector('.table-container');
@@ -204,8 +207,8 @@ function showMindMap() {
     if (tableContainer) tableContainer.style.display = 'none';
     if (mindMapContainer) mindMapContainer.style.display = 'block';
     
-    // 刷新思维导图数据
-    loadFolderDataToMindMap();
+    // 初始化思维导图实例
+    await initializeMindMapInstance();
 }
 
 // 隐藏思维导图视图
