@@ -185,7 +185,10 @@ function loadFolderDataToMindMap() {
     
     // 初始化思维导图
     if (window.mind && mindMapData) {
-        window.mind.init(mindMapData);
+        // 使用正确的数据格式初始化
+        window.mind.init({
+            nodeData: mindMapData.nodeData
+        });
     }
 }
 
