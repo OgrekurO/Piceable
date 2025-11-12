@@ -364,6 +364,11 @@ class SemicircleLayout {
         
         console.log('[MINDMAP] nodeData:', this.mind.nodeData);
         
+        // 保存原始layout方法
+        if (!this.mind._originalLayout) {
+            this.mind._originalLayout = this.mind.layout;
+        }
+        
         // 重写layout方法，使用正确的重绘方式
         this.mind.layout = () => {
             console.log('[MINDMAP] 调用自定义layout方法');
@@ -371,28 +376,11 @@ class SemicircleLayout {
             // 应用自定义节点位置
             this.applyCustomNodePositions();
             
-            // 重绘节点和连线
-            // 检查不同的可能方法
-            if (typeof this.mind.draw === 'function') {
-                console.log('[MINDMAP] 调用mind.draw()');
-                this.mind.draw();
-            } else if (typeof this.mind.refresh === 'function') {
-                console.log('[MINDMAP] 调用mind.refresh()');
-                // 使用空参数调用refresh以触发重绘
-                this.mind.refresh();
-            } else {
-                console.warn('[MINDMAP] mind.draw 和 mind.refresh 方法都不存在');
-            }
-            
-            // 重绘连线
-            if (this.mind.line && typeof this.mind.line.draw === 'function') {
-                console.log('[MINDMAP] 调用mind.line.draw()');
-                this.mind.line.draw();
-            } else if (this.mind.linkDiv && typeof this.mind.linkDiv === 'function') {
-                console.log('[MINDMAP] 调用mind.linkDiv()');
-                this.mind.linkDiv();
-            } else {
-                console.warn('[MINDMAP] mind.line.draw 和 mind.linkDiv 方法都不存在');
+            // 调用原始layout方法确保连接线正确更新
+            // 避免调用refresh方法导致无限递归
+            if (typeof this.mind._originalLayout === 'function') {
+                console.log('[MINDMAP] 调用原始layout方法');
+                this.mind._originalLayout.call(this.mind);
             }
         };
         
