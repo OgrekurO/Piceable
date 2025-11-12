@@ -48,19 +48,9 @@ eagle.onPluginRun(async () => {
     await initializeApp();
 });
 
-let isPluginInitialized = false;
-
 // 插件显示时的回调
 eagle.onPluginShow(async () => {
     console.log('[CORE] Eagle插件已显示');
-    
-    // 如果插件还没有初始化，则进行初始化
-    if (!isPluginInitialized) {
-        await initializeApp();
-        isPluginInitialized = true;
-    }
-    
-    // 如果表格已经存在，则在tableBuilt事件中刷新数据
 });
 
 // 插件隐藏时的回调
@@ -72,35 +62,45 @@ eagle.onPluginHide(() => {
 async function initializeApp() {
     console.log('[CORE] 开始初始化应用');
     
-    try {
-        // 加载数据（无论是否在Eagle环境中）
-        console.log('[CORE] 开始加载项目数据');
-        await loadEagleItems();
-        
-        // 确保Tabulator库已加载
-        if (typeof Tabulator === 'undefined') {
-            try {
-                console.log('[CORE] 开始加载Tabulator库');
-                await loadTabulator();
-                console.log('[CORE] Tabulator库加载完成');
-            } catch (error) {
-                console.error('[CORE] Tabulator库加载失败:', error);
-                showStatus('界面库加载失败: ' + error.message, 'error');
-                return;
-            }
-        }
-        
-        // 最后初始化UI组件
+    // 检查是否在Eagle环境中
+    if (typeof eagle === 'undefined') {
+        console.log('[CORE] 未检测到Eagle环境');
+        // 在非Eagle环境中使用示例数据进行演示
+        loadDemoData();
         initUI();
         bindEvents();
         initializeTable();
-        
-        console.log('[CORE] 应用初始化完成');
-    } catch (error) {
-        console.error('[CORE] 初始化应用失败:', error);
-        showStatus('初始化失败: ' + error.message, 'error');
         return;
     }
+    
+    // 等待Tabulator加载完成
+    if (typeof Tabulator === 'undefined') {
+        try {
+            console.log('[CORE] 开始加载Tabulator库');
+            await loadTabulator();
+            console.log('[CORE] Tabulator库加载完成');
+        } catch (error) {
+            console.error('[CORE] Tabulator库加载失败:', error);
+            showStatus('界面库加载失败: ' + error.message, 'error');
+            return;
+        }
+    }
+    
+    // 加载数据
+    console.log('[CORE] 开始加载Eagle项目数据');
+    await loadEagleItems();
+    
+    // 初始化UI
+    initUI();
+    
+    // 绑定事件
+    bindEvents();
+    
+    // 初始化表格
+    console.log('[CORE] 初始化表格');
+    initializeTable();
+    
+    console.log('[CORE] 应用初始化完成');
 }
 
 // 加载演示数据（用于非Eagle环境下的演示）
@@ -337,19 +337,20 @@ function initializeTable() {
         tableBuilt: function() {
             // 表格构建完成后添加动态列（基于文件夹结构）
             console.log('[CORE] 表格构建完成，添加动态列');
-            console.log('[CORE] 当前window.dynamicColumns:', window.dynamicColumns);
             if (window.dynamicColumns && window.dynamicColumns.length > 0) {
                 // 获取当前列定义
-                const currentColumns = this.getColumnDefinitions();
-                console.log('[CORE] 当前列定义:', currentColumns);
+                const currentColumns = this.getColumns(true).map(col => {
+                    return {
+                        title: col.getDefinition().title,
+                        field: col.getDefinition().field,
+                        columns: col.getDefinition().columns
+                    };
+                });
                 
                 // 添加动态列
                 const allColumns = [...currentColumns, ...window.dynamicColumns];
-                console.log('[CORE] 合并后的列定义:', allColumns);
                 this.setColumns(allColumns);
                 console.log('[CORE] 动态列添加完成');
-            } else {
-                console.log('[CORE] 没有动态列需要添加');
             }
         }
     });
