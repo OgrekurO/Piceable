@@ -87,7 +87,7 @@ async function syncDataToEagle() {
                     needSave = true;
                 }
                 
-                // 处理文件夹更新
+                // 处理文件夹更新（基于传统字段和动态列）
                 const originalFolders = getFolderNames(originalItem.folders || []);
                 if (rowData.folders !== originalFolders) {
                     console.log(`[SYNC] 更新项目文件夹: ${originalFolders} -> ${rowData.folders}`);
@@ -159,22 +159,21 @@ async function syncDataToEagle() {
                                             folderId = window.createdFolders.get(fullPath);
                                             console.log(`[SYNC] 子文件夹 "${fullPath}" 已创建过，ID: ${folderId}`);
                                         }
-                                    } else {
-                                        console.log(`[SYNC] 警告: 父文件夹 "${parentPath}" 不存在，无法创建子文件夹 "${folderName}"`);
                                     }
                                 }
-                            } catch (error) {
-                                console.error(`[SYNC] 创建文件夹 "${folderName}" 失败:`, error);
+                            } catch (createError) {
+                                console.error(`[SYNC] 创建文件夹 "${folderName}" 失败:`, createError);
+                                showStatus(`创建文件夹 "${folderName}" 失败: ${createError.message}`, 'error');
+                                continue;
                             }
                         }
                         
-                        // 只有当folderId有效时才添加到数组中
                         if (folderId) {
                             folderIds.push(folderId);
                         }
                     }
                     
-                    // 更新项目文件夹（支持多个文件夹）
+                    // 更新原始项目的文件夹
                     originalItem.folders = folderIds;
                     needSave = true;
                 }

@@ -162,239 +162,113 @@ function initializeTable() {
         resizableRows: true,
         columns: [
             {
-                title: "预览",
-                field: "thumbnail",
-                formatter: function(cell) {
-                    const imageData = cell.getValue();
-                    
-                    if (imageData) {
-                        // 使用img标签并添加错误处理
-                        return `<img src="${imageData}" class="thumbnail" onerror="this.parentElement.innerHTML='<div style=\'width:50px;height:50px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:12px;text-align:center;\'>无预览</div>'"/>`;
-                    } else {
-                        return '<div style="width:50px;height:50px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:12px;text-align:center;">无预览</div>';
+                title: "基础信息",
+                columns: [
+                    {
+                        title: "预览",
+                        field: "thumbnail",
+                        formatter: function(cell) {
+                            const imageData = cell.getValue();
+                            
+                            if (imageData) {
+                                // 使用img标签并添加错误处理
+                                return `<img src="${imageData}" class="thumbnail" onerror="this.parentElement.innerHTML='<div style=\'width:50px;height:50px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:12px;text-align:center;\'>无预览</div>'"/>`;
+                            } else {
+                                return '<div style="width:50px;height:50px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:12px;text-align:center;">无预览</div>';
+                            }
+                        },
+                        hozAlign: "center",
+                        width: 80,
+                        headerSort: false
+                    },
+                    {
+                        title: "名称",
+                        field: "name",
+                        editor: function(cell, onRendered, success, cancel) {
+                            // 创建输入框
+                            var input = document.createElement("input");
+                            input.setAttribute("type", "text");
+                            input.style.padding = "4px";
+                            input.style.width = "100%";
+                            input.style.boxSizing = "border-box";
+                            
+                            // 设置初始值
+                            input.value = cell.getValue();
+                            
+                            // 当输入框失去焦点时保存值
+                            input.addEventListener("blur", function() {
+                                console.log('[EDIT] 自定义编辑器 - 失去焦点，保存值:', input.value);
+                                success(input.value);
+                                // 触发同步
+                                triggerSyncIfNeeded();
+                            });
+                            
+                            // 当按下Enter键时保存值
+                            input.addEventListener("keydown", function(e) {
+                                if (e.key === "Enter") {
+                                    console.log('[EDIT] 自定义编辑器 - 按下Enter，保存值:', input.value);
+                                    e.preventDefault(); // 阻止默认行为
+                                    success(input.value);
+                                    // 触发同步
+                                    triggerSyncIfNeeded();
+                                }
+                                if (e.key === "Escape") {
+                                    console.log('[EDIT] 自定义编辑器 - 按下Escape，取消编辑');
+                                    cancel();
+                                }
+                            });
+                            
+                            // 在编辑器渲染后聚焦到输入框
+                            onRendered(function() {
+                                console.log('[EDIT] 自定义编辑器 - 开始编辑，原值:', cell.getValue());
+                                input.focus();
+                            });
+                            
+                            return input;
+                        },
+                        validator: ["required"],
+                        width: 200
                     }
-                },
-                hozAlign: "center",
-                width: 80,
-                headerSort: false
+                ]
             },
             {
-                title: "名称",
-                field: "name",
-                editor: function(cell, onRendered, success, cancel) {
-                    // 创建输入框
-                    var input = document.createElement("input");
-                    input.setAttribute("type", "text");
-                    input.style.padding = "4px";
-                    input.style.width = "100%";
-                    input.style.boxSizing = "border-box";
-                    
-                    // 设置初始值
-                    input.value = cell.getValue();
-                    
-                    // 当输入框失去焦点时保存值
-                    input.addEventListener("blur", function() {
-                        console.log('[EDIT] 自定义编辑器 - 失去焦点，保存值:', input.value);
-                        success(input.value);
-                        // 触发同步
-                        triggerSyncIfNeeded();
-                    });
-                    
-                    // 当按下Enter键时保存值
-                    input.addEventListener("keydown", function(e) {
-                        if (e.key === "Enter") {
-                            console.log('[EDIT] 自定义编辑器 - 按下Enter，保存值:', input.value);
-                            e.preventDefault(); // 阻止默认行为
-                            success(input.value);
-                            // 触发同步
-                            triggerSyncIfNeeded();
+                title: "Eagle信息",
+                columns: [
+                    {
+                        title: "文件夹",
+                        field: "folders",
+                        editor: "input",
+                        width: 150
+                    },
+                    {
+                        title: "标签",
+                        field: "tags",
+                        editor: "input",
+                        width: 200
+                    },
+                    {
+                        title: "注释",
+                        field: "annotation",
+                        editor: "textarea",
+                        formatter: "textarea",
+                        width: 300,
+                        cellClick: function(e, cell) {
+                            console.log('[EDIT] 注释单元格被点击，ID:', cell.getRow().getData().id);
+                        },
+                        cellDblClick: function(e, cell) {
+                            console.log('[EDIT] 注释单元格被双击，尝试进入编辑状态');
+                            cell.edit(); // 尝试手动触发编辑
                         }
-                        if (e.key === "Escape") {
-                            console.log('[EDIT] 自定义编辑器 - 按下Escape，取消编辑');
-                            cancel();
-                        }
-                    });
-                    
-                    // 在编辑器渲染后聚焦到输入框
-                    onRendered(function() {
-                        console.log('[EDIT] 自定义编辑器 - 开始编辑，原值:', cell.getValue());
-                        input.focus();
-                        input.select();
-                    });
-                    
-                    return input;
-                },
-                width: 200,
-                sorter: "string",
-                validator: ["required"],
-                cellClick: function(e, cell) {
-                    console.log('[EDIT] 名称单元格被点击，ID:', cell.getRow().getData().id);
-                }
-            },
-            {
-                title: "文件夹",
-                field: "folders",
-                editor: function(cell, onRendered, success, cancel) {
-                    // 创建输入框
-                    var input = document.createElement("input");
-                    input.setAttribute("type", "text");
-                    input.style.padding = "4px";
-                    input.style.width = "100%";
-                    input.style.boxSizing = "border-box";
-                    
-                    // 设置初始值
-                    input.value = cell.getValue();
-                    
-                    // 当输入框失去焦点时保存值
-                    input.addEventListener("blur", function() {
-                        console.log('[EDIT] 文件夹自定义编辑器 - 失去焦点，保存值:', input.value);
-                        success(input.value);
-                        // 触发同步
-                        triggerSyncIfNeeded();
-                    });
-                    
-                    // 当按下Enter键时保存值
-                    input.addEventListener("keydown", function(e) {
-                        if (e.key === "Enter") {
-                            console.log('[EDIT] 文件夹自定义编辑器 - 按下Enter，保存值:', input.value);
-                            e.preventDefault(); // 阻止默认行为
-                            success(input.value);
-                            // 触发同步
-                            triggerSyncIfNeeded();
-                        }
-                        if (e.key === "Escape") {
-                            console.log('[EDIT] 文件夹自定义编辑器 - 按下Escape，取消编辑');
-                            cancel();
-                        }
-                    });
-                    
-                    // 在编辑器渲染后聚焦到输入框
-                    onRendered(function() {
-                        console.log('[EDIT] 文件夹自定义编辑器 - 开始编辑，原值:', cell.getValue());
-                        input.focus();
-                        input.select();
-                    });
-                    
-                    return input;
-                },
-                width: 200,
-                cellClick: function(e, cell) {
-                    console.log('[EDIT] 文件夹单元格被点击，ID:', cell.getRow().getData().id);
-                }
-            },
-            {
-                title: "标签",
-                field: "tags",
-                editor: function(cell, onRendered, success, cancel) {
-                    // 创建输入框
-                    var input = document.createElement("input");
-                    input.setAttribute("type", "text");
-                    input.style.padding = "4px";
-                    input.style.width = "100%";
-                    input.style.boxSizing = "border-box";
-                    
-                    // 设置初始值
-                    input.value = cell.getValue();
-                    
-                    // 当输入框失去焦点时保存值
-                    input.addEventListener("blur", function() {
-                        console.log('[EDIT] 标签自定义编辑器 - 失去焦点，保存值:', input.value);
-                        success(input.value);
-                        // 触发同步
-                        triggerSyncIfNeeded();
-                    });
-                    
-                    // 当按下Enter键时保存值
-                    input.addEventListener("keydown", function(e) {
-                        if (e.key === "Enter") {
-                            console.log('[EDIT] 标签自定义编辑器 - 按下Enter，保存值:', input.value);
-                            e.preventDefault(); // 阻止默认行为
-                            success(input.value);
-                            // 触发同步
-                            triggerSyncIfNeeded();
-                        }
-                        if (e.key === "Escape") {
-                            console.log('[EDIT] 标签自定义编辑器 - 按下Escape，取消编辑');
-                            cancel();
-                        }
-                    });
-                    
-                    // 在编辑器渲染后聚焦到输入框
-                    onRendered(function() {
-                        console.log('[EDIT] 标签自定义编辑器 - 开始编辑，原值:', cell.getValue());
-                        input.focus();
-                        input.select();
-                    });
-                    
-                    return input;
-                },
-                width: 200,
-                cellClick: function(e, cell) {
-                    console.log('[EDIT] 标签单元格被点击，ID:', cell.getRow().getData().id);
-                }
-            },
-            {
-                title: "注释",
-                field: "annotation",
-                editor: function(cell, onRendered, success, cancel) {
-                    // 创建文本域
-                    var input = document.createElement("textarea");
-                    input.style.padding = "4px";
-                    input.style.width = "100%";
-                    input.style.boxSizing = "border-box";
-                    input.style.height = "60px";
-                    input.style.resize = "vertical";
-                    
-                    // 设置初始值
-                    input.value = cell.getValue();
-                    
-                    // 当输入框失去焦点时保存值
-                    input.addEventListener("blur", function() {
-                        console.log('[EDIT] 注释自定义编辑器 - 失去焦点，保存值:', input.value);
-                        success(input.value);
-                        // 触发同步
-                        triggerSyncIfNeeded();
-                    });
-                    
-                    // 当按下Ctrl+Enter键时保存值
-                    input.addEventListener("keydown", function(e) {
-                        if (e.key === "Enter" && e.ctrlKey) {
-                            console.log('[EDIT] 注释自定义编辑器 - 按下Ctrl+Enter，保存值:', input.value);
-                            e.preventDefault(); // 阻止默认行为
-                            success(input.value);
-                            // 触发同步
-                            triggerSyncIfNeeded();
-                        }
-                        if (e.key === "Escape") {
-                            console.log('[EDIT] 注释自定义编辑器 - 按下Escape，取消编辑');
-                            cancel();
-                        }
-                    });
-                    
-                    // 在编辑器渲染后聚焦到输入框
-                    onRendered(function() {
-                        console.log('[EDIT] 注释自定义编辑器 - 开始编辑，原值:', cell.getValue());
-                        input.focus();
-                    });
-                    
-                    return input;
-                },
-                formatter: "textarea",
-                width: 300,
-                cellClick: function(e, cell) {
-                    console.log('[EDIT] 注释单元格被点击，ID:', cell.getRow().getData().id);
-                },
-                cellDblClick: function(e, cell) {
-                    console.log('[EDIT] 注释单元格被双击，尝试进入编辑状态');
-                    cell.edit(); // 尝试手动触发编辑
-                }
-            },
-            {
-                title: "最后修改",
-                field: "lastModified",
-                width: 180,
-                sorter: "date"
+                    },
+                    {
+                        title: "最后修改",
+                        field: "lastModified",
+                        width: 180,
+                        sorter: "date"
+                    }
+                ]
             }
+            // 动态列将在表格初始化后添加
         ],
         cellEditing: function(cell) {
             // 单元格开始编辑事件 - 增强版调试信息
@@ -429,55 +303,30 @@ function initializeTable() {
             const rowData = row.getData();
             console.log('[EDIT] 单元格编辑已取消:', {
                 field: cell.getField(),
-                attemptedValue: cell.getValue(),
-                originalValue: cell.getOriginalValue(),
+                value: cell.getValue(),
                 id: rowData.id,
-                name: rowData.name,
-                cancellationTimestamp: new Date().toISOString()
+                name: rowData.name
             });
         }
     });
     
-    console.log('[UI] Tabulator实例创建完成');
-    
-    // 不再需要初始化同步按钮状态，因为我们实现了自动同步
-    
-    // 添加表格创建完成事件监听器
-    window.table.on("tableBuilt", function() {
-        console.log('[UI] 表格构建完成，当前数据行数:', window.table.getDataCount());
+    // 添加动态列（基于文件夹结构）
+    if (window.dynamicColumns && window.dynamicColumns.length > 0) {
+        // 获取当前列定义
+        const currentColumns = window.table.getColumns(true).map(col => {
+            return {
+                title: col.getDefinition().title,
+                field: col.getDefinition().field,
+                columns: col.getDefinition().columns
+            };
+        });
         
-        // 添加一个测试按钮来手动触发编辑
-        setTimeout(() => {
-            const testBtn = document.createElement('button');
-            testBtn.id = 'test-edit-btn';
-            testBtn.textContent = '测试编辑';
-            testBtn.style.position = 'fixed';
-            testBtn.style.top = '10px';
-            testBtn.style.right = '10px';
-            testBtn.style.zIndex = '1000';
-            testBtn.addEventListener('click', () => {
-                console.log('[UI] 点击测试编辑按钮');
-                // 获取第一行的第一个可编辑单元格并尝试编辑
-                const firstRow = window.table.getRows()[0];
-                if (firstRow) {
-                    const nameCell = firstRow.getCell('name');
-                    if (nameCell) {
-                        console.log('[UI] 尝试编辑第一个单元格');
-                        nameCell.edit(); // 尝试触发编辑
-                    }
-                }
-            });
-            document.body.appendChild(testBtn);
-            console.log('[UI] 测试编辑按钮已添加到页面');
-        }, 1000);
-    });
+        // 添加动态列
+        const allColumns = [...currentColumns, ...window.dynamicColumns];
+        window.table.setColumns(allColumns);
+    }
     
-    // 添加渲染完成事件监听器
-    window.table.on("renderComplete", function() {
-        console.log('[UI] 表格渲染完成');
-    });
-    
-    console.log('[UI] 表格初始化函数执行完成');
+    console.log('[UI] 表格初始化完成');
 }
 
 // 触发同步的函数

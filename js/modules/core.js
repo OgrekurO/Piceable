@@ -270,48 +270,59 @@ function initializeTable() {
         selectable: true, // 启用选择功能
         columns: [
             {
-                title: "预览",
-                field: "thumbnail",
-                formatter: "image",
-                formatterParams: {
-                    height: "50px",
-                    width: "50px"
-                },
-                hozAlign: "center",
-                vertAlign: "middle",
-                width: 80
+                title: "基础信息",
+                columns: [
+                    {
+                        title: "预览",
+                        field: "thumbnail",
+                        formatter: "image",
+                        formatterParams: {
+                            height: "50px",
+                            width: "50px"
+                        },
+                        hozAlign: "center",
+                        vertAlign: "middle",
+                        width: 80
+                    },
+                    {
+                        title: "名称",
+                        field: "name",
+                        editor: "input",
+                        validator: ["required"],
+                        width: 200
+                    }
+                ]
             },
             {
-                title: "名称",
-                field: "name",
-                editor: "input",
-                validator: ["required"],
-                width: 200
-            },
-            {
-                title: "文件夹",
-                field: "folders",
-                editor: "input",
-                width: 150
-            },
-            {
-                title: "标签",
-                field: "tags",
-                editor: "input",
-                width: 200
-            },
-            {
-                title: "注释",
-                field: "annotation",
-                editor: "textarea",
-                formatter: "textarea"
-            },
-            {
-                title: "最后修改时间",
-                field: "lastModified",
-                hozAlign: "center",
-                width: 150
+                title: "Eagle信息",
+                columns: [
+                    {
+                        title: "文件夹",
+                        field: "folders",
+                        editor: "input",
+                        width: 150
+                    },
+                    {
+                        title: "标签",
+                        field: "tags",
+                        editor: "input",
+                        width: 200
+                    },
+                    {
+                        title: "注释",
+                        field: "annotation",
+                        editor: "textarea",
+                        formatter: "textarea"
+                    },
+                    {
+                        title: "最后修改时间",
+                        field: "lastModified",
+                        hozAlign: "center",
+                        width: 150
+                    }
+                ]
             }
+            // 动态列将在表格初始化后添加
         ],
         cellEdited: function(cell) {
             console.log('[CORE] 单元格编辑完成:', cell.getField(), cell.getValue());
@@ -324,6 +335,22 @@ function initializeTable() {
             }
         }
     });
+    
+    // 添加动态列（基于文件夹结构）
+    if (window.dynamicColumns && window.dynamicColumns.length > 0) {
+        // 获取当前列定义
+        const currentColumns = window.table.getColumns(true).map(col => {
+            return {
+                title: col.getDefinition().title,
+                field: col.getDefinition().field,
+                columns: col.getDefinition().columns
+            };
+        });
+        
+        // 添加动态列
+        const allColumns = [...currentColumns, ...window.dynamicColumns];
+        window.table.setColumns(allColumns);
+    }
     
     console.log('[CORE] 表格初始化完成');
 }

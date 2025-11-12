@@ -19,6 +19,63 @@ function buildFolderMap(folders, prefix = '') {
     return {map, idMap};
 }
 
+// 构建文件夹树结构
+function buildFolderTree(folders, prefix = '') {
+    return folders.map(folder => {
+        const folderPath = prefix ? `${prefix}/${folder.name}` : folder.name;
+        return {
+            id: folder.id,
+            name: folder.name,
+            path: folderPath,
+            children: folder.children && folder.children.length > 0 
+                ? buildFolderTree(folder.children, folderPath)
+                : []
+        };
+    });
+}
+
+// 为文件夹节点生成唯一标识符
+function generateFolderColumnId(folderPath) {
+    // 将路径转换为合法的字段名
+    return 'folder_' + folderPath.replace(/[^a-zA-Z0-9]/g, '_');
+}
+
+// 生成基于文件夹结构的动态列定义
+function generateDynamicColumns(folderTree) {
+    function processFolderNode(node) {
+        const columnId = generateFolderColumnId(node.path);
+        
+        // 如果有子文件夹，创建组
+        if (node.children && node.children.length > 0) {
+            return {
+                title: node.name,
+                field: columnId,
+                columns: node.children.map(processFolderNode)
+            };
+        } else {
+            // 叶子节点，创建普通列
+            return {
+                title: node.name,
+                field: columnId,
+                editor: "tickCross",
+                hozAlign: "center",
+                width: 100,
+                formatter: function(cell) {
+                    const value = cell.getValue();
+                    if (value) {
+                        return '<span style="color: green;">✓</span>';
+                    } else {
+                        return '<span style="color: lightgray;">○</span>';
+                    }
+                }
+            };
+        }
+    }
+    
+    // 为每个根文件夹生成列定义
+    return folderTree.map(processFolderNode);
+}
+
 // 加载Eagle项目数据
 async function loadEagleItems() {
     try {
@@ -36,7 +93,17 @@ async function loadEagleItems() {
         const {map, idMap} = buildFolderMap(libraryInfo.folders || []);
         window.folderMap = map;
         window.folderIdMap = idMap;
+        
+        // 构建文件夹树结构
+        const folderTree = buildFolderTree(libraryInfo.folders || []);
+        window.folderTree = folderTree;
+        
+        // 生成动态列定义
+        const dynamicColumns = generateDynamicColumns(folderTree);
+        window.dynamicColumns = dynamicColumns;
+        
         console.log('[DATA] 文件夹映射构建完成，映射表大小:', Object.keys(window.folderMap).length);
+        console.log('[DATA] 动态列定义生成完成，列数量:', dynamicColumns.length);
         
         // 获取项目数据
         const items = await eagle.item.get({
@@ -78,6 +145,19 @@ async function loadEagleItems() {
                 thumbnailUrl = item.url;
             }
             
+            // 构建动态列数据
+            const dynamicData = {};
+            if (item.folders && Array.isArray(item.folders)) {
+                // 为每个项目所属的文件夹在对应列中设置标记
+                item.folders.forEach(folderId => {
+                    const folderPath = window.folderMap[folderId];
+                    if (folderPath) {
+                        const columnId = generateFolderColumnId(folderPath);
+                        dynamicData[columnId] = true;
+                    }
+                });
+            }
+            
             const result = {
                 id: item.id,
                 name: item.name,
@@ -86,7 +166,8 @@ async function loadEagleItems() {
                 folders: folders,
                 tags: tags,
                 annotation: item.annotation || '',
-                lastModified: item.lastModified ? new Date(item.lastModified).toLocaleString() : ''
+                lastModified: item.lastModified ? new Date(item.lastModified).toLocaleString() : '',
+                ...dynamicData // 合并动态列数据
             };
             
             return result;

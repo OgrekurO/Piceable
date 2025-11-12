@@ -122,6 +122,11 @@ function applyMultiHeadersToTable(table, headerConfig) {
             }
         });
         
+        // 添加动态列（基于文件夹结构）
+        if (window.dynamicColumns && window.dynamicColumns.length > 0) {
+            columnDefinition.push(...window.dynamicColumns);
+        }
+        
         // 应用新的列定义到表格
         // 先检查表格是否已初始化
         if (table.setColumns) {
@@ -138,43 +143,17 @@ function applyMultiHeadersToTable(table, headerConfig) {
 
 // 获取默认的多级表头配置
 function getDefaultMultiHeaderConfig() {
-    return [
+    // 基于新的数据结构，固定的基础信息和Eagle信息列
+    const fixedColumns = [
         { 
-            title: "基本信息",
+            title: "基础信息",
             columns: [
                 { title: "预览", field: "thumbnail", formatter: "image", formatterParams: { height: "50px", width: "50px" }, hozAlign: "center", width: 80 },
                 { title: "名称", field: "name", editor: "input", width: 200 }
             ]
         },
         {
-            title: "灯具本体", 
-            columns: [
-                { title: "发光体类型", field: "lightType", editor: "input", width: 150 },
-                { title: "变压器", field: "transformer", editor: "input", width: 150 },
-                { title: "电线与接头", field: "wires", editor: "input", width: 150 }
-            ]
-        },
-        {
-            title: "安装信息",
-            columns: [
-                { 
-                    title: "位置信息",
-                    columns: [
-                        { title: "安装位置", field: "location", editor: "input", width: 150 },
-                        { title: "安装房间", field: "room", editor: "input", width: 150 }
-                    ]
-                },
-                { 
-                    title: "尺寸信息", 
-                    columns: [
-                        { title: "安装高度", field: "height", editor: "input", width: 150 },
-                        { title: "投影面积", field: "area", editor: "input", width: 150 }
-                    ]
-                }
-            ]
-        },
-        {
-            title: "其他信息",
+            title: "Eagle信息",
             columns: [
                 { title: "文件夹", field: "folders", editor: "input", width: 150 },
                 { title: "标签", field: "tags", editor: "input", width: 200 },
@@ -183,6 +162,8 @@ function getDefaultMultiHeaderConfig() {
             ]
         }
     ];
+    
+    return fixedColumns;
 }
 
 // 保存多级表头配置
