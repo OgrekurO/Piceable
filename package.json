@@ -1,0 +1,27 @@
+{
+  "name": "piceable",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "http-server -p 8080"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OgrekurO/Piceable.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/OgrekurO/Piceable/issues"
+  },
+  "homepage": "https://github.com/OgrekurO/Piceable#readme",
+  "dependencies": {
+    "mind-elixir": "^5.3.5"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
