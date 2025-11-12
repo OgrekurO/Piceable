@@ -280,13 +280,24 @@ function showStatus(message, type) {
 // 刷新库数据的函数（如果不存在则创建一个）
 async function refreshLibraryData() {
     // 如果在新页面中，尝试从主页面获取数据或重新加载
-    if (typeof window.libraryInfo === 'undefined' && typeof window.parent !== 'undefined' && window.parent.libraryInfo) {
-        window.libraryInfo = window.parent.libraryInfo;
+    if (typeof window.libraryInfo === 'undefined' && typeof window.opener !== 'undefined' && window.opener.libraryInfo) {
+        window.libraryInfo = window.opener.libraryInfo;
     }
     
-    // 如果仍然没有数据，尝试重新加载
+    // 如果仍然没有数据，尝试通过插件API重新加载
     if (typeof window.libraryInfo === 'undefined') {
         // 这里可以添加重新加载数据的逻辑
         console.log('[MINDMAP] 需要重新加载库数据');
+        
+        // 尝试从插件API获取数据
+        if (typeof window.eagle !== 'undefined') {
+            try {
+                const libraryInfo = await window.eagle.library.info();
+                window.libraryInfo = libraryInfo;
+                console.log('[MINDMAP] 通过插件API获取到库信息');
+            } catch (error) {
+                console.error('[MINDMAP] 通过插件API获取库信息失败:', error);
+            }
+        }
     }
 }

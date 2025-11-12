@@ -216,14 +216,36 @@
     </div>
     
     <script type="text/javascript" src="js/plugin.js"></script>
-    <script type="module" src="js/modules/mindmap.js"></script>
     
     <script>
         // 页面加载完成后初始化思维导图
         document.addEventListener('DOMContentLoaded', async function() {
-            if (typeof initMindMapPage === 'function') {
-                await initMindMapPage();
+            // 首先尝试从 opener 窗口获取 libraryInfo 数据
+            if (typeof window.opener !== 'undefined' && window.opener.libraryInfo) {
+                window.libraryInfo = window.opener.libraryInfo;
+                console.log('[MINDMAP PAGE] 从 opener 窗口获取到 libraryInfo 数据');
             }
+            
+            // 如果 opener 没有数据，尝试通过插件 API 获取
+            if (typeof window.libraryInfo === 'undefined' && typeof window.eagle !== 'undefined') {
+                try {
+                    window.libraryInfo = await window.eagle.library.info();
+                    console.log('[MINDMAP PAGE] 通过插件 API 获取到 libraryInfo 数据');
+                } catch (error) {
+                    console.error('[MINDMAP PAGE] 通过插件 API 获取数据失败:', error);
+                }
+            }
+            
+            // 加载思维导图模块
+            const mindMapScript = document.createElement('script');
+            mindMapScript.type = 'module';
+            mindMapScript.src = 'js/modules/mindmap.js';
+            mindMapScript.onload = function() {
+                if (typeof initMindMapPage === 'function') {
+                    initMindMapPage();
+                }
+            };
+            document.head.appendChild(mindMapScript);
         });
     </script>
 </body>
