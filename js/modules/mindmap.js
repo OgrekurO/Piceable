@@ -187,7 +187,7 @@ function loadFolderDataToMindMap() {
     if (window.mind && mindMapData) {
         // 使用正确的数据格式初始化
         window.mind.init({
-            nodeData: mindMapData.nodeData
+            nodeData: mindMapData.nodeData || mindMapData
         });
     }
 }
@@ -201,7 +201,15 @@ function convertFolderTreeToMindMapData(folderTree, isRoot = true) {
     }
     
     if (folderTree.length === 0) {
-        return window.MindElixir.new('根文件夹');
+        // 当没有文件夹时，返回一个默认的根节点
+        return {
+            nodeData: {
+                topic: 'Eagle文件夹结构',
+                id: 'root',
+                children: [],
+                expanded: true
+            }
+        };
     }
     
     function convertNode(node) {
@@ -224,6 +232,9 @@ function convertFolderTreeToMindMapData(folderTree, isRoot = true) {
             }
         };
     }
+    
+    // 对于非根情况，直接返回节点数组
+    return folderTree.map(convertNode);
 }
 
 // 绑定思维导图相关事件
