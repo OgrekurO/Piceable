@@ -278,9 +278,21 @@ function applySemicircleLayout() {
     calculateSemicirclePositions(allNodes, window.mind);
     
     // 重新渲染
+    // 使用MindElixir的正确API来更新布局
+    if (typeof window.mind.setNodePosition === 'function') {
+        // 如果有setNodePosition方法，逐个更新节点位置
+        allNodes.forEach(node => {
+            if (node.x !== undefined && node.y !== undefined) {
+                window.mind.setNodePosition(node, node.x, node.y);
+            }
+        });
+    }
+    
+    // 调用layout方法更新视图
     if (typeof window.mind.layout === 'function') {
         window.mind.layout();
     }
+    
     console.log('[MINDMAP] 半圆弧布局应用完成');
 }
 
