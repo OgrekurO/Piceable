@@ -348,14 +348,12 @@ class SemicircleLayout {
         
         const traverseAndApply = (node) => {
             if (node._offsetX !== undefined && node._offsetY !== undefined) {
-                const nodeElement = document.querySelector(`[data-nodeid="me${node.id}"]`);
+                // 根据MindElixir新版DOM结构查找节点元素
+                const nodeElement = document.querySelector(`me-node[data-nodeid="${node.id}"]`);
                 if (nodeElement) {
-                    const parentElement = nodeElement.closest('me-parent');
-                    if (parentElement) {
-                        parentElement.style.position = 'absolute';
-                        parentElement.style.left = `${node._offsetX}px`;
-                        parentElement.style.top = `${node._offsetY}px`;
-                    }
+                    nodeElement.style.position = 'absolute';
+                    nodeElement.style.left = `${node._offsetX}px`;
+                    nodeElement.style.top = `${node._offsetY}px`;
                 }
             }
             
