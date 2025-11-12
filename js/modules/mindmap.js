@@ -161,76 +161,141 @@ async function initializeMindMapInstance() {
 
 // 将文件夹数据加载到思维导图中
 function loadFolderDataToMindMap() {
-    console.log('[MINDMAP] 加载文件夹数据到思维导图');
+    console.log('[MINDMAP] 开始加载文件夹数据到思维导图');
     
     // 获取文件夹树结构
     const libraryInfo = window.libraryInfo || { folders: [] };
-    let folderTree = buildFolderTree(libraryInfo.folders || []);
+    console.log('[MINDMAP] 获取到libraryInfo:', libraryInfo);
+    
+    if (!libraryInfo.folders) {
+        console.warn('[MINDMAP] libraryInfo中缺少folders字段，使用空数组');
+        libraryInfo.folders = [];
+    }
+    
+    let folderTree = buildFolderTree(libraryInfo.folders);
+    console.log('[MINDMAP] 构建的文件夹树:', folderTree);
     
     // 应用文件夹筛选
     folderTree = filterFolders(folderTree);
+    console.log('[MINDMAP] 筛选后的文件夹树:', folderMap);
     
     // 转换为思维导图数据结构
     const mindMapData = convertFolderTreeToMindMapData(folderTree);
+    console.log('[MINDMAP] 转换后的思维导图数据:', mindMapData);
     
     // 初始化思维导图
     if (window.mind && mindMapData) {
-        // 使用正确的数据格式初始化
-        window.mind.init(mindMapData);
-        
-        // 应用半圆弧布局
-        applySemicircleLayout();
+        console.log('[MINDMAP] 准备初始化思维导图，实例:', window.mind, '数据:', mindMapData);
+        try {
+            // 使用正确的数据格式初始化
+            window.mind.init(mindMapData);
+            console.log('[MINDMAP] 思维导图初始化成功');
+            
+            // 应用半圆弧布局
+            applySemicircleLayout();
+            console.log('[MINDMAP] 半圆弧布局应用完成');
+        } catch (error) {
+            console.error('[MINDMAP] 初始化思维导图时发生错误:', error);
+            showStatus('思维导图初始化失败: ' + error.message, 'error');
+        }
+    } else {
+        console.error('[MINDMAP] 无法初始化思维导图，原因：', {
+            hasMindInstance: !!window.mind,
+            hasMindMapData: !!mindMapData,
+            mindInstance: window.mind,
+            mindMapData: mindMapData
+        });
+        showStatus('思维导图初始化失败：缺少实例或数据', 'error');
     }
 }
 
 // 将文件夹树结构转换为思维导图数据结构
 function convertFolderTreeToMindMapData(folderTree) {
+    console.log('[MINDMAP] 开始转换文件夹树结构为思维导图数据，输入:', folderTree);
+    
     // 确保MindElixir已定义
     if (!window.MindElixir) {
         console.error('[MINDMAP] MindElixir未定义，无法创建思维导图数据');
         return null;
     }
     
+    // 验证输入数据
+    if (!folderTree || !Array.isArray(folderTree)) {
+        console.warn('[MINDMAP] 无效的folderTree输入，使用默认值');
+        folderTree = [];
+    }
+    
     if (folderTree.length === 0) {
         // 返回默认数据结构
-        return window.MindElixir.new('根文件夹');
+        const defaultData = window.MindElixir.new('根文件夹');
+        console.log('[MINDMAP] 文件夹树为空，返回默认数据:', defaultData);
+        return defaultData;
     }
     
     // 构建节点对象
     function buildNodeObj(node) {
+        // 验证节点数据
+        if (!node || !node.name) {
+            console.warn('[MINDMAP] 无效的节点数据，跳过:', node);
+            return null;
+        }
+        
         const nodeObj = {
             topic: node.name,
-            id: node.id
+            id: node.id || generateUniqueId(),
+            created: Date.now()
         };
         
         // 处理子节点
-        if (node.children && node.children.length > 0) {
-            nodeObj.children = node.children.map(buildNodeObj);
+        if (node.children && Array.isArray(node.children) && node.children.length > 0) {
+            const validChildren = node.children
+                .map(buildNodeObj)
+                .filter(child => child !== null);
+            
+            if (validChildren.length > 0) {
+                nodeObj.children = validChildren;
+            }
         }
         
         return nodeObj;
     }
     
+    // 生成唯一ID的辅助函数
+    function generateUniqueId() {
+        return 'node_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+    
     // 创建根节点
     const rootNode = {
         topic: 'Eagle文件夹结构',
-        id: 'root'
+        id: 'root_' + Date.now(),
+        created: Date.now()
     };
     
     // 添加子节点
     if (folderTree.length > 0) {
-        rootNode.children = folderTree.map(buildNodeObj);
+        const validNodes = folderTree
+            .map(buildNodeObj)
+            .filter(node => node !== null);
+        
+        if (validNodes.length > 0) {
+            rootNode.children = validNodes;
+        }
     }
     
     // 构造符合MindElixir要求的数据结构
-    return {
+    const result = {
         nodeData: {
-            id: 'mindmap-root',
             topic: rootNode.topic,
+            id: rootNode.id,
             children: rootNode.children || [],
-            expanded: true
+            expanded: true,
+            root: true
         }
     };
+    
+    console.log('[MINDMAP] 成功转换文件夹树结构，输出:', result);
+    return result;
 }
 
 // 应用半圆弧布局

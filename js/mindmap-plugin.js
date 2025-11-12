@@ -50,12 +50,13 @@ async function initializeMindMapPage() {
         initializeMindMapWhenReady();
     } else {
         // 如果 opener 没有数据，尝试通过插件 API 获取
-        getLibraryInfoFromPluginAPI();
+        await getLibraryInfoFromPluginAPI();
     }
     
     // 如果仍然没有数据，显示错误消息
     if (typeof window.libraryInfo === 'undefined') {
-        showErrorMessage('无法获取文件夹数据，请返回主界面刷新数据后重试');
+        console.log('[MINDMAP PLUGIN] 仍未获取到数据，尝试初始化');
+        initializeMindMapWhenReady();
     }
 }
 
@@ -105,7 +106,7 @@ function applyFolderFilter() {
 }
 
 // 通过插件 API 获取数据
-function getLibraryInfoFromPluginAPI() {
+async function getLibraryInfoFromPluginAPI() {
     if (typeof window.eagle !== 'undefined') {
         // 监听 plugin-create 事件，确保插件完全初始化后再调用API
         window.eagle.onPluginCreate(async () => {
@@ -120,6 +121,8 @@ function getLibraryInfoFromPluginAPI() {
                 showErrorMessage('通过插件 API 获取数据失败: ' + error.message);
             }
         });
+    } else {
+        console.log('[MINDMAP PLUGIN] window.eagle 未定义');
     }
 }
 
