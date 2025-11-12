@@ -305,12 +305,14 @@ class SemicircleLayout {
             }
         } else {
             // 子节点和孙子节点按半圆弧分布
-            const currentRadius = this.radius + (level - 1) * 100;
+            // 调整半径计算方式，使布局更加清晰
+            const currentRadius = this.radius + (level - 1) * 150;
             console.log(`[MINDMAP] 当前层级 ${level} 半径: ${currentRadius}`);
             
             if (level === 1) {
                 // 第一层子节点（围绕根节点的上半圆弧）
                 // 优化角度计算，避免除零错误
+                // 从π到0的角度范围（上半圆弧，开口向上）
                 const angle = Math.PI - (index / Math.max(1, totalSiblings - 1)) * Math.PI;
                 node._offsetX = this.centerX + currentRadius * Math.cos(angle);
                 node._offsetY = this.centerY - currentRadius * Math.sin(angle);
@@ -325,11 +327,13 @@ class SemicircleLayout {
                 console.log(`[MINDMAP] 父节点角度: ${parentAngle}`);
                 
                 // 计算相对于父节点的角度偏移
-                const angleOffset = (index / Math.max(1, totalSiblings - 1) - 0.5) * Math.PI * 0.7;
+                // 对于深层节点，使用较小的角度范围以避免重叠
+                const angleRange = Math.PI * 0.5; // 90度范围
+                const angleOffset = (index / Math.max(1, totalSiblings - 1) - 0.5) * angleRange;
                 const angle = parentAngle + angleOffset;
                 
-                node._offsetX = node.parent._offsetX + currentRadius * 0.8 * Math.cos(angle);
-                node._offsetY = node.parent._offsetY + currentRadius * 0.8 * Math.sin(angle);
+                node._offsetX = node.parent._offsetX + currentRadius * 0.5 * Math.cos(angle);
+                node._offsetY = node.parent._offsetY + currentRadius * 0.5 * Math.sin(angle);
                 console.log(`[MINDMAP] 深层节点位置: ${node._offsetX}, ${node._offsetY}, angle: ${angle}`);
             }
             
@@ -382,11 +386,34 @@ class SemicircleLayout {
                 console.log('[MINDMAP] 调用原始layout方法');
                 this.mind._originalLayout.call(this.mind);
             }
+            
+            // 确保连线也被正确更新
+            this.updateLines();
         };
         
         // 立即调用一次layout来应用布局
         console.log('[MINDMAP] 立即调用layout方法');
         this.mind.layout();
+    },
+    
+    // 更新连线
+    updateLines() {
+        console.log('[MINDMAP] 更新连线');
+        
+        // 尝试多种方式更新连线
+        if (this.mind.line && typeof this.mind.line.draw === 'function') {
+            console.log('[MINDMAP] 调用mind.line.draw()');
+            this.mind.line.draw();
+        } else if (this.mind.linkDiv) {
+            console.log('[MINDMAP] 调用mind.linkDiv()');
+            if (typeof this.mind.linkDiv === 'function') {
+                this.mind.linkDiv();
+            } else if (this.mind.linkDiv.draw) {
+                this.mind.linkDiv.draw();
+            }
+        } else {
+            console.warn('[MINDMAP] 未找到更新连线的方法');
+        }
     }
     
     // 应用自定义节点位置
@@ -397,9 +424,9 @@ class SemicircleLayout {
             if (node._offsetX !== undefined && node._offsetY !== undefined) {
                 console.log(`[MINDMAP] 设置节点 ${node.topic} 位置: ${node._offsetX}, ${node._offsetY}`);
                 
-                // 根据MindElixir新版DOM结构查找节点元素
-                // 使用正确的ID格式，添加"me"前缀
-                let nodeElement = document.querySelector(`me-node[data-nodeid="me${node.id}"]`);
+                // 根据实际DOM结构调整选择器
+                // 从日志看，我们需要选择 me-tpc 元素而不是 me-node 元素
+                let nodeElement = document.querySelector(`me-tpc[data-nodeid="me${node.id}"]`);
                 if (!nodeElement) {
                     // 尝试其他可能的选择器
                     nodeElement = document.querySelector(`[data-nodeid="me${node.id}"]`);
