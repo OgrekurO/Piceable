@@ -62,15 +62,20 @@ eagle.onPluginHide(() => {
 async function initializeApp() {
     console.log('[CORE] 开始初始化应用');
     
-    // 检查是否在Eagle环境中
-    if (typeof eagle === 'undefined') {
-        console.log('[CORE] 未检测到Eagle环境');
-        // 在非Eagle环境中使用示例数据进行演示
-        loadDemoData();
-        initUI();
-        bindEvents();
-        initializeTable();
-        return;
+    // 如果在Eagle环境中，加载真实数据；否则加载演示数据
+    if (typeof eagle !== 'undefined') {
+        try {
+            console.log('[CORE] 检测到Eagle环境，加载真实数据');
+            await loadEagleItems();
+            initUI();
+            bindEvents();
+            initializeTable();
+            return;
+        } catch (error) {
+            console.error('[CORE] 加载Eagle数据失败:', error);
+            showStatus('加载数据失败: ' + error.message, 'error');
+            return;
+        }
     }
     
     // 等待Tabulator加载完成
