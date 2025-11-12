@@ -48,32 +48,24 @@ function generateFolderColumnId(folderPath) {
 function generateDynamicColumns(folderTree) {
     console.log('[DATA] 开始生成动态列定义，文件夹树:', folderTree);
     
-    // 为所有节点创建列（包括根节点）
+    // 只为非叶子节点创建列（即文件夹路径的倒数第二层）
     function processFolderNode(node) {
         const columnId = generateFolderColumnId(node.path);
         console.log(`[DATA] 处理节点: ${node.name}, 路径: ${node.path}, ID: ${columnId}`);
         
         // 如果有子文件夹，创建组
         if (node.children && node.children.length > 0) {
-            // 处理所有子节点
             const columns = node.children.map(processFolderNode).filter(col => col !== null);
             console.log(`[DATA] 节点 ${node.name} 的子列:`, columns);
-            
-            // 创建列组（即使子列为空也要创建，因为父节点本身需要显示其直接子文件夹）
             return {
                 title: node.name,
                 field: columnId,
                 columns: columns
             };
         } else {
-            // 对于叶子节点，也要创建列（特别是根节点的叶子节点）
-            console.log(`[DATA] 为叶子节点 ${node.name} 创建列`);
-            return {
-                title: node.name,
-                field: columnId,
-                editor: "input",
-                width: 150
-            };
+            // 叶子节点不创建列
+            console.log(`[DATA] 节点 ${node.name} 是叶子节点，不创建列`);
+            return null;
         }
     }
     
