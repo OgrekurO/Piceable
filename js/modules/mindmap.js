@@ -58,36 +58,28 @@ function loadMindElixir() {
             return;
         }
         
-        // 创建容器来检测样式是否已加载
-        const styleCheck = document.createElement('div');
-        styleCheck.className = 'mind-elixir-style-check';
-        styleCheck.style.display = 'none';
-        document.head.appendChild(styleCheck);
+        // 加载CSS样式
+        const cssLink = document.createElement('link');
+        cssLink.rel = 'stylesheet';
+        cssLink.href = 'https://cdn.jsdelivr.net/npm/mind-elixir/dist/style.css';
+        cssLink.onload = () => {
+            console.log('[MINDMAP] MindElixir样式加载完成');
+        };
+        document.head.appendChild(cssLink);
         
-        // 检查是否已经加载了样式
-        const styleLoaded = getComputedStyle(styleCheck).display === 'none';
-        document.head.removeChild(styleCheck);
-        
-        // 如果样式未加载，则加载CSS样式
-        if (!styleLoaded) {
-            const cssLink = document.createElement('link');
-            cssLink.rel = 'stylesheet';
-            cssLink.href = 'https://cdn.jsdelivr.net/npm/mind-elixir@3.1.2/dist/style.css';
-            cssLink.onload = () => {
-                console.log('[MINDMAP] MindElixir样式加载完成');
-            };
-            document.head.appendChild(cssLink);
-        }
-        
-        // 加载JS库 - 使用UMD版本确保全局访问
+        // 加载JS库 - 使用非模块方式确保全局访问
         const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/mind-elixir@3.1.2/dist/mind-elixir.js';
+        script.src = 'https://cdn.jsdelivr.net/npm/mind-elixir/dist/mind-elixir.js';
         script.onload = () => {
             console.log('[MINDMAP] MindElixir库加载完成');
             // 等待一段时间确保库完全初始化
             setTimeout(() => {
-                resolve();
-            }, 100);
+                if (window.MindElixir) {
+                    resolve();
+                } else {
+                    reject(new Error('MindElixir loaded but not available in global scope'));
+                }
+            }, 200);
         };
         script.onerror = () => {
             console.error('[MINDMAP] MindElixir库加载失败');
