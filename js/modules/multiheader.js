@@ -122,11 +122,6 @@ function applyMultiHeadersToTable(table, headerConfig) {
             }
         });
         
-        // 添加动态列（基于文件夹结构）
-        if (window.dynamicColumns && window.dynamicColumns.length > 0) {
-            columnDefinition.push(...window.dynamicColumns);
-        }
-        
         // 应用新的列定义到表格
         // 先检查表格是否已初始化
         if (table.setColumns) {
@@ -162,6 +157,16 @@ function getDefaultMultiHeaderConfig() {
             ]
         }
     ];
+    
+    // 添加动态列（基于文件夹结构）
+    if (window.dynamicColumns && window.dynamicColumns.length > 0) {
+        // 创建动态列组
+        const dynamicColumnGroup = {
+            title: "文件夹结构",
+            columns: window.dynamicColumns
+        };
+        fixedColumns.push(dynamicColumnGroup);
+    }
     
     return fixedColumns;
 }
@@ -349,6 +354,7 @@ function renderHeaderGroups(config) {
                     font-size: 14px;
                     margin-left: 8px;
                 ">+ 添加子组</button>
+                ${group.title === "文件夹结构" ? '<button class="refresh-dynamic-columns-btn" style="background: #fbbc05; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 8px;">刷新文件夹结构</button>' : ''}
             </div>
         </div>
     `).join('');
@@ -612,6 +618,31 @@ function bindMultiHeaderModalEvents(modal, config) {
             const container = modal.querySelector('#header-groups-container');
             if (container) {
                 container.innerHTML = renderHeaderGroups(config);
+            }
+        }
+    });
+    
+    // 刷新动态列按钮
+    modal.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('refresh-dynamic-columns-btn')) {
+            // 重新加载文件夹结构并更新动态列
+            showStatus('正在刷新文件夹结构...', 'info');
+            try {
+                await loadEagleItems();
+                // 更新配置中的动态列部分
+                const folderStructureGroup = config.find(group => group.title === "文件夹结构");
+                if (folderStructureGroup && window.dynamicColumns) {
+                    folderStructureGroup.columns = window.dynamicColumns;
+                }
+                
+                const container = modal.querySelector('#header-groups-container');
+                if (container) {
+                    container.innerHTML = renderHeaderGroups(config);
+                }
+                showStatus('文件夹结构刷新完成', 'success');
+            } catch (error) {
+                console.error('刷新文件夹结构失败:', error);
+                showStatus('刷新文件夹结构失败: ' + error.message, 'error');
             }
         }
     });

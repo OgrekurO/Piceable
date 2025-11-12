@@ -42,6 +42,7 @@ function generateFolderColumnId(folderPath) {
 
 // 生成基于文件夹结构的动态列定义
 function generateDynamicColumns(folderTree) {
+    // 只为非叶子节点创建列（即文件夹路径的倒数第二层）
     function processFolderNode(node) {
         const columnId = generateFolderColumnId(node.path);
         
@@ -50,30 +51,26 @@ function generateDynamicColumns(folderTree) {
             return {
                 title: node.name,
                 field: columnId,
-                columns: node.children.map(processFolderNode)
+                columns: node.children.map(processFolderNode).filter(col => col !== null)
             };
         } else {
-            // 叶子节点，创建普通列
-            return {
-                title: node.name,
-                field: columnId,
-                editor: "tickCross",
-                hozAlign: "center",
-                width: 100,
-                formatter: function(cell) {
-                    const value = cell.getValue();
-                    if (value) {
-                        return '<span style="color: green;">✓</span>';
-                    } else {
-                        return '<span style="color: lightgray;">○</span>';
-                    }
-                }
-            };
+            // 叶子节点不创建列，但返回null以便过滤
+            return null;
         }
     }
     
-    // 为每个根文件夹生成列定义
-    return folderTree.map(processFolderNode);
+    // 为每个根文件夹生成列定义，并过滤掉null值
+    const columns = folderTree.map(processFolderNode).filter(col => col !== null);
+    
+    // 添加一个特殊的根文件夹列来处理直接在根目录下的文件夹
+    columns.push({
+        title: "根文件夹",
+        field: generateFolderColumnId('ROOT_FOLDER'),
+        editor: "input",
+        width: 150
+    });
+    
+    return columns;
 }
 
 // 加载Eagle项目数据
@@ -148,12 +145,36 @@ async function loadEagleItems() {
             // 构建动态列数据
             const dynamicData = {};
             if (item.folders && Array.isArray(item.folders)) {
-                // 为每个项目所属的文件夹在对应列中设置标记
+                // 为每个项目所属的文件夹在对应列中填写最内层文件夹名称
                 item.folders.forEach(folderId => {
                     const folderPath = window.folderMap[folderId];
                     if (folderPath) {
-                        const columnId = generateFolderColumnId(folderPath);
-                        dynamicData[columnId] = true;
+                        // 获取文件夹路径的所有父路径
+                        const pathParts = folderPath.split('/');
+                        // 只有当路径有至少两层时才处理
+                        if (pathParts.length >= 2) {
+                            // 获取倒数第二层路径（父文件夹）
+                            const parentPath = pathParts.slice(0, -1).join('/');
+                            // 获取最内层文件夹名称
+                            const innerFolderName = pathParts[pathParts.length - 1];
+                            // 为父文件夹对应的列设置最内层文件夹名称
+                            const columnId = generateFolderColumnId(parentPath);
+                            // 如果该列已存在值，则追加新的文件夹名称
+                            if (dynamicData[columnId]) {
+                                dynamicData[columnId] += ', ' + innerFolderName;
+                            } else {
+                                dynamicData[columnId] = innerFolderName;
+                            }
+                        } else if (pathParts.length === 1) {
+                            // 根文件夹的情况，我们需要一个特殊的处理方式
+                            // 为根文件夹创建一个特殊的列
+                            const columnId = generateFolderColumnId('ROOT_FOLDER');
+                            if (dynamicData[columnId]) {
+                                dynamicData[columnId] += ', ' + pathParts[0];
+                            } else {
+                                dynamicData[columnId] = pathParts[0];
+                            }
+                        }
                     }
                 });
             }

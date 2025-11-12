@@ -41,8 +41,22 @@ async function syncDataToEagle() {
             const annotationChanged = rowData.annotation !== (originalItem.annotation || '');
             const foldersChanged = rowData.folders !== getFolderNames(originalItem.folders || []);
             
-            if (nameChanged || tagsChanged || annotationChanged || foldersChanged) {
-                console.log(`[SYNC] 检测到修改 - ID: ${rowData.id}, Name: ${nameChanged}, Tags: ${tagsChanged}, Annotation: ${annotationChanged}, Folders: ${foldersChanged}`);
+            // 检查动态列是否修改
+            let dynamicColumnsChanged = false;
+            if (window.dynamicColumns && Array.isArray(window.dynamicColumns)) {
+                for (const column of window.dynamicColumns) {
+                    const columnName = column.field;
+                    if (rowData.hasOwnProperty(columnName) && 
+                        originalItem.metaData && 
+                        originalItem.metaData[columnName] !== rowData[columnName]) {
+                        dynamicColumnsChanged = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (nameChanged || tagsChanged || annotationChanged || foldersChanged || dynamicColumnsChanged) {
+                console.log(`[SYNC] 检测到修改 - ID: ${rowData.id}, Name: ${nameChanged}, Tags: ${tagsChanged}, Annotation: ${annotationChanged}, Folders: ${foldersChanged}, DynamicColumns: ${dynamicColumnsChanged}`);
                 modifiedCount++;
             }
         }
@@ -176,6 +190,28 @@ async function syncDataToEagle() {
                     // 更新原始项目的文件夹
                     originalItem.folders = folderIds;
                     needSave = true;
+                }
+                
+                // 处理动态列数据（自定义元数据）
+                if (window.dynamicColumns && Array.isArray(window.dynamicColumns)) {
+                    if (!originalItem.metaData) {
+                        originalItem.metaData = {};
+                    }
+                    
+                    let metaChanged = false;
+                    for (const column of window.dynamicColumns) {
+                        const columnName = column.field;
+                        if (rowData.hasOwnProperty(columnName) && originalItem.metaData[columnName] !== rowData[columnName]) {
+                            console.log(`[SYNC] 更新动态列数据: ${columnName} -> ${rowData[columnName]}`);
+                            originalItem.metaData[columnName] = rowData[columnName];
+                            metaChanged = true;
+                            needSave = true;
+                        }
+                    }
+                    
+                    if (metaChanged) {
+                        console.log(`[SYNC] 项目 ${rowData.id} 的动态列数据已更新`);
+                    }
                 }
                 
                 // 保存修改
