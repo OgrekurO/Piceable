@@ -221,7 +221,7 @@
         // 页面加载完成后初始化思维导图
         document.addEventListener('DOMContentLoaded', async function() {
             // 首先尝试从 opener 窗口获取 libraryInfo 数据
-            if (typeof window.opener !== 'undefined' && window.opener.libraryInfo) {
+            if (window.opener && !window.opener.closed && window.opener.libraryInfo) {
                 window.libraryInfo = window.opener.libraryInfo;
                 console.log('[MINDMAP PAGE] 从 opener 窗口获取到 libraryInfo 数据');
             }
@@ -234,6 +234,21 @@
                 } catch (error) {
                     console.error('[MINDMAP PAGE] 通过插件 API 获取数据失败:', error);
                 }
+            }
+            
+            // 如果仍然没有数据，显示错误消息
+            if (typeof window.libraryInfo === 'undefined') {
+                const statusMessage = document.getElementById('status-message');
+                const statusBar = document.getElementById('status-bar');
+                if (statusMessage) {
+                    statusMessage.textContent = '无法获取文件夹数据，请返回主界面刷新数据后重试';
+                    statusMessage.className = 'status-message error';
+                    statusMessage.style.display = 'block';
+                }
+                if (statusBar) {
+                    statusBar.textContent = '数据加载失败';
+                }
+                console.error('[MINDMAP PAGE] 无法获取 libraryInfo 数据');
             }
         });
     </script>
