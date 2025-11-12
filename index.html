@@ -17,6 +17,9 @@
             --light-gray: #f5f5f5;
             --dark-gray: #666;
             --border-color: #ddd;
+            --sidebar-width: 250px;
+            --header-height: 60px;
+            --toolbar-height: 70px;
         }
         
         * {
@@ -30,14 +33,73 @@
             background-color: #f8f9fa;
             color: #333;
             height: 100vh;
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: var(--sidebar-width) 1fr;
+            grid-template-rows: var(--header-height) var(--toolbar-height) 1fr auto;
+            grid-template-areas:
+                "sidebar header"
+                "sidebar toolbar"
+                "sidebar main"
+                "sidebar status";
+        }
+        
+        .sidebar {
+            grid-area: sidebar;
+            background: #2c3e50;
+            color: white;
+            padding: 20px 0;
+            overflow-y: auto;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        
+        .sidebar h2 {
+            padding: 0 20px;
+            margin-top: 0;
+            font-size: 1.2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 15px;
+        }
+        
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar-menu li {
+            padding: 0;
+        }
+        
+        .sidebar-menu a {
+            display: block;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            padding: 12px 20px;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+        
+        .sidebar-menu a:hover, 
+        .sidebar-menu a.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .sidebar-menu i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
         }
         
         .header {
+            grid-area: header;
             background: white;
-            padding: 15px 20px;
+            padding: 0 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
             z-index: 100;
         }
         
@@ -48,12 +110,15 @@
         }
         
         .toolbar {
+            grid-area: toolbar;
             background: white;
             padding: 15px 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+            align-items: center;
+            overflow-x: auto;
             z-index: 100;
         }
         
@@ -61,6 +126,7 @@
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+            align-items: center;
         }
         
         button {
@@ -75,6 +141,7 @@
             align-items: center;
             gap: 5px;
             transition: background 0.2s;
+            white-space: nowrap;
         }
         
         button:hover {
@@ -110,19 +177,27 @@
             background: #d33b2c;
         }
         
+        .main-content {
+            grid-area: main;
+            padding: 20px;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
         .table-container {
             flex: 1;
             background: white;
-            padding: 20px;
-            overflow: auto;
-            margin: 10px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
         
         #item-table {
+            flex: 1;
             border: none;
-            width: 100%;
         }
         
         .thumbnail {
@@ -133,6 +208,7 @@
         }
         
         .status-bar {
+            grid-area: status;
             padding: 10px 20px;
             background: white;
             border-top: 1px solid var(--border-color);
@@ -183,10 +259,56 @@
         .flex-space {
             flex: 1;
         }
+        
+        .grouping-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: 10px;
+            padding-left: 10px;
+            border-left: 1px solid var(--border-color);
+        }
+        
+        .grouping-controls label {
+            white-space: nowrap;
+        }
+        
+        .grouping-controls select {
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                grid-template-columns: 1fr;
+                grid-template-rows: var(--header-height) var(--toolbar-height) 1fr auto;
+                grid-template-areas:
+                    "header"
+                    "toolbar"
+                    "main"
+                    "status";
+            }
+            
+            .sidebar {
+                display: none;
+            }
+        }
     </style>
 </head>
 
 <body>
+    <div class="sidebar">
+        <h2>导航菜单</h2>
+        <ul class="sidebar-menu">
+            <li><a href="#" class="active">📋 数据管理</a></li>
+            <li><a href="#">📊 数据可视化</a></li>
+            <li><a href="#">⚙️ 设置</a></li>
+            <li><a href="#">🧱 属性模板</a></li>
+            <li><a href="#">📚 帮助文档</a></li>
+        </ul>
+    </div>
+    
     <div class="header">
         <h1>Eagle Ontology Manager</h1>
     </div>
@@ -202,6 +324,15 @@
             <button id="visualization-btn" disabled>📊 数据可视化</button>
         </div>
         
+        <div class="grouping-controls">
+            <label for="grouping-select">分组方式:</label>
+            <select id="grouping-select">
+                <option value="">无分组</option>
+                <option value="countryGroup">按国家分组</option>
+                <option value="regionGroup">按地区分组</option>
+            </select>
+        </div>
+        
         <div class="flex-space"></div>
         
         <div class="toolbar-group">
@@ -211,7 +342,7 @@
     
     <div class="status-message" id="status-message"></div>
     
-    <div id="app-container">
+    <div class="main-content">
         <div class="table-container">
             <div id="item-table"></div>
         </div>
