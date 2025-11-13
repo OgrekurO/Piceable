@@ -14,7 +14,7 @@ async function loadMindMapModules() {
     try {
         // 只加载思维导图必需的模块
         await loadModule('js/modules/data.js');
-        await loadModule('js/modules/mindmap.js');
+        await loadModule('js/modules/d3-mindmap.js');
         
         // 模块加载完成后执行初始化
         initializeMindMapPlugin();
@@ -96,8 +96,8 @@ function applyFolderFilter() {
         }
         
         // 重新加载思维导图
-        if (typeof window.mind !== 'undefined') {
-            loadFolderDataToMindMap();
+        if (typeof loadFolderDataToD3MindMap === 'function') {
+            loadFolderDataToD3MindMap();
         }
     }
 }
@@ -128,13 +128,13 @@ async function getLibraryInfoFromPluginAPI() {
 // 当数据准备好时初始化思维导图
 function initializeMindMapWhenReady() {
     // 确保思维导图模块已加载
-    if (typeof initMindMapPage === 'function') {
-        initMindMapPage();
+    if (typeof initD3MindMap === 'function') {
+        initD3MindMap();
     } else {
         // 如果模块尚未加载，等待一段时间后重试
         setTimeout(() => {
-            if (typeof initMindMapPage === 'function') {
-                initMindMapPage();
+            if (typeof initD3MindMap === 'function') {
+                initD3MindMap();
             } else {
                 console.error('[MINDMAP PLUGIN] 思维导图模块未正确加载');
                 showErrorMessage('思维导图模块未正确加载');
