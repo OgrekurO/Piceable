@@ -8,15 +8,21 @@
     <!-- 引入Tabulator样式 -->
     <link href="https://unpkg.com/tabulator-tables@5.4.4/dist/css/tabulator.min.css" rel="stylesheet">
     
+    <!-- 引入阿里巴巴iconfont图标库 -->
+    <link rel="stylesheet" href="https://at.alicdn.com/t/font_3303843_467u1005y5n.css">
+    
     <style>
         :root {
-            --primary-color: #4285f4;
-            --success-color: #34a853;
-            --warning-color: #fbbc05;
-            --danger-color: #ea4335;
-            --light-gray: #f5f5f5;
-            --dark-gray: #666;
-            --border-color: #ddd;
+            --primary-color: #000000;
+            --success-color: #000000;
+            --warning-color: #000000;
+            --danger-color: #000000;
+            --light-gray: #f5f5f7;
+            --medium-gray: #86868b;
+            --dark-gray: #1d1d1f;
+            --border-color: #d2d2d7;
+            --header-height: 44px; /* 从60px减小到44px */
+            --toolbar-height: 44px; /* 从60px减小到44px */
         }
         
         * {
@@ -30,120 +36,396 @@
             background-color: #f8f9fa;
             color: #333;
             height: 100vh;
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-template-rows: var(--header-height) var(--toolbar-height) 1fr auto;
+            grid-template-areas:
+                "header"
+                "toolbar"
+                "main"
+                "status";
         }
         
         .header {
+            grid-area: header;
             background: white;
-            padding: 15px 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 0 15px;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* 使三个部分均匀分布 */
             z-index: 100;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .header-left,
+        .header-right {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+        
+        .header-right {
+            justify-content: flex-end; /* 右侧内容右对齐 */
         }
         
         .header h1 {
             margin: 0;
-            font-size: 1.5rem;
-            color: #333;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--dark-gray);
+        }
+        
+        .header-menu {
+            display: flex;
+            margin-right: 20px;
+            border-right: 1px solid var(--border-color);
+            padding-right: 20px;
+        }
+        
+        .header-menu a {
+            text-decoration: none;
+            color: var(--medium-gray);
+            font-size: 14px;
+            padding: 6px 10px;
+            border-radius: 4px;
+            margin-right: 5px;
+            transition: all 0.2s;
+        }
+        
+        .search-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            position: relative;
+            max-width: 400px; /* 限制搜索框最大宽度 */
+        }
+        
+        .search-box {
+            padding: 5px 10px 5px 28px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 13px;
+            width: 100%; /* 占满容器宽度 */
+            max-width: 300px; /* 限制最大宽度 */
+            background-color: #f5f5f7;
+            transition: all 0.2s;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: var(--dark-gray);
+            background-color: white;
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+            width: 280px;
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 70px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--medium-gray);
+        }
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            margin-left: 20px;
+            border-left: 1px solid var(--border-color);
+            padding-left: 20px;
+        }
+        
+        .action-icon {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .action-icon:hover {
+            background-color: #f5f5f7;
         }
         
         .toolbar {
             background: white;
-            padding: 15px 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 8px 15px;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.1);
             display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            overflow-x: auto;
             z-index: 100;
+            border-bottom: 1px solid var(--border-color);
         }
         
         .toolbar-group {
             display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+        
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .action-icon {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px; /* 与按钮圆角保持一致 */
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .action-icon:hover {
+            background-color: #f5f5f7;
+        }
+        
+        .grouping-controls {
+            display: flex;
+            align-items: center;
             gap: 10px;
-            flex-wrap: wrap;
+            margin-left: 10px;
+            padding-left: 10px;
+            border-left: 1px solid var(--border-color);
+        }
+        
+        .grouping-controls label {
+            white-space: nowrap;
+            font-size: 14px;
+            color: var(--medium-gray);
+        }
+        
+        .grouping-controls select {
+            padding: 5px 8px; /* 调整内边距 */
+            border-radius: 4px; /* 稍稍微减小圆角 */
+            border: none;
+            background-color: #f5f5f7;
+            font-size: 13px; /* 稍稍微减小字体大小 */
+            color: var(--dark-gray);
         }
         
         button {
-            background: var(--primary-color);
-            color: white;
+            background: transparent;
+            color: var(--dark-gray);
             border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
+            padding: 5px 12px; /* 减小内边距 */
+            border-radius: 4px; /* 稍稍微减小圆角 */
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px; /* 稍稍微减小字体大小 */
             display: flex;
             align-items: center;
-            gap: 5px;
-            transition: background 0.2s;
+            gap: 4px; /* 稍稍微减小间距 */
+            transition: all 0.2s;
+            white-space: nowrap;
         }
         
         button:hover {
-            background: #3367d6;
+            background: #f5f5f7;
+            /* 去掉边框相关的悬停效果 */
         }
         
         button:disabled {
-            background: #ccc;
+            background: transparent; /* 保持背景透明 */
+            color: var(--medium-gray);
             cursor: not-allowed;
+            /* 去掉边框 */
         }
         
         button.success {
-            background: var(--success-color);
+            background: transparent;
+            color: var(--dark-gray);
         }
         
         button.success:hover {
-            background: #2e8f4a;
+            background: #f5f5f7;
         }
         
         button.warning {
-            background: var(--warning-color);
+            background: transparent;
+            color: var(--dark-gray);
         }
         
         button.warning:hover {
-            background: #e6ac00;
+            background: #f5f5f7;
         }
         
         button.danger {
-            background: var(--danger-color);
+            background: transparent;
+            color: var(--dark-gray);
         }
         
         button.danger:hover {
-            background: #d33b2c;
+            background: #f5f5f7;
         }
         
+        .main-content {
+            grid-area: main;
+            padding: 0 0 0 20px; /* 只保留左边距，移除上、右、下边距 */
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .content-area {
+            display: flex;
+            flex: 1;
+            gap: 15px;
+            height: calc(100vh - var(--header-height) - var(--toolbar-height) - 30px); /* 调整高度计算 */
+        }
+        
+        .table-section {
+            flex: 8; /* 改为flex: 8，占8/10宽度 */
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-radius: 0;
+            box-shadow: none;
+            overflow: hidden;
+            padding: 0;
+        }
+
         .table-container {
             flex: 1;
             background: white;
-            padding: 20px;
-            overflow: auto;
-            margin: 10px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 0;
+            box-shadow: none;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%; /* 确保填满父容器 */
         }
         
         #item-table {
             border: none;
+            height: 100%; /* 确保填满父容器 */
+        }
+
+        .image-cell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
             width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .image-cell img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
         }
         
-        .thumbnail {
-            width: 50px;
-            height: 50px;
-            object-fit: cover;
+        .details-section {
+            flex: 2; /* 改为flex: 2，占2/10宽度 */
+            background: #f5f5f7;
+            border-radius: 0;
+            padding: 0; /* 移除内边距以实现顶格效果 */
+            box-shadow: none;
+            overflow-y: auto;
+        }
+        
+        .details-section h3 {
+            margin: 0;
+            padding: 15px;
+            color: var(--dark-gray);
+            border-bottom: 1px solid var(--border-color);
+            font-size: 16px; /* 缩小字体大小 */
+            font-weight: 500;
+        }
+        
+        .details-content {
+            padding: 15px;
+        }
+        
+        .form-group {
+            margin-bottom: 12px; /* 稍稍微减小间距 */
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 4px; /* 稍稍微减小间距 */
+            font-size: 13px; /* 稍稍微减小字体大小 */
+            color: var(--dark-gray);
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 6px 10px; /* 调整内边距 */
+            border: 1px solid var(--border-color);
+            border-radius: 4px; /* 稍稍微减小圆角 */
+            font-size: 13px; /* 稍稍微减小字体大小 */
+            background-color: white;
+        }
+        
+        .detail-item {
+            margin-bottom: 4px; /* 缩短信息框之间的距离 */
+            padding: 0;
+            border-bottom: none; /* 移除分割线 */
+        }
+        
+        .detail-input,
+        .detail-textarea {
+            width: 100%;
+            padding: 4px 8px; /* 压缩信息框高度 */
+            border: 1px solid var(--border-color);
             border-radius: 4px;
+            font-size: 13px;
+            background-color: white;
+            margin-bottom: 4px;
+            font-family: inherit;
+        }
+        
+        .detail-input:focus,
+        .detail-textarea:focus {
+            outline: none;
+            border-color: var(--dark-gray);
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .detail-textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+        
+        .detail-input[readonly] {
+            background-color: #f5f5f7;
+            color: var(--medium-gray);
+        }
+        
+        #image-preview-container {
+            display: none;
         }
         
         .status-bar {
-            padding: 10px 20px;
+            grid-area: status;
+            padding: 5px 20px; /* 从10px减少到5px，压缩1/2 */
             background: white;
             border-top: 1px solid var(--border-color);
             font-size: 14px;
-            color: var(--dark-gray);
+            color: var(--medium-gray);
         }
         
         .status-message {
             padding: 10px 20px;
             margin: 10px;
-            border-radius: 4px;
+            border-radius: 6px;
             font-size: 14px;
             display: none;
         }
@@ -166,55 +448,197 @@
             border: 1px solid #bee5eb;
         }
         
-        .search-box {
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            font-size: 14px;
-            width: 250px;
-        }
-        
-        .search-box:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
-        }
-        
         .flex-space {
             flex: 1;
+        }
+        
+        .iconfont {
+            font-size: 16px;
+            vertical-align: middle;
+        }
+        
+        button .iconfont {
+            margin-right: 5px;
+        }
+        
+        .search-icon .iconfont {
+            font-size: 14px;
+        }
+        
+        .action-icon .iconfont {
+            font-size: 16px;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                grid-template-columns: 1fr;
+                grid-template-rows: var(--header-height) var(--toolbar-height) 1fr auto;
+                grid-template-areas:
+                    "header"
+                    "toolbar"
+                    "main"
+                    "status";
+            }
+            
+            .search-box {
+                width: 150px;
+            }
+            
+            .search-box:focus {
+                width: 180px;
+            }
+            
+            .search-icon {
+                left: 15px;
+            }
+        }
+        
+        .image-preview-container {
+            width: 100%;
+            height: 200px;
+            background-color: white;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #image-preview {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        #no-image-text {
+            color: var(--medium-gray);
+            font-size: 14px;
+        }
+        
+        .detail-item {
+            margin-bottom: 8px; /* 压缩信息之间的距离 */
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .detail-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .detail-value {
+            font-size: 14px;
+            color: var(--dark-gray);
+            padding: 2px 0;
+            word-break: break-word;
+        }
+        
+        #detail-name {
+            font-weight: 500;
+            font-size: 16px;
+        }
+        
+        #detail-folders::before {
+            content: "📁 ";
+        }
+        
+        #detail-tags::before {
+            content: "🏷️ ";
+        }
+        
+        #detail-annotation::before {
+            content: "📝 ";
+        }
+        
+        #detail-lastModified::before {
+            content: "🕒 ";
         }
     </style>
 </head>
 
 <body>
     <div class="header">
-        <h1>Eagle Ontology Manager</h1>
+        <div class="header-left">
+            <div class="header-menu">
+                <a href="#">文件</a>
+                <a href="#">编辑</a>
+            </div>
+        </div>
+        <div class="search-container">
+            <span class="search-icon"><i class="iconfont icon-search"></i></span>
+            <input type="text" class="search-box" id="search-box" placeholder="搜索图片名称、标签或注释...">
+        </div>
+        <div class="header-right">
+            <div class="header-actions">
+                <div class="action-icon"><i class="iconfont icon-upload"></i></div>
+            </div>
+        </div>
     </div>
     
     <div class="toolbar">
-        <div class="toolbar-group">
-            <button id="refresh-btn">🔄 刷新数据</button>
-            <button id="export-csv-btn">📤 导出CSV</button>
+        <div class="toolbar-left">
+            <div class="toolbar-group">
+                <button id="refresh-btn"><i class="iconfont icon-refresh"></i> 刷新数据</button>
+            </div>
+            
+            <div class="toolbar-group">
+                <button id="template-btn"><i class="iconfont icon-template"></i> 属性模板</button>
+                <button id="visualization-btn" disabled><i class="iconfont icon-chart"></i> 数据可视化</button>
+            </div>
+            
+            <div class="grouping-controls">
+                <label for="grouping-select">分组方式:</label>
+                <select id="grouping-select">
+                    <option value="">无分组</option>
+                    <option value="countryGroup">按国家分组</option>
+                    <option value="regionGroup">按地区分组</option>
+                </select>
+            </div>
         </div>
         
-        <div class="toolbar-group">
-            <button id="template-btn">🧱 属性模板</button>
-            <button id="visualization-btn" disabled>📊 数据可视化</button>
-            <button id="mindmap-btn">🧠 文件夹结构</button>
-        </div>
-        
-        <div class="flex-space"></div>
-        
-        <div class="toolbar-group">
-            <input type="text" class="search-box" id="search-box" placeholder="搜索图片名称、标签或注释...">
+        <div class="toolbar-right">
+            <div class="action-icon"><i class="iconfont icon-list"></i></div>
+            <div class="action-icon"><i class="iconfont icon-grid"></i></div>
         </div>
     </div>
     
     <div class="status-message" id="status-message"></div>
     
-    <div id="app-container">
-        <div class="table-container">
-            <div id="item-table"></div>
+    <div class="main-content">
+        <div class="content-area">
+            <div class="table-section">
+                <div class="table-container">
+                    <div id="item-table"></div>
+                </div>
+            </div>
+            <div class="details-section">
+                <div class="details-content">
+                    <div id="image-preview-container" style="display: none; text-align: center; margin-bottom: 8px;">
+                        <img id="image-preview" src="" alt="图像预览" style="max-width: 100%; max-height: 200px;">
+                    </div>
+
+                    <div class="detail-item">
+                        <input type="text" id="detail-name" class="detail-input" placeholder="名称" style="font-size: 13px; margin-bottom: 4px;">
+                    </div>
+
+                    <div class="detail-item">
+                        <input type="text" id="detail-folders" class="detail-input" placeholder="文件夹" style="font-size: 13px; margin-bottom: 4px;">
+                    </div>
+
+                    <div class="detail-item">
+                        <input type="text" id="detail-tags" class="detail-input" placeholder="标签" style="font-size: 13px; margin-bottom: 4px;">
+                    </div>
+
+                    <div class="detail-item">
+                        <textarea id="detail-annotation" class="detail-textarea" placeholder="注释" style="font-size: 13px; margin-bottom: 4px;"></textarea>
+                    </div>
+
+                    <div class="detail-item">
+                        <input type="text" id="detail-lastModified" class="detail-input" placeholder="最后修改" readonly style="font-size: 13px;">
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -223,6 +647,108 @@
     </div>
     
     <script type="text/javascript" src="js/plugin.js"></script>
+    <script>
+        // 等待页面加载完成
+        document.addEventListener('DOMContentLoaded', function() {
+            // 模拟表格行点击事件处理
+            const tableContainer = document.getElementById('item-table');
+            
+            // 由于表格是通过Tabulator动态生成的，我们需要在表格初始化后绑定事件
+            // 这里添加一个函数，在表格初始化后调用
+            if (typeof initTableClickHandler === 'function') {
+                initTableClickHandler();
+            }
+        });
+        
+        // 初始化表格点击处理函数
+        function initTableClickHandler() {
+            // 为表格添加行点击事件监听器
+            // 注意：这需要在Tabulator表格初始化后调用
+            if (window.table) {
+                window.table.on("rowClick", function(e, row) {
+                    updateDetailsPanel(row.getData());
+                });
+            }
+        }
+        
+        // 更新详情面板内容
+        function updateDetailsPanel(data) {
+            // 更新图像预览（如果有缩略图）
+            const previewContainer = document.getElementById('image-preview-container');
+            const previewElement = document.getElementById('image-preview');
+
+            if (data.thumbnail) {
+                previewElement.src = data.thumbnail;
+                previewContainer.style.display = 'block';
+            } else {
+                previewContainer.style.display = 'none';
+            }
+
+            // 更新名称
+            const nameElement = document.getElementById('detail-name');
+            if (nameElement) {
+                nameElement.value = data.name || '';
+            }
+
+            // 更新文件夹
+            const foldersElement = document.getElementById('detail-folders');
+            if (foldersElement) {
+                foldersElement.value = data.folders || '';
+            }
+
+            // 更新标签
+            const tagsElement = document.getElementById('detail-tags');
+            if (tagsElement) {
+                tagsElement.value = data.tags || '';
+            }
+
+            // 更新注释
+            const annotationElement = document.getElementById('detail-annotation');
+            if (annotationElement) {
+                annotationElement.value = data.annotation || '';
+            }
+
+            // 更新最后修改时间
+            const lastModifiedElement = document.getElementById('detail-lastModified');
+            if (lastModifiedElement && data.lastModified) {
+                // 格式化日期显示
+                const date = new Date(data.lastModified);
+                lastModifiedElement.value = date.toLocaleString('zh-CN');
+            } else if (lastModifiedElement) {
+                lastModifiedElement.value = '';
+            }
+        }
+        
+        // 页面加载完成后尝试初始化表格点击处理
+        setTimeout(function() {
+            if (window.table) {
+                initTableClickHandler();
+            }
+        }, 1000);
+        
+        // 重写初始化函数以确保在表格创建后绑定事件
+        function initializeTableWithClickHandler() {
+            // 等待表格初始化完成后再绑定事件
+            const checkTableInterval = setInterval(function() {
+                if (window.table) {
+                    window.table.on("rowClick", function(e, row) {
+                        updateDetailsPanel(row.getData());
+                    });
+                    clearInterval(checkTableInterval);
+                }
+            }, 100);
+            
+            // 设置超时时间，避免无限等待
+            setTimeout(function() {
+                clearInterval(checkTableInterval);
+            }, 5000);
+        }
+        
+        // 页面加载完成后初始化表格点击处理
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeTableWithClickHandler();
+        });
+    </script>
     <script>
         // 添加mindmap按钮点击事件
         document.getElementById('mindmap-btn').addEventListener('click', function() {
