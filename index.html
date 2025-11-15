@@ -8,15 +8,12 @@
     <!-- 引入Tabulator样式 -->
     <link href="https://unpkg.com/tabulator-tables@5.4.4/dist/css/tabulator.min.css" rel="stylesheet">
     
-    <!-- 引入阿里巴巴iconfont图标库 -->
-    <link rel="stylesheet" href="https://at.alicdn.com/t/font_3303843_467u1005y5n.css">
-    
     <style>
         :root {
-            --primary-color: #000000;
-            --success-color: #000000;
-            --warning-color: #000000;
-            --danger-color: #000000;
+            --primary-color: #8b5d3c; /* 使用mindmap.css中的颜色定义 */
+            --success-color: #54e57b;
+            --warning-color: #861948;
+            --danger-color: #ff2c18;
             --light-gray: #f5f5f7;
             --medium-gray: #86868b;
             --dark-gray: #1d1d1f;
@@ -76,6 +73,32 @@
             color: var(--dark-gray);
         }
         
+        .header-button {
+            background: transparent;
+            color: var(--dark-gray);
+            border: none;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+            white-space: nowrap;
+            margin-left: 8px;
+        }
+        
+        .header-button:hover {
+            background: #f5f5f7;
+        }
+        
+        .header-button:disabled {
+            background: transparent;
+            color: var(--medium-gray);
+            cursor: not-allowed;
+        }
+        
         .header-menu {
             display: flex;
             margin-right: 20px;
@@ -102,7 +125,7 @@
         }
         
         .search-box {
-            padding: 5px 10px 5px 28px;
+            padding: 5px 10px;
             border: 1px solid var(--border-color);
             border-radius: 4px;
             font-size: 13px;
@@ -118,14 +141,6 @@
             background-color: white;
             box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
             width: 280px;
-        }
-        
-        .search-icon {
-            position: absolute;
-            left: 70px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--medium-gray);
         }
         
         .header-actions {
@@ -312,8 +327,61 @@
         }
         
         #item-table {
-            border: none;
+            border: 1px solid #ddd;
+            border-right: none; /* 移除右边框，使其与详情面板边缘对齐 */
             height: 100%; /* 确保填满父容器 */
+        }
+        
+        /* 消除表格行间空隙 */
+        .tabulator-tableholder {
+            border-spacing: 0;
+            border-collapse: collapse;
+        }
+        
+        .tabulator-row {
+            margin: 0;
+            padding: 0;
+            /* 移除固定行高设置，让行高自适应内容 */
+            border-bottom: 1px solid #ddd; /* 添加行底部边框 */
+        }
+        
+        /* 为第一行添加顶部边框 */
+        .tabulator-row:first-child {
+            border-top: 1px solid #ddd;
+        }
+        
+        /* 禁用表格行选中时的蓝色背景 */
+        .tabulator-row.tabulator-selected {
+            background-color: transparent !important;
+        }
+        
+        .tabulator-row.tabulator-selectable:hover {
+            background-color: transparent !important;
+        }
+        
+        /* 确保表格单元格大小在排序时保持一致 */
+        .tabulator-cell {
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            border-right: 1px solid #ddd; /* 添加单元格右边框 */
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* 移除最后一列的右边框 */
+        .tabulator-cell:last-child {
+            border-right: none;
+        }
+        
+        /* 移除表头单元格的右边框 */
+        .tabulator-col .tabulator-cell {
+            border-right: none;
+        }
+        
+        /* 为表头添加底部边框 */
+        .tabulator-header .tabulator-col {
+            border-bottom: 1px solid #ddd;
         }
 
         .image-cell {
@@ -321,14 +389,16 @@
             justify-content: center;
             align-items: center;
             width: 100%;
-            height: 100%;
+            height: 60px; /* 与表格行高保持一致 */
             overflow: hidden;
         }
 
         .image-cell img {
             max-width: 100%;
             max-height: 100%;
-            object-fit: contain;
+            object-fit: contain; /* 修改为contain以自适应显示完整图片 */
+            width: auto;
+            height: auto;
         }
         
         .details-section {
@@ -338,6 +408,7 @@
             padding: 0; /* 移除内边距以实现顶格效果 */
             box-shadow: none;
             overflow-y: auto;
+            border-left: 1px solid #ddd; /* 添加左边框与表格右侧对齐 */
         }
         
         .details-section h3 {
@@ -452,22 +523,6 @@
             flex: 1;
         }
         
-        .iconfont {
-            font-size: 16px;
-            vertical-align: middle;
-        }
-        
-        button .iconfont {
-            margin-right: 5px;
-        }
-        
-        .search-icon .iconfont {
-            font-size: 14px;
-        }
-        
-        .action-icon .iconfont {
-            font-size: 16px;
-        }
         
         @media (max-width: 768px) {
             body {
@@ -488,15 +543,13 @@
                 width: 180px;
             }
             
-            .search-icon {
-                left: 15px;
-            }
+            /* 移除了搜索图标相关的CSS样式 */
         }
         
         .image-preview-container {
             width: 100%;
-            height: 200px;
-            background-color: white;
+            /* 移除固定高度，让容器自适应图片大小 */
+            background-color: transparent; /* 取消白底 */
             border-radius: 6px;
             display: flex;
             align-items: center;
@@ -508,7 +561,23 @@
         
         #image-preview {
             max-width: 100%;
-            max-height: 100%;
+            max-height: 200px; /* 保持最大高度限制 */
+            width: auto;
+            height: auto;
+            object-fit: contain;
+        }
+        
+        #image-preview-container {
+            width: 100%;
+            height: 200px;
+            background-color: transparent; /* 取消白底 */
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            overflow: hidden;
+            position: relative;
         }
         
         #no-image-text {
@@ -540,53 +609,50 @@
         }
         
         #detail-folders::before {
-            content: "📁 ";
+            /* content: "📁 "; */
+            content: "";
         }
         
         #detail-tags::before {
-            content: "🏷️ ";
+            /* content: "🏷️ "; */
+            content: "";
         }
         
         #detail-annotation::before {
-            content: "📝 ";
+            /* content: "📝 "; */
+            content: "";
         }
         
         #detail-lastModified::before {
-            content: "🕒 ";
+            /* content: "🕒 "; */
+            content: "";
         }
     </style>
 </head>
 
 <body>
-    <div class="header">
+    <nav class="header">
         <div class="header-left">
-            <div class="header-menu">
-                <a href="#">文件</a>
-                <a href="#">编辑</a>
+            <button id="refresh-btn" class="header-button">刷新数据</button>
+            <button id="template-btn" class="header-button">属性模板</button>
+            <button id="visualization-btn" class="header-button" disabled>数据可视化</button>
+        </div>
+        
+        <div class="header-center">
+            <div class="search-container">
+                <input type="text" class="search-box" placeholder="搜索图片..." id="search-box">
+                <!-- 移除了放大镜图标 -->
             </div>
         </div>
-        <div class="search-container">
-            <span class="search-icon"><i class="iconfont icon-search"></i></span>
-            <input type="text" class="search-box" id="search-box" placeholder="搜索图片名称、标签或注释...">
-        </div>
+        
         <div class="header-right">
-            <div class="header-actions">
-                <div class="action-icon"><i class="iconfont icon-upload"></i></div>
-            </div>
+            <button id="export-csv-btn" class="header-button">导出CSV</button>
+            <button id="mindmap-btn" class="header-button">图谱</button>
         </div>
-    </div>
+    </nav>
     
     <div class="toolbar">
         <div class="toolbar-left">
-            <div class="toolbar-group">
-                <button id="refresh-btn"><i class="iconfont icon-refresh"></i> 刷新数据</button>
-            </div>
-            
-            <div class="toolbar-group">
-                <button id="template-btn"><i class="iconfont icon-template"></i> 属性模板</button>
-                <button id="visualization-btn" disabled><i class="iconfont icon-chart"></i> 数据可视化</button>
-            </div>
-            
             <div class="grouping-controls">
                 <label for="grouping-select">分组方式:</label>
                 <select id="grouping-select">
@@ -598,8 +664,20 @@
         </div>
         
         <div class="toolbar-right">
-            <div class="action-icon"><i class="iconfont icon-list"></i></div>
-            <div class="action-icon"><i class="iconfont icon-grid"></i></div>
+            <!-- 移除了无用的列表视图和网格视图按钮 -->
+            <!-- 添加页码选择器 -->
+            <div class="grouping-controls">
+                <label for="page-size-select">显示:</label>
+                <select id="page-size-select">
+                    <option value="10">显示10条/页</option>
+                    <option value="20">显示20条/页</option>
+                    <option value="50" selected>显示50条/页</option>
+                    <option value="100">显示100条/页</option>
+                    <option value="200">显示200条/页</option>
+                    <option value="500">显示500条/页</option>
+                </select>
+            </div>
+            
         </div>
     </div>
     
@@ -648,29 +726,119 @@
     
     <script type="text/javascript" src="js/plugin.js"></script>
     <script>
-        // 等待页面加载完成
+        // 添加按钮点击事件处理
         document.addEventListener('DOMContentLoaded', function() {
-            // 模拟表格行点击事件处理
-            const tableContainer = document.getElementById('item-table');
+            // 刷新数据按钮事件处理
+            const refreshBtn = document.getElementById('refresh-btn');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', async function() {
+                    try {
+                        const data = await loadEagleItems();
+                        if (window.table) {
+                            window.table.setData(data);
+                        }
+                    } catch (error) {
+                        console.error('[UI] 刷新数据失败:', error);
+                    }
+                });
+            }
             
-            // 由于表格是通过Tabulator动态生成的，我们需要在表格初始化后绑定事件
-            // 这里添加一个函数，在表格初始化后调用
-            if (typeof initTableClickHandler === 'function') {
-                initTableClickHandler();
+            // 属性模板按钮事件处理
+            const templateBtn = document.getElementById('template-btn');
+            if (templateBtn) {
+                templateBtn.addEventListener('click', function() {
+                    // 属性模板功能待实现
+                });
+            }
+            
+            // 数据可视化按钮事件处理
+            const visualizationBtn = document.getElementById('visualization-btn');
+            if (visualizationBtn) {
+                visualizationBtn.addEventListener('click', function() {
+                    // 数据可视化功能待实现
+                });
+            }
+            
+            // 导出CSV按钮事件处理
+            const exportCsvBtn = document.getElementById('export-csv-btn');
+            if (exportCsvBtn) {
+                exportCsvBtn.addEventListener('click', function() {
+                    exportTableToCSV('eagle_data.csv');
+                });
+            }
+            
+            // 图谱按钮事件处理
+            const mindmapBtn = document.getElementById('mindmap-btn');
+            if (mindmapBtn) {
+                mindmapBtn.addEventListener('click', function() {
+                    window.location.href = 'mindmap.html';
+                });
             }
         });
         
-        // 初始化表格点击处理函数
-        function initTableClickHandler() {
-            // 为表格添加行点击事件监听器
-            // 注意：这需要在Tabulator表格初始化后调用
-            if (window.table) {
-                window.table.on("rowClick", function(e, row) {
-                    updateDetailsPanel(row.getData());
+        // 导出表格数据为CSV文件
+        function exportTableToCSV(filename) {
+            try {
+                // 获取表格数据
+                const table = window.table;
+                if (!table) {
+                    console.error('[EXPORT] 表格数据未找到');
+                    alert('导出失败：未找到表格数据');
+                    return;
+                }
+                
+                // 获取所有行数据
+                const data = table.getData();
+                if (!data || data.length === 0) {
+                    console.error('[EXPORT] 表格数据为空');
+                    alert('导出失败：表格数据为空');
+                    return;
+                }
+                
+                console.log('[EXPORT] 准备导出', data.length, '条数据');
+                
+                // 定义CSV列标题
+                const headers = ['名称', '文件夹', '标签', '注释', '最后修改时间'];
+                
+                // 创建CSV内容
+                let csvContent = '\uFEFF' + headers.join(',') + '\n'; // 添加BOM以支持中文
+                
+                // 添加数据行
+                data.forEach(row => {
+                    try {
+                        const values = [
+                            `"${(row.name || '').replace(/"/g, '""')}"`,
+                            `"${(row.folders || '').replace(/"/g, '""')}"`,
+                            `"${(row.tags || []).join(';').replace(/"/g, '""')}"`,
+                            `"${(row.annotation || '').replace(/"/g, '""')}"`,
+                            `"${row.lastModified ? new Date(row.lastModified).toLocaleString('zh-CN') : ''}"`
+                        ];
+                        csvContent += values.join(',') + '\n';
+                    } catch (rowError) {
+                        console.error('[EXPORT] 处理行数据时出错:', rowError, row);
+                    }
                 });
+                
+                // 创建下载链接
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                console.log('[EXPORT] 导出完成');
+            } catch (error) {
+                console.error('[EXPORT] 导出过程中出现错误:', error);
+                alert('导出失败：' + error.message);
             }
         }
-        
+    </script>
+    
+    <script>
         // 更新详情面板内容
         function updateDetailsPanel(data) {
             // 更新图像预览（如果有缩略图）
@@ -678,10 +846,16 @@
             const previewElement = document.getElementById('image-preview');
 
             if (data.thumbnail) {
-                previewElement.src = data.thumbnail;
-                previewContainer.style.display = 'block';
+                if (previewElement) {
+                    previewElement.src = data.thumbnail;
+                }
+                if (previewContainer) {
+                    previewContainer.style.display = 'block';
+                }
             } else {
-                previewContainer.style.display = 'none';
+                if (previewContainer) {
+                    previewContainer.style.display = 'none';
+                }
             }
 
             // 更新名称
@@ -718,42 +892,6 @@
                 lastModifiedElement.value = '';
             }
         }
-        
-        // 页面加载完成后尝试初始化表格点击处理
-        setTimeout(function() {
-            if (window.table) {
-                initTableClickHandler();
-            }
-        }, 1000);
-        
-        // 重写初始化函数以确保在表格创建后绑定事件
-        function initializeTableWithClickHandler() {
-            // 等待表格初始化完成后再绑定事件
-            const checkTableInterval = setInterval(function() {
-                if (window.table) {
-                    window.table.on("rowClick", function(e, row) {
-                        updateDetailsPanel(row.getData());
-                    });
-                    clearInterval(checkTableInterval);
-                }
-            }, 100);
-            
-            // 设置超时时间，避免无限等待
-            setTimeout(function() {
-                clearInterval(checkTableInterval);
-            }, 5000);
-        }
-        
-        // 页面加载完成后初始化表格点击处理
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeTableWithClickHandler();
-        });
-    </script>
-    <script>
-        // 添加mindmap按钮点击事件
-        document.getElementById('mindmap-btn').addEventListener('click', function() {
-            window.location.href = 'mindmap.html';
-        });
     </script>
 </body>
 </html>

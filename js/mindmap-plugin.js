@@ -123,6 +123,146 @@ async function getLibraryInfoFromPluginAPI() {
         // 即使没有eagle，也尝试初始化
         initializeMindMapWhenReady();
     }
+    
+    // 绑定导航栏和功能栏事件
+    bindHeaderAndToolbarEvents();
+}
+
+// 绑定导航栏和功能栏事件
+function bindHeaderAndToolbarEvents() {
+    // 刷新数据按钮事件处理
+    const refreshBtn = document.getElementById('refresh-btn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', async function() {
+            try {
+                // TODO: 实现刷新数据功能
+                console.log('[MINDMAP] 刷新数据按钮被点击');
+            } catch (error) {
+                console.error('[MINDMAP] 刷新数据失败:', error);
+            }
+        });
+    }
+    
+    // 属性模板按钮事件处理
+    const templateBtn = document.getElementById('template-btn');
+    if (templateBtn) {
+        templateBtn.addEventListener('click', function() {
+            // TODO: 实现属性模板功能
+            console.log('[MINDMAP] 点击属性模板按钮');
+        });
+    }
+    
+    // 数据可视化按钮事件处理
+    const visualizationBtn = document.getElementById('visualization-btn');
+    if (visualizationBtn) {
+        visualizationBtn.addEventListener('click', function() {
+            // TODO: 实现数据可视化功能
+            console.log('[MINDMAP] 点击数据可视化按钮');
+        });
+    }
+    
+    // 导出CSV按钮事件处理
+    const exportCsvBtn = document.getElementById('export-csv-btn');
+    if (exportCsvBtn) {
+        exportCsvBtn.addEventListener('click', function() {
+            console.log('[MINDMAP] 点击导出CSV按钮');
+            // TODO: 实现导出CSV功能
+            alert('导出CSV功能将在后续版本中实现');
+        });
+    }
+    
+    // 表格按钮事件处理
+    const tableBtn = document.getElementById('table-btn');
+    if (tableBtn) {
+        tableBtn.addEventListener('click', function() {
+            window.location.href = 'index.html';
+        });
+    }
+    
+    // 分组控制事件处理
+    const groupingSelect = document.getElementById('grouping-select');
+    if (groupingSelect) {
+        groupingSelect.addEventListener('change', function() {
+            const selectedValue = this.value;
+            console.log('[MINDMAP] 分组方式更改:', selectedValue);
+            // TODO: 实现分组功能
+        });
+    }
+    
+    // 页码选择器事件处理
+    const pageSizeSelect = document.getElementById('page-size-select');
+    if (pageSizeSelect) {
+        pageSizeSelect.addEventListener('change', function() {
+            const pageSize = parseInt(this.value);
+            console.log('[MINDMAP] 页码选择器更改:', pageSize);
+            // TODO: 实现页码选择功能
+        });
+    }
+    
+    // 初始化思维导图缩放功能
+    initMindMapZoom();
+}
+
+// 思维导图缩放功能
+function initMindMapZoom() {
+    const mindmapContainer = document.getElementById('mindmap-container');
+    
+    // 检查必要元素是否存在
+    if (!mindmapContainer) {
+        console.warn('[MINDMAP ZOOM] 未找到思维导图容器');
+        return;
+    }
+    
+    let scale = 1;
+    
+    // 添加鼠标滚轮缩放事件
+    mindmapContainer.addEventListener('wheel', function(e) {
+        // 检查是否按住了Ctrl键
+        if (e.ctrlKey) {
+            e.preventDefault();
+            
+            // 根据滚轮方向调整缩放比例 (使用较低的灵敏度0.05)
+            const delta = e.deltaY > 0 ? -0.05 : 0.05;
+            scale = Math.max(0.1, Math.min(3, scale + delta));
+            
+            // 应用缩放变换
+            applyZoom();
+        }
+    });
+    
+    // 放大按钮事件
+    const zoomInBtn = document.getElementById('zoom-in-btn');
+    if (zoomInBtn) {
+        zoomInBtn.addEventListener('click', function() {
+            scale = Math.min(3, scale + 0.05);
+            applyZoom();
+        });
+    }
+    
+    // 缩小按钮事件
+    const zoomOutBtn = document.getElementById('zoom-out-btn');
+    if (zoomOutBtn) {
+        zoomOutBtn.addEventListener('click', function() {
+            scale = Math.max(0.1, scale - 0.05);
+            applyZoom();
+        });
+    }
+    
+    // 重置缩放按钮事件
+    const zoomResetBtn = document.getElementById('zoom-reset-btn');
+    if (zoomResetBtn) {
+        zoomResetBtn.addEventListener('click', function() {
+            scale = 1;
+            applyZoom();
+        });
+    }
+    
+    // 应用缩放变换
+    function applyZoom() {
+        // 使用transform替代zoom以获得更好的浏览器兼容性
+        mindmapContainer.style.transform = `scale(${scale})`;
+        mindmapContainer.style.transformOrigin = 'center top';
+    }
 }
 
 // 当数据准备好时初始化思维导图

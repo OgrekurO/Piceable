@@ -111,8 +111,8 @@ async function initializeApp() {
 
 // 初始化思维导图
 function initMindMap() {
-    console.log('[CORE] 思维导图初始化函数被调用');
-    // TODO: 此处将实现实时渲染当前数据集文件夹结构的思维导图
+    // 思维导图初始化函数
+    // 此处将实现实时渲染当前数据集文件夹结构的思维导图
     // 需要创建或调用一个专门处理mindmap的模块
 }
 

@@ -17,15 +17,60 @@
 </head>
 
 <body>
-    <div class="header">
-        <h1>🧠 Eagle 文件夹结构思维导图</h1>
-        <a href="index.html" class="back-link">🔙 返回主界面</a>
-    </div>
+    <nav class="header-nav">
+        <div class="header-left">
+            <button id="refresh-btn" class="header-button">刷新数据</button>
+            <button id="template-btn" class="header-button">属性模板</button>
+            <button id="visualization-btn" class="header-button" disabled>数据可视化</button>
+            
+            <div class="header-menu">
+                <a href="#" class="active">项目管理</a>
+                <a href="#">文件夹管理</a>
+                <a href="#">标签管理</a>
+            </div>
+            
+            <div class="search-container">
+                <input type="text" class="search-box" placeholder="搜索文件夹..." id="search-box">
+            </div>
+        </div>
+        
+        <div class="header-right">
+            <button id="export-csv-btn" class="header-button">导出CSV</button>
+            <button id="table-btn" class="header-button">表格</button>
+        </div>
+    </nav>
     
     <div class="toolbar">
-        <div class="toolbar-group">
-            <button id="mindmap-save-btn">💾 保存更改</button>
-            <button id="mindmap-refresh-btn">🔄 刷新数据</button>
+        <div class="toolbar-left">
+            <div class="grouping-controls">
+                <label for="grouping-select">分组方式:</label>
+                <select id="grouping-select">
+                    <option value="">无分组</option>
+                    <option value="countryGroup">按国家分组</option>
+                    <option value="regionGroup">按地区分组</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="toolbar-right">
+            <div class="grouping-controls">
+                <label for="page-size-select">显示:</label>
+                <select id="page-size-select">
+                    <option value="10">显示10条/页</option>
+                    <option value="20">显示20条/页</option>
+                    <option value="50" selected>显示50条/页</option>
+                    <option value="100">显示100条/页</option>
+                    <option value="200">显示200条/页</option>
+                    <option value="500">显示500条/页</option>
+                </select>
+            </div>
+            
+            <!-- 添加缩放控制按钮 -->
+            <div class="zoom-controls">
+                <button id="zoom-in-btn" class="header-button">放大</button>
+                <button id="zoom-out-btn" class="header-button">缩小</button>
+                <button id="zoom-reset-btn" class="header-button">重置</button>
+            </div>
         </div>
     </div>
     
