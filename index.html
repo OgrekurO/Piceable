@@ -774,7 +774,55 @@
                     window.location.href = 'mindmap.html';
                 });
             }
+            
+            // 为详情面板的输入字段添加事件监听器，实现数据同步
+            const detailInputs = [
+                { id: 'detail-name', field: 'name' },
+                { id: 'detail-folders', field: 'folders' },
+                { id: 'detail-tags', field: 'tags' },
+                { id: 'detail-annotation', field: 'annotation' }
+            ];
+            
+            detailInputs.forEach(item => {
+                const element = document.getElementById(item.id);
+                if (element) {
+                    // 失去焦点时更新数据
+                    element.addEventListener('blur', function() {
+                        updateTableFromDetails(item.field, this.value);
+                    });
+                    
+                    // 按下Enter键时更新数据
+                    if (item.id !== 'detail-annotation') { // 注释字段使用textarea，不监听Enter键
+                        element.addEventListener('keydown', function(e) {
+                            if (e.key === 'Enter') {
+                                updateTableFromDetails(item.field, this.value);
+                            }
+                        });
+                    }
+                }
+            });
         });
+        
+        // 从详情面板更新表格数据
+        function updateTableFromDetails(field, value) {
+            // 获取当前选中的行
+            if (window.currentSelectedRowId && window.table) {
+                const row = window.table.getRow(window.currentSelectedRowId);
+                if (row) {
+                    // 更新行数据
+                    const rowData = row.getData();
+                    rowData[field] = value;
+                    row.update(rowData);
+                    
+                    // 触发数据同步
+                    window.hasUnsavedChanges = true;
+                    setTimeout(async () => {
+                        showStatus('正在自动同步数据到Eagle...', 'info');
+                        await syncDataToEagle();
+                    }, 100);
+                }
+            }
+        }
         
         // 导出表格数据为CSV文件
         function exportTableToCSV(filename) {
@@ -841,6 +889,11 @@
     <script>
         // 更新详情面板内容
         function updateDetailsPanel(data) {
+            // 保存当前选中行的ID
+            if (data.id) {
+                window.currentSelectedRowId = data.id;
+            }
+            
             // 更新图像预览（如果有缩略图）
             const previewContainer = document.getElementById('image-preview-container');
             const previewElement = document.getElementById('image-preview');

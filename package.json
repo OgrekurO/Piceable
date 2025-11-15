@@ -18,8 +18,6 @@
     "url": "https://github.com/OgrekurO/Piceable/issues"
   },
   "homepage": "https://github.com/OgrekurO/Piceable#readme",
-  "dependencies": {
-  },
   "devDependencies": {
     "http-server": "^14.1.1"
   }

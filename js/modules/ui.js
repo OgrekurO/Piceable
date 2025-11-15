@@ -57,22 +57,82 @@ function initializeTable() {
             {
                 title: "名称",
                 field: "name",
-                width: 200
+                editor: "input",
+                width: 200,
+                sorter: "string",
+                validator: ["required"],
+                cellClick: function(e, cell) {
+                    // 单击单元格时仅查看，不进行编辑
+                    console.log('[EDIT] 名称单元格被点击，ID:', cell.getRow().getData().id);
+                },
+                cellDblClick: function(e, cell) {
+                    // 双击单元格时触发编辑
+                    console.log('[EDIT] 名称单元格被双击，ID:', cell.getRow().getData().id);
+                    cell.edit();
+                },
+                cellEdited: function(cell) {
+                    // 单元格编辑完成事件
+                    console.log('[EDIT] 单元格编辑完成:', cell.getField(), '新值:', cell.getValue(), '行ID:', cell.getRow().getData().id);
+                    window.hasUnsavedChanges = true;
+                    
+                    // 更新详情面板中的对应字段
+                    const rowData = cell.getRow().getData();
+                    updateDetailsPanel(rowData);
+                    
+                    // 自动同步数据到Eagle，无需点击同步按钮
+                    setTimeout(async () => {
+                        console.log('[SYNC] 开始自动同步数据到Eagle');
+                        showStatus('正在自动同步数据到Eagle...', 'info');
+                        await syncDataToEagle();
+                        console.log('[SYNC] 数据同步完成');
+                    }, 100);
+                },
             },
             {
                 title: "文件夹",
                 field: "folders",
-                width: 150
+                editor: "input",
+                width: 150,
+                cellClick: function(e, cell) {
+                    // 单击单元格时仅查看，不进行编辑
+                    console.log('[EDIT] 文件夹单元格被点击，ID:', cell.getRow().getData().id);
+                },
+                cellDblClick: function(e, cell) {
+                    // 双击单元格时触发编辑
+                    console.log('[EDIT] 文件夹单元格被双击，ID:', cell.getRow().getData().id);
+                    cell.edit();
+                }
             },
             {
                 title: "标签",
                 field: "tags",
-                width: 200
+                editor: "input",
+                width: 200,
+                cellClick: function(e, cell) {
+                    // 单击单元格时仅查看，不进行编辑
+                    console.log('[EDIT] 标签单元格被点击，ID:', cell.getRow().getData().id);
+                },
+                cellDblClick: function(e, cell) {
+                    // 双击单元格时触发编辑
+                    console.log('[EDIT] 标签单元格被双击，ID:', cell.getRow().getData().id);
+                    cell.edit();
+                }
             },
             {
                 title: "注释",
                 field: "annotation",
-                width: 300
+                editor: "textarea",
+                formatter: "textarea",
+                width: 300,
+                cellClick: function(e, cell) {
+                    // 单击单元格时仅查看，不进行编辑
+                    console.log('[EDIT] 注释单元格被点击，ID:', cell.getRow().getData().id);
+                },
+                cellDblClick: function(e, cell) {
+                    // 双击单元格时触发编辑
+                    console.log('[EDIT] 注释单元格被双击，ID:', cell.getRow().getData().id);
+                    cell.edit();
+                }
             },
             {
                 title: "最后修改",
