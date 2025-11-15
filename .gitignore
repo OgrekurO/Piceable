@@ -3,3 +3,16 @@ node_modules/
 .DS_Store
 Thumbs.db
 .lingma
+*.tmp
+*.temp
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+dist/
+build/
+coverage/
+*.bak
+*.swp
+*.swo
