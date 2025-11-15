@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Eagle Ontology Frontend Bridge</title>
+    
+    <style>
+        :root {
+            --primary-color: #8b5d3c;
+            --success-color: #54e57b;
+            --warning-color: #861948;
+            --danger-color: #ff2c18;
+            --light-gray: #f5f5f7;
+            --medium-gray: #86868b;
+            --dark-gray: #1d1d1f;
+            --border-color: #d2d2d7;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #333;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: white;
+            padding: 0 15px;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 44px;
+        }
+        
+        .logo {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .status-section {
+            background: white;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        
+        .status-section h2 {
+            margin-top: 0;
+            color: var(--dark-gray);
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--light-gray);
+        }
+        
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        
+        .status-label {
+            font-weight: 500;
+            color: var(--dark-gray);
+        }
+        
+        .status-value {
+            color: var(--medium-gray);
+        }
+        
+        .status-value.connected {
+            color: var(--success-color);
+        }
+        
+        .status-value.disconnected {
+            color: var(--danger-color);
+        }
+        
+        .log-section {
+            background: white;
+            border-radius: 6px;
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        
+        .log-section h2 {
+            margin-top: 0;
+            color: var(--dark-gray);
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .log-container {
+            flex: 1;
+            background: #2b2b2b;
+            color: #f8f8f2;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 12px;
+            overflow: auto;
+            white-space: pre-wrap;
+        }
+        
+        .api-doc-link {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px 16px;
+            background-color: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .api-doc-link:hover {
+            background-color: #6b4428;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">Eagle Ontology Frontend Bridge</div>
+    </div>
+    
+    <div class="main-content">
+        <div class="status-section">
+            <h2>连接状态</h2>
+            <div class="status-item">
+                <span class="status-label">Eagle API:</span>
+                <span id="eagle-api-status" class="status-value disconnected">未连接</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">前端连接:</span>
+                <span id="frontend-status" class="status-value disconnected">未连接</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">HTTP服务器:</span>
+                <span id="server-status" class="status-value">未知</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">数据加载:</span>
+                <span id="data-status" class="status-value">未加载</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">API文档:</span>
+                <span class="status-value">
+                    <a href="http://localhost:3001" class="api-doc-link" target="_blank">访问API文档</a>
+                </span>
+            </div>
+        </div>
+        
+        <div class="log-section">
+            <h2>通信日志</h2>
+            <div id="log-container" class="log-container"></div>
+        </div>
+    </div>
+
+    <!-- 引入主插件脚本 -->
+    <script src="js/plugin.js"></script>
+    
+    <script>
+        // 日志记录函数
+        function log(message) {
+            const logContainer = document.getElementById('log-container');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logContainer.textContent += logEntry;
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        // 更新状态显示
+        function updateStatus(elementId, status, isConnected) {
+            const element = document.getElementById(elementId);
+            element.textContent = status;
+            element.className = 'status-value ' + (isConnected ? 'connected' : 'disconnected');
+        }
+        
+        // 检查是否与前端建立了连接
+        let frontendConnected = false;
+        
+        // 监听来自前端的消息
+        window.addEventListener('message', function(event) {
+            // 在实际部署中应该验证event.origin
+            if (!event.data) return;
+            
+            log('收到来自前端的消息: ' + JSON.stringify(event.data));
+            frontendConnected = true;
+            updateStatus('frontend-status', '已连接', true);
+            
+            // 处理特定类型的消息
+            if (event.data.type === 'PING') {
+                // 发送响应
+                if (event.source) {
+                    const response = {
+                        id: event.data.id,
+                        success: true,
+                        data: { message: 'pong' }
+                    };
+                    event.source.postMessage(response, '*');
+                    log('发送PING响应: ' + JSON.stringify(response));
+                }
+            }
+        });
+        
+        // 定期检查连接状态
+        setInterval(() => {
+            if (!frontendConnected) {
+                updateStatus('frontend-status', '未连接', false);
+            }
+        }, 5000);
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            log('插件页面加载完成');
+            
+            // 检查Eagle API
+            if (typeof window.eagle !== 'undefined') {
+                updateStatus('eagle-api-status', '已连接', true);
+                log('检测到Eagle API');
+            } else {
+                updateStatus('eagle-api-status', '未连接', false);
+                log('未检测到Eagle API');
+            }
+            
+            // 定期尝试发送准备就绪消息直到前端连接建立
+            const sendReadyInterval = setInterval(() => {
+                if (!frontendConnected) {
+                    // 创建准备就绪消息
+                    const readyMessage = {
+                        type: 'PLUGIN_READY',
+                        data: { status: 'ready', timestamp: Date.now() }
+                    };
+                    
+                    // 发送到所有可能的窗口
+                    let sent = false;
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage(readyMessage, '*');
+                        sent = true;
+                    }
+                    
+                    if (window.opener) {
+                        window.opener.postMessage(readyMessage, '*');
+                        sent = true;
+                    }
+                    
+                    if (sent) {
+                        log('发送准备就绪消息');
+                    }
+                } else {
+                    // 前端已连接，停止发送准备就绪消息
+                    clearInterval(sendReadyInterval);
+                }
+            }, 3000); // 每3秒发送一次准备就绪消息
+        });
+    </script>
+</body>
+</html>

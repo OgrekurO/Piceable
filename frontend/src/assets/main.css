@@ -1,0 +1,38 @@
+@import './base.css';
+
+#app {
+  /* 移除最大宽度限制和居中对齐，让应用占满整个窗口 */
+  /* max-width: 1280px; */
+  /* margin: 0 auto; */
+  padding: 0; /* 移除默认内边距 */
+  font-weight: normal;
+  height: 100vh; /* 确保应用占满整个视口高度 */
+}
+
+a,
+.green {
+  text-decoration: none;
+  color: rgb(134, 134, 134);
+  transition: 0.4s;
+  padding: 3px;
+}
+
+@media (hover: hover) {
+  a:hover {
+    background-color: hsla(0, 0%, 69%, 0.2);
+  }
+}
+
+@media (min-width: 1024px) {
+  body {
+    display: block; /* 改为block而不是flex */
+    place-items: unset; /* 取消居中对齐 */
+  }
+
+  #app {
+    display: block; /* 改为block而不是grid */
+    /* grid-template-columns: 1fr 1fr; */
+    padding: 0; /* 移除内边距 */
+    height: 100vh; /* 确保应用占满整个视口高度 */
+  }
+}

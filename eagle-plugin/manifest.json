@@ -1,0 +1,16 @@
+{
+    "id": "587a5a6e-daf9-4b9d-8882-10640f816728",
+    "version": "1.0.0",
+    "platform": "all",
+    "arch": "all",
+    "name": "Eagle Ontology Frontend Bridge",
+    "logo": "/logo.png",
+    "keywords": ["ontology", "frontend", "bridge", "通信", "桥接"],
+    "devTools": false,
+    "serviceMode": true,
+    "main": {
+        "url": "index.html",
+        "width": 800,
+        "height": 600
+    }
+}

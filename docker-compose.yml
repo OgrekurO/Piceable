@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  frontend:
+    # 前端服务
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./eagle-plugin:/usr/share/nginx/html
+    depends_on:
+      - backend
+
+  backend:
+    # 后端服务
+    # image: your-backend-image  # 需要替换为实际的后端镜像
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///db/data.db
+    volumes:
+      - ./db:/app/db
+
+  database:
+    # 数据库服务
+    image: postgres:13
+    environment:
+      POSTGRES_DB: eagle_ontology
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - ./db/postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
