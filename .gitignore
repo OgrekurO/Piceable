@@ -1,5 +1,38 @@
+# Dependencies
 node_modules/
+
+# Build outputs
+/dist/
+/build/
+/.vite/
+
+# Logs
+logs
 *.log
+
+# Environment files
+.env*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
 .DS_Store
 Thumbs.db
 .lingma
+
+# Database files
+*.db
+*.sqlite
+
+# Docker
+.dockerignore
+
+# Backend specific
+/backend/.env
+/backend/venv/
+/backend/__pycache__/
+/backend/*/__pycache__/

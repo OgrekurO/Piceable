@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # PostgreSQL数据库服务
+  postgres:
+    image: postgres:15
+    container_name: eagle_ontology_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: eagle_ontology
+      POSTGRES_USER: eagle_user
+      POSTGRES_PASSWORD: eagle_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  # 后端服务
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: eagle_ontology_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://eagle_user:eagle_password@postgres:5432/eagle_ontology
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend:/app
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: eagle_ontology_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+volumes:
+  postgres_data:

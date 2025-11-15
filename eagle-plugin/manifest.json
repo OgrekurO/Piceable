@@ -1,0 +1,15 @@
+{
+  "name": "Eagle Ontology Manager",
+  "version": "2.0.0",
+  "identifier": "com.eagle-ontology.manager",
+  "author": "Eagle Ontology Team",
+  "description": "图像本体管理器，用于管理Eagle中的图像属性和结构",
+  "homepage": "https://github.com/OgrekurO/Piceable",
+  "main": "main.js",
+  "icon": "icon.png",
+  "permissions": [
+    "library.info",
+    "item.read",
+    "item.write"
+  ]
+}
