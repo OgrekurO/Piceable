@@ -1,41 +1,44 @@
-
 <template>
-  <div class="home-page">
-    <header>
-      <h1>Eagle Ontology Manager</h1>
-      <p>基于本体论的Eagle资源管理工具</p>
-    </header>
+  <MainLayout>
+    <div class="home-page">
+      <header>
+        <h1>Eagle Ontology Manager</h1>
+        <p>基于本体论的Eagle资源管理工具</p>
+      </header>
 
-    <main>
-      <div class="features">
-        <div class="feature-card">
-          <div class="feature-icon">📊</div>
-          <h3>数据可视化</h3>
-          <p>通过思维导图和表格形式展示Eagle资源</p>
+      <main>
+        <div class="features">
+          <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h3>数据可视化</h3>
+            <p>通过思维导图和表格形式展示Eagle资源</p>
+          </div>
+          
+          <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <h3>数据同步</h3>
+            <p>支持与Eagle插件进行数据同步</p>
+          </div>
+          
+          <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <h3>HTTP API</h3>
+            <p>采用HTTP API作为主要通信方式</p>
+          </div>
         </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">🔄</div>
-          <h3>数据同步</h3>
-          <p>支持与Eagle插件进行数据同步</p>
-        </div>
-        
-        <div class="feature-card">
-          <div class="feature-icon">🌐</div>
-          <h3>HTTP API</h3>
-          <p>采用HTTP API作为主要通信方式</p>
-        </div>
-      </div>
 
-      <div class="actions">
-        <router-link to="/table" class="btn primary">查看项目表格</router-link>
-        <router-link to="/mindmap" class="btn">查看思维导图</router-link>
-      </div>
-    </main>
-  </div>
+        <div class="actions">
+          <router-link to="/table" class="btn primary">查看项目表格</router-link>
+          <router-link to="/mindmap" class="btn">查看思维导图</router-link>
+        </div>
+      </main>
+    </div>
+  </MainLayout>
 </template>
 
 <script setup lang="ts">
+import MainLayout from '@/layouts/MainLayout.vue'
+
 // 移除了自动跳转逻辑，让用户可以停留在主页
 </script>
 
@@ -44,11 +47,14 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  height: calc(100vh - 120px); /* 减去MainLayout header的高度 */
+  overflow-y: auto;
 }
 
 header {
   text-align: center;
   margin-bottom: 40px;
+  padding-top: 20px;
 }
 
 header h1 {

@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "platform": "all",
     "arch": "all",
-    "name": "Eagle Ontology Frontend Bridge",
+    "name": "piceable4Eagle",
     "logo": "/logo.png",
     "keywords": ["ontology", "frontend", "bridge", "通信", "桥接"],
     "devTools": false,
