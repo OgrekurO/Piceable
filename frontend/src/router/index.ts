@@ -3,6 +3,7 @@ import HomePage from '../views/HomePage.vue'
 import MindMapPage from '../views/MindMapPage.vue'
 import TablePage from '../views/TablePage.vue'
 import SettingsPage from '../views/SettingsPage.vue'
+import LoginRegisterPage from '../views/LoginRegisterPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -26,6 +27,11 @@ const router = createRouter({
       path: '/settings',
       name: 'settings',
       component: SettingsPage
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: LoginRegisterPage
     }
   ]
 })

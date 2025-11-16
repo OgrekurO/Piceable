@@ -2,7 +2,7 @@
   <div class="main-layout">
     <header class="header">
       <div class="header-left">
-        <h1>Eagle Ontology Manager</h1>
+        <h1>Piceable</h1>
       </div>
       
       <div class="header-center">
@@ -24,6 +24,16 @@
           <router-link to="/table">表格视图</router-link>
           <router-link to="/settings">设置</router-link>
         </nav>
+        
+        <div class="auth-buttons" v-if="!authStore.isAuth">
+          <router-link to="/login" class="auth-link">登录</router-link>
+          <router-link to="/login" class="auth-link register">注册</router-link>
+        </div>
+        
+        <div class="user-info" v-else>
+          <span class="username">{{ authStore.currentUser?.username }}</span>
+          <button class="logout-btn" @click="handleLogout">退出</button>
+        </div>
         
         <div class="header-actions">
           <div class="action-icon" @click="refreshData" title="刷新">
@@ -47,6 +57,12 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+
+// 获取认证存储和路由实例
+const authStore = useAuthStore()
+const router = useRouter()
 
 // 搜索文本
 const searchText = ref('')
@@ -63,12 +79,25 @@ const refreshData = () => {
   console.log('刷新数据')
   // 这里可以触发全局数据刷新逻辑
 }
+
+// 处理用户登出
+const handleLogout = () => {
+  authStore.logout()
+  router.push('/login')
+}
 </script>
 
 <style scoped>
+/* 定义CSS变量 */
+:root {
+  --header-height: 120px;
+  --border-color: #ddd;
+  --light-gray: #f8f9fa;
+  --medium-gray: #6c757d;
+  --dark-gray: #343a40;
+}
+
 .main-layout {
-  --header-height: 60px;
-  
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -77,49 +106,43 @@ const refreshData = () => {
 
 .header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 1rem 1rem;
-  background-color: var(--light-gray);
-  border-bottom: 1px solid var(--border-color);
+  padding: 0 1rem;
   height: var(--header-height);
-  z-index: 100;
-  box-shadow: 0 1px 0 rgba(0,0,0,0.1);
+  background-color: white;
+  border-bottom: 1px solid var(--border-color);
+  position: relative;
 }
 
-.header h1 {
+.header-left h1 {
   margin: 0;
-  font-size: 1rem;
-  font-weight: bold;
-  color: var(--dark-gray);
+  font-size: 1.5rem;
+  color: #333;
 }
 
 .header-center {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  padding: 0 1rem;
+  position: absolute;
+  left: 160px;
+  width: 500px;
+  height: 30px;
 }
 
 .search-container {
-  max-width: 400px;
   width: 100%;
-  flex: 1;
-  display: flex;
-  justify-content: center;
+  height: 100%;
   position: relative;
-
 }
 
 .search-box {
-  padding: 5px 10px;
+  padding: 6px 10px;
   border: 1px solid var(--border-color);
-  border-radius: 4px;
-  font-size: 13px;
-  width: 60%;
-  max-width: 300px;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 100%;
+  height: 100%;
   background-color: var(--light-gray);
   transition: all 0.2s;
+  box-sizing: border-box;
 }
 
 .search-box:focus {
@@ -133,21 +156,22 @@ const refreshData = () => {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.5rem;
+  margin-left: auto;
 }
 
 .header nav {
   display: flex;
-  gap: 0.5rem;
+  gap: 1rem;
 }
 
 .header a {
   text-decoration: none;
   color: var(--medium-gray);
-  padding: 0.3rem 0.8rem;
-  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
   transition: all 0.3s;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .header a:hover,
@@ -156,14 +180,71 @@ const refreshData = () => {
   font-weight: bold;
 }
 
+.auth-buttons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.auth-link {
+  text-decoration: none;
+  color: var(--medium-gray);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: all 0.3s;
+  font-size: 16px;
+  border: 1px solid var(--border-color);
+}
+
+.auth-link:hover {
+  color: var(--dark-gray);
+  background-color: #f0f0f0;
+}
+
+.auth-link.register {
+  background-color: #007bff;
+  color: white;
+  border: 1px solid #007bff;
+}
+
+.auth-link.register:hover {
+  background-color: #0069d9;
+  border-color: #0062cc;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.username {
+  font-weight: 500;
+  color: var(--dark-gray);
+}
+
+.logout-btn {
+  padding: 0.5rem 1rem;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.logout-btn:hover {
+  background-color: #c82333;
+}
+
 .header-actions {
   display: flex;
   align-items: center;
 }
 
 .action-icon {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -179,8 +260,8 @@ const refreshData = () => {
 .content {
   flex: 1;
   padding: 0;
-  overflow: auto;
-  height: auto;
+  overflow: hidden;
+  height: calc(100vh - var(--header-height));
   min-height: calc(100vh - var(--header-height));
 }
 

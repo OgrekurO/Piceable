@@ -31,16 +31,47 @@ Piceable 是一个基于 Web 的轻量级思维导图工具，旨在提供简洁
 - 通过HTTP API与后端服务和Eagle插件通信
 - 展示从后端获取的数据（源自Eagle和用户管理等）
 
+#### 使用方法
+```bash
+# 安装依赖
+npm install
+
+# 开发模式运行
+npm run dev
+
+# 构建生产版本
+npm run build
+
+# 预览生产版本
+npm run preview
+```
+
 ### 后端服务 (backend/)
 提供HTTP API服务，使用FastAPI（Python）实现，处理用户管理等核心业务功能：
 - 用户管理、权限控制、数据持久化等核心业务功能
 - 为前端应用提供用户相关数据访问接口
+
+#### 使用方法
+```bash
+# 安装依赖
+pip install -r requirements.txt
+
+# 运行服务
+python main.py
+```
+
+默认运行在 http://localhost:3001
 
 ### Eagle插件 (eagle-plugin/)
 运行在Eagle内部的插件，作为数据桥接：
 - 运行在Eagle应用内部
 - 通过Eagle API访问和操作数据
 - 启动HTTP服务为前端提供实时Eagle数据
+
+#### 使用方法
+1. 在Eagle中安装插件
+2. 插件会自动启动HTTP服务
+3. 前端应用通过API与插件通信获取数据
 
 ### 数据流说明
 ```
@@ -101,27 +132,17 @@ Piceable 是一个基于 Web 的轻量级思维导图工具，旨在提供简洁
    python main.py
    ```
 
-2. 启动前端开发服务器：
+2. 在另一个终端中安装前端依赖并启动前端开发服务：
    ```bash
    cd frontend
+   npm install
    npm run dev
    ```
 
-3. 在Eagle中加载并运行插件
+3. 在Eagle中安装并启用插件（如果需要Eagle集成）：
+   - 打开Eagle
+   - 进入插件管理
+   - 安装eagle-plugin目录中的插件
 
-4. 在浏览器中访问前端应用，默认地址为 http://localhost:5173
-
-## 文档
-
-- [需求文档](项目辅助文档/0%20需求文档%202.0.md)
-- [技术文档](项目辅助文档/技术文档.md)
-- [开发计划清单](项目辅助文档/开发计划清单.md)
-- [通信机制说明](项目辅助文档/通信机制说明.md)
-
-## 通信方式
-
-根据项目规范：
-- Eagle插件通过eagle.api调用从Eagle获取数据
-- Eagle插件启动HTTP服务为前端提供实时Eagle数据
-- FastAPI后端处理用户管理等核心业务功能
-- 前端应用通过不同端点分别与插件和后端通信
+4. 访问前端应用：
+   打开浏览器访问 http://localhost:5173 （默认的Vite开发服务器端口）
