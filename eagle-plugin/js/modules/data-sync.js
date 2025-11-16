@@ -33,13 +33,22 @@ var DataSyncModule = (function() {
             // 更新项目标签
             if (updateData.tags !== undefined) {
                 const originalTags = originalItem.tags ? originalItem.tags.join(', ') : '';
-                if (updateData.tags !== originalTags) {
-                    console.log(`[DATA_SYNC] 更新项目标签: ${originalTags} -> ${updateData.tags}`);
-                    // 将逗号分隔的标签转换为数组
-                    originalItem.tags = updateData.tags ? 
-                        updateData.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+                // 处理tags可能是数组或字符串的情况
+                let newTags = [];
+                if (Array.isArray(updateData.tags)) {
+                    // 如果tags是数组，直接使用
+                    newTags = updateData.tags;
+                } else if (typeof updateData.tags === 'string') {
+                    // 如果tags是字符串，按逗号分割
+                    newTags = updateData.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+                }
+                
+                const newTagsString = newTags.join(', ');
+                if (newTagsString !== originalTags) {
+                    console.log(`[DATA_SYNC] 更新项目标签: ${originalTags} -> ${newTagsString}`);
+                    originalItem.tags = newTags;
                     needSave = true;
-                    changes.tags = updateData.tags;
+                    changes.tags = newTagsString;
                 }
             }
             

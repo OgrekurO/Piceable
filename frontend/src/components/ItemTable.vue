@@ -12,6 +12,7 @@
           :src="row.thumbnail" 
           class="thumbnail" 
           @error="handleImageError"
+          @load="handleImageLoad"
         />
         <div v-else class="no-preview">无预览</div>
       </div>
@@ -161,10 +162,17 @@ const gridEvents: VxeGridListeners<Item> = {
 // 处理图片加载错误
 const handleImageError = (event: Event) => {
   const target = event.target as HTMLImageElement
+  console.log('[ITEM_TABLE] 图片加载失败:', target.src);
   if (target && target.parentElement) {
     target.style.display = 'none'
     target.parentElement.innerHTML = '<div class="no-preview">无预览</div>'
   }
+}
+
+// 处理图片加载成功
+const handleImageLoad = (event: Event) => {
+  const target = event.target as HTMLImageElement
+  console.log('[ITEM_TABLE] 图片加载成功:', target.src);
 }
 
 // 格式化数组值显示
@@ -199,100 +207,60 @@ defineExpose({
 <style scoped>
 /* 表格主体样式 */
 .vxe-table--body-wrapper {
-  border-spacing: 0;
-  border-collapse: collapse;
+  /* 确保表格内容可以垂直滚动 */
+  overflow-y: auto;
 }
 
-/* 表格行样式 */
-.vxe-body--row {
-  margin: 0;
-  padding: 0;
-  border-bottom: 1px solid #ddd;
-}
-
-/* 第一行添加顶部边框 */
-.vxe-body--row:first-child {
-  border-top: 1px solid #ddd;
-}
-
-/* 禁用表格行选中时的蓝色背景 */
-.vxe-body--row.row--selected {
-  background-color: transparent !important;
-}
-
-.vxe-body--row.row--hover {
-  background-color: transparent !important;
-}
-
-/* 表格单元格样式 */
-.vxe-body--column {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  border-right: 1px solid #ddd;
-  margin: 0;
-  padding: 0;
-  height: 50px; /* 固定行高 */
-  line-height: 50px; /* 垂直居中 */
-}
-
-/* 移除最后一列的右边框 */
-.vxe-body--column:last-child {
-  border-right: none;
-}
-
-/* 表头单元格样式 */
-.vxe-header--column {
-  border-right: none;
-  border-bottom: 1px solid #ddd;
-  background-color: #fafafa; /* 表头背景色 */
-  font-weight: bold; /* 表头字体加粗 */
-  padding: 10px 0; /* 表头内边距 */
-  text-align: left; /* 表头文字左对齐 */
-}
-
-/* 表头区域样式 */
-.vxe-table--header-wrapper {
-  border-bottom: 1px solid #ddd;
-}
-
-/* 单独控制表头文字样式 */
-.vxe-header--column .vxe-cell--title {
-  font-size: 14px;
-  color: #333;
-  padding-left: 16px;
-}
-
-/* 单独控制表格内容文字样式 */
-.vxe-body--column .vxe-cell {
-  font-size: 13px;
-  color: #666;
-  padding: 0 16px;
-  line-height: 50px; /* 与单元格高度一致以垂直居中 */
-}
-
+/* 图片单元格样式 */
 .image-cell {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 50px;
+  height: 100%;
+  min-height: 50px;
 }
 
 .thumbnail {
   max-width: 80px;
-  max-height: 40px;
+  max-height: 80px;
   object-fit: contain;
+  border-radius: 4px;
 }
 
 .no-preview {
   color: #999;
   font-size: 12px;
+  text-align: center;
 }
 
+/* 单元格内容样式 */
 .cell-content {
   display: block;
+  padding: 8px 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 表头样式 */
+.vxe-header--column .vxe-cell--title {
+  background-color: #fafafa;
+  font-weight: bold;
+  padding: 10px 0;
+  text-align: left;
+}
+
+/* 表格内容样式 */
+.vxe-body--column .vxe-cell {
   height: 50px;
   line-height: 50px;
+  font-size: 13px;
+  color: #666;
   padding: 0 16px;
+}
+
+/* 编辑状态样式 */
+.vxe-table--body .vxe-cell--highlight {
+  background-color: #fffbe6;
 }
 </style>

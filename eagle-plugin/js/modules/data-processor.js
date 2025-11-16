@@ -18,42 +18,33 @@ var DataProcessorModule = (function() {
         const map = {};
         const idMap = {};
         
-        console.log(`[DATA_PROCESSOR] 构建文件夹映射表，前缀: "${prefix}", 文件夹数量: ${folders ? folders.length : 0}`);
-        
         if (!folders || !Array.isArray(folders)) {
-            console.log('[DATA_PROCESSOR] 文件夹数据无效或为空');
             return {map, idMap};
         }
         
         folders.forEach((folder, index) => {
             if (!folder || typeof folder !== 'object') {
-                console.log('[DATA_PROCESSOR] 跳过无效的文件夹对象');
                 return;
             }
             
             if (!folder.id) {
-                console.log('[DATA_PROCESSOR] 跳过没有ID的文件夹对象');
                 return;
             }
             
             const folderName = (folder.name && typeof folder.name === 'string' && folder.name.trim() !== '') ? folder.name.trim() : 'Unknown Folder';
             const folderPath = prefix ? `${prefix}/${folderName}` : folderName;
             
-            console.log(`[DATA_PROCESSOR] 处理文件夹: ID=${folder.id}, 名称=${folderName}, 路径=${folderPath}`);
-            
             map[folder.id] = folderPath;
             idMap[folderPath] = folder.id;
             
             // 递归处理子文件夹
             if (folder.children && folder.children.length > 0) {
-                console.log(`[DATA_PROCESSOR] 处理 ${folder.children.length} 个子文件夹`);
                 const {map: childMap, idMap: childIdMap} = buildFolderMap(folder.children, folderPath);
                 Object.assign(map, childMap);
                 Object.assign(idMap, childIdMap);
             }
         });
         
-        console.log(`[DATA_PROCESSOR] 文件夹映射表构建完成，map大小: ${Object.keys(map).length}, idMap大小: ${Object.keys(idMap).length}`);
         return {map, idMap};
     }
     
@@ -64,15 +55,11 @@ var DataProcessorModule = (function() {
      * @returns {string} 逗号分隔的文件夹名称
      */
     function getFolderNames(folderIds, folderMap) {
-        console.log(`[DATA_PROCESSOR] 处理文件夹ID数量: ${folderIds ? folderIds.length : 0}, 文件夹映射表大小: ${folderMap ? Object.keys(folderMap).length : 0}`);
-        
         if (!folderIds || !Array.isArray(folderIds)) {
-            console.log('[DATA_PROCESSOR] 文件夹ID无效或为空');
             return '';
         }
         
         if (!folderMap || typeof folderMap !== 'object') {
-            console.log('[DATA_PROCESSOR] 文件夹映射表无效');
             return folderIds.join(', ');
         }
         
@@ -90,7 +77,6 @@ var DataProcessorModule = (function() {
         .filter(name => name && typeof name === 'string' && name.trim() !== '')
         .join(', ');
         
-        console.log(`[DATA_PROCESSOR] 处理后的文件夹名称数量: ${result.split(', ').length}`);
         return result;
     }
     
@@ -103,22 +89,17 @@ var DataProcessorModule = (function() {
      * @returns {Promise<string|null>} 文件夹ID或null
      */
     async function createFolderPath(folderPath, folderIdMap, createdFolders) {
-        console.log(`[DATA_PROCESSOR] 创建文件夹路径: ${folderPath}`);
-        
         // 检查文件夹是否已存在
         if (folderIdMap && folderIdMap[folderPath]) {
-            console.log(`[DATA_PROCESSOR] 文件夹路径 "${folderPath}" 已存在，ID: ${folderIdMap[folderPath]}`);
             return folderIdMap[folderPath];
         }
         
         // 检查是否已经创建过但尚未刷新映射表
         if (createdFolders && createdFolders.has(folderPath)) {
-            console.log(`[DATA_PROCESSOR] 文件夹路径 "${folderPath}" 已创建过，ID: ${createdFolders.get(folderPath)}`);
             return createdFolders.get(folderPath);
         }
         
         // 在HTTP API环境中，我们无法真正创建文件夹，只能模拟过程
-        console.log(`[DATA_PROCESSOR] 在HTTP API环境中无法真正创建文件夹，仅模拟过程`);
         return null;
     }
     
@@ -129,52 +110,91 @@ var DataProcessorModule = (function() {
      * @returns {Array} 处理后的项目数组
      */
     function processItemsData(items, folderMap) {
+        console.log('[DATA_PROCESSOR] 开始处理项目数据，项目数量:', items ? items.length : 0);
+        
         if (!items || !Array.isArray(items)) {
-            console.log('[DATA_PROCESSOR] 输入项目数据无效或为空');
+            console.log('[DATA_PROCESSOR] 项目数据无效或为空');
             return [];
-        }
-        
-        console.log(`[DATA_PROCESSOR] 开始处理 ${items.length} 个项目`);
-        console.log(`[DATA_PROCESSOR] folderMap大小: ${folderMap ? Object.keys(folderMap).length : 0}`);
-        
-        // 检查前几个项目的数据结构
-        for (let i = 0; i < Math.min(3, items.length); i++) {
-            console.log(`[DATA_PROCESSOR] 原始项目${i}:`, {
-                id: items[i].id,
-                name: items[i].name,
-                hasUrl: !!items[i].url,
-                hasThumbnailURL: !!items[i].thumbnailURL,
-                hasThumbnailPath: !!items[i].thumbnailPath,
-                folders: items[i].folders,
-                hasTags: !!items[i].tags,
-                hasAnnotation: !!items[i].annotation,
-                hasLastModified: !!items[i].lastModified
-            });
         }
         
         const result = items.map((item, index) => {
             try {
+                console.log(`[DATA_PROCESSOR] 处理项目 ${index}:`, {
+                    id: item.id,
+                    hasThumbnailPath: !!item.thumbnailPath,
+                    thumbnailPath: item.thumbnailPath
+                });
+                
                 // 检查项目是否有效
                 if (!item || typeof item !== 'object') {
-                    console.warn(`[DATA_PROCESSOR] 跳过无效项目，索引: ${index}`);
+                    console.log(`[DATA_PROCESSOR] 跳过无效项目，索引: ${index}`);
                     return null;
                 }
                 
-                // 处理缩略图URL，优先使用thumbnailURL，其次是thumbnailPath，最后是url
+                // 增强版缩略图URL处理逻辑，按优先级顺序尝试多种来源
                 let thumbnailUrl = '';
-                if (item.thumbnailURL && typeof item.thumbnailURL === 'string' && item.thumbnailURL.trim() !== '') {
+                
+                // 1. 首先尝试使用thumbnailPath（本地文件路径）- 最高优先级
+                // 因为thumbnailURL可能包含file://路径，我们需要优先处理thumbnailPath
+                if (item.thumbnailPath && typeof item.thumbnailPath === 'string' && item.thumbnailPath.trim() !== '') {
+                    try {
+                        console.log(`[DATA_PROCESSOR] 处理本地缩略图路径: ${item.thumbnailPath}`);
+                        // 获取干净的路径（移除file://前缀）
+                        let cleanPath = item.thumbnailPath.trim();
+                        if (cleanPath.startsWith('file://')) {
+                            cleanPath = cleanPath.substring(7); // 移除'file://'前缀
+                            console.log(`[DATA_PROCESSOR] 移除file://前缀后: ${cleanPath}`);
+                        }
+                        
+                        // 规范化路径
+                        cleanPath = cleanPath.replace(/\\/g, '/');
+                        console.log(`[DATA_PROCESSOR] 规范化路径后: ${cleanPath}`);
+                        const encodedPath = encodeURIComponent(cleanPath);
+                        thumbnailUrl = `http://localhost:3001/static/${encodedPath}`;
+                        console.log(`[DATA_PROCESSOR] 构造HTTP URL: ${thumbnailUrl}`);
+                    } catch (pathError) {
+                        console.warn(`[DATA_PROCESSOR] 路径处理失败: ${item.id}`, pathError);
+                    }
+                }
+                // 2. 然后尝试使用thumbnailURL（远程缩略图URL），但要排除file://路径
+                else if (item.thumbnailURL && typeof item.thumbnailURL === 'string' && item.thumbnailURL.trim() !== '' && !item.thumbnailURL.startsWith('file://')) {
                     thumbnailUrl = item.thumbnailURL.trim();
-                    console.log(`[DATA_PROCESSOR] 使用thumbnailURL: ${item.id}`);
-                } else if (item.thumbnailPath && typeof item.thumbnailPath === 'string' && item.thumbnailPath.trim() !== '') {
-                    // 将本地文件路径转换为可通过HTTP访问的URL
-                    const encodedPath = encodeURIComponent(item.thumbnailPath.trim());
-                    thumbnailUrl = `http://localhost:3001/static/${encodedPath}`;
-                    console.log(`[DATA_PROCESSOR] 使用thumbnailPath并转换为HTTP URL: ${item.id}`);
-                } else if (item.url && typeof item.url === 'string' && item.url.trim() !== '') {
-                    thumbnailUrl = item.url.trim();
-                    console.log(`[DATA_PROCESSOR] 使用url: ${item.id}`);
-                } else {
-                    console.log(`[DATA_PROCESSOR] 没有可用的缩略图URL: ${item.id}`);
+                    console.log(`[DATA_PROCESSOR] 使用远程缩略图URL: ${thumbnailUrl}`);
+                } 
+                // 3. 尝试从注释(annotation)中提取图片URL
+                else if (item.annotation && typeof item.annotation === 'string' && item.annotation.trim() !== '') {
+                    try {
+                        const annotation = item.annotation.trim();
+                        // 尝试从注释中提取第一个图片URL
+                        const urlMatch = annotation.match(/https?:\/\/[^\s]+?\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff|avif|ico)[^\s]*/i);
+                        if (urlMatch && urlMatch[0]) {
+                            thumbnailUrl = urlMatch[0];
+                            console.log(`[DATA_PROCESSOR] 从注释中提取缩略图URL: ${thumbnailUrl}`);
+                        }
+                    } catch (annotationError) {
+                        console.warn(`[DATA_PROCESSOR] 从注释提取URL失败: ${item.id}`, annotationError);
+                    }
+                }
+                // 4. 最后作为备选，使用项目本身的url（如果是图片）
+                else if (item.url && typeof item.url === 'string' && item.url.trim() !== '') {
+                    const itemUrl = item.url.trim();
+                    // 对于常见图片格式的URL，可以直接用作缩略图
+                    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.tiff', '.avif', '.ico'];
+                    const isImageUrl = imageExtensions.some(ext => 
+                        itemUrl.toLowerCase().endsWith(ext)
+                    );
+                    
+                    if (isImageUrl) {
+                        thumbnailUrl = itemUrl;
+                        console.log(`[DATA_PROCESSOR] 使用项目URL作为缩略图: ${thumbnailUrl}`);
+                    }
+                    // 对于非图片URL，生成占位符或保持为空
+                    else {
+                        // 可以考虑集成第三方缩略图服务
+                        // 例如：`https://api.thumbalizr.com/?url=${encodeURIComponent(itemUrl)}&width=300`
+                        // 目前保持为空，前端会显示默认占位符
+                        console.log(`[DATA_PROCESSOR] 项目URL不是图片格式，不作为缩略图: ${itemUrl}`);
+                    }
                 }
                 
                 // 确保url字段存在
@@ -201,10 +221,10 @@ var DataProcessorModule = (function() {
                     lastModified: item.lastModified ? new Date(item.lastModified).toLocaleString() : ''
                 };
                 
-                // 记录处理后的字段信息（仅前几个项目）
-                if (index < 3) {
-                    console.log(`[DATA_PROCESSOR] 处理项目 ${item.id}: url=${!!processedItem.url}, thumbnail=${!!processedItem.thumbnail}, folders=${processedItem.folders}`);
-                }
+                console.log(`[DATA_PROCESSOR] 处理完成的项目 ${index}:`, {
+                    id: processedItem.id,
+                    thumbnail: processedItem.thumbnail
+                });
                 
                 return processedItem;
             } catch (error) {
@@ -224,13 +244,7 @@ var DataProcessorModule = (function() {
      * @returns {Object} 处理后的库信息，包含文件夹映射表
      */
     function processLibraryInfo(libraryInfo) {
-        console.log('[DATA_PROCESSOR] 开始处理库信息:', libraryInfo ? {
-            name: libraryInfo.name,
-            foldersCount: libraryInfo.folders ? libraryInfo.folders.length : 0
-        } : '库信息为空');
-        
         if (!libraryInfo || typeof libraryInfo !== 'object') {
-            console.warn('[DATA_PROCESSOR] 库信息无效');
             return {
                 libraryInfo: {},
                 folderMap: {},
@@ -239,7 +253,6 @@ var DataProcessorModule = (function() {
         }
         
         const {map, idMap} = buildFolderMap(libraryInfo.folders || []);
-        console.log(`[DATA_PROCESSOR] 构建文件夹映射完成，folderMap大小: ${Object.keys(map).length}, folderIdMap大小: ${Object.keys(idMap).length}`);
         
         return {
             libraryInfo: libraryInfo,

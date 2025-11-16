@@ -66,8 +66,8 @@ export function useItems() {
             name: item.name,
             url: item.url || '',
             thumbnail: item.thumbnail || '', // 缩略图字段应该直接使用thumbnail
-            folders: item.folders || '',
-            tags: item.tags || '',
+            folders: item.folders || [],
+            tags: item.tags || [],
             annotation: item.annotation || '',
             lastModified: item.lastModified || ''
           }

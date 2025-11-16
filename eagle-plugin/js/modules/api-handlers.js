@@ -35,9 +35,25 @@ var APIHandlersModule = (function() {
             
             console.log(`[API_HANDLERS] 从Eagle API获取到 ${items ? items.length : 0} 个项目`);
             
+            // 检查前几个项目的原始数据结构
+            if (items && items.length > 0) {
+                console.log('[API_HANDLERS] 前3个项目的原始数据结构:');
+                for (let i = 0; i < Math.min(3, items.length); i++) {
+                    console.log(`[API_HANDLERS] 原始项目${i}:`, {
+                        id: items[i].id,
+                        name: items[i].name,
+                        thumbnailURL: items[i].thumbnailURL,
+                        thumbnailPath: items[i].thumbnailPath,
+                        thumbnailPathType: typeof items[i].thumbnailPath,
+                        url: items[i].url
+                    });
+                }
+            }
+            
             // 检查数据处理器模块是否可用
             if (typeof DataProcessorModule !== 'undefined' && 
                 typeof DataProcessorModule.processItemsData === 'function') {
+                console.log('[API_HANDLERS] 数据处理器模块可用，开始处理数据');
                 // 如果可以获取到库信息，处理数据格式
                 let processedItems = items;
                 
@@ -89,6 +105,7 @@ var APIHandlersModule = (function() {
                         name: processedItems[0].name,
                         hasUrl: !!processedItems[0].url,
                         hasThumbnail: !!processedItems[0].thumbnail,
+                        thumbnailValue: processedItems[0].thumbnail,
                         folders: processedItems[0].folders,
                         hasTags: !!processedItems[0].tags,
                         hasAnnotation: !!processedItems[0].annotation,
@@ -116,7 +133,13 @@ var APIHandlersModule = (function() {
                 console.log('[API_HANDLERS] 准备返回的响应数据:', {
                     success: responseData.success,
                     count: responseData.count,
-                    dataLength: responseData.data.length
+                    dataLength: responseData.data.length,
+                    // 检查前几个数据项的thumbnail字段
+                    firstItemsThumbnail: responseData.data.slice(0, 3).map(item => ({
+                        id: item.id,
+                        thumbnail: item.thumbnail,
+                        thumbnailType: typeof item.thumbnail
+                    }))
                 });
                 res.end(JSON.stringify(responseData));
             } else {
@@ -177,7 +200,8 @@ var APIHandlersModule = (function() {
                                 console.log(`[API_HANDLERS] 成功获取库信息: ${libraryInfo.name}, 包含 ${libraryInfo.folders ? libraryInfo.folders.length : 0} 个文件夹`);
                                 
                                 const {map: folderMap} = DataProcessorModule.processLibraryInfo(libraryInfo);
-                                processedItem = DataProcessorModule.processItemsData([item], folderMap)[0];
+                                const processedItems = DataProcessorModule.processItemsData([item], folderMap);
+                                processedItem = processedItems[0];
                                 console.log('[API_HANDLERS] 项目数据处理完成');
                             } else {
                                 console.warn('[API_HANDLERS] 获取到的库信息为空');
@@ -196,7 +220,6 @@ var APIHandlersModule = (function() {
                     }));
                 } else {
                     // 如果数据处理器不可用，返回原始数据
-                    console.warn('[API_HANDLERS] 数据处理器模块不可用，返回原始数据');
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({
                         success: true,
@@ -211,7 +234,7 @@ var APIHandlersModule = (function() {
                 }));
             }
         } catch (error) {
-            console.error(`[API_HANDLERS] 获取项目失败，ID: ${itemId}`, error);
+            console.error(`[API_HANDLERS] 获取项目失败，ID: ${itemId}:`, error);
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({
                 success: false,
@@ -222,13 +245,25 @@ var APIHandlersModule = (function() {
     }
 
     /**
-     * 处理更新单个项目请求
+     * 处理更新项目请求
      */
     async function handleUpdateItem(req, res, itemId) {
         try {
             console.log(`[API_HANDLERS] 收到更新项目请求，ID: ${itemId}`);
             
-            // 读取请求体
+            // 检查eagle对象和api方法是否存在
+            if (typeof eagle === 'undefined' || !eagle.item || typeof eagle.item.update !== 'function') {
+                console.error('[API_HANDLERS] Eagle API不可用');
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: false,
+                    error: 'Eagle API not available',
+                    message: 'Eagle API不可用，请确保插件在Eagle环境中运行'
+                }));
+                return;
+            }
+            
+            // 收集请求体数据
             let body = '';
             req.on('data', chunk => {
                 body += chunk.toString();
@@ -237,88 +272,39 @@ var APIHandlersModule = (function() {
             req.on('end', async () => {
                 try {
                     const updateData = JSON.parse(body);
+                    console.log('[API_HANDLERS] 更新数据:', updateData);
                     
-                    // 检查eagle对象是否存在
-                    if (typeof eagle === 'undefined') {
-                        console.error('[API_HANDLERS] Eagle API不可用');
+                    // 调用eagle.item.update更新项目
+                    const result = await eagle.item.update({
+                        id: itemId,
+                        ...updateData
+                    });
+                    
+                    if (result) {
+                        res.writeHead(200, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({
+                            success: true,
+                            message: 'Item updated successfully',
+                            data: result
+                        }));
+                    } else {
                         res.writeHead(500, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({
                             success: false,
-                            error: 'Eagle API not available',
-                            message: 'Eagle API不可用，请确保插件在Eagle环境中运行'
+                            error: 'Failed to update item'
                         }));
-                        return;
-                    }
-                    
-                    // 检查数据同步模块是否可用
-                    if (typeof DataSyncModule !== 'undefined' && 
-                        typeof DataSyncModule.syncItemToEagle === 'function') {
-                        
-                        // 首先获取原始项目
-                        if (!eagle.item || typeof eagle.item.getById !== 'function') {
-                            console.error('[API_HANDLERS] Eagle item API不可用');
-                            res.writeHead(500, { 'Content-Type': 'application/json' });
-                            res.end(JSON.stringify({
-                                success: false,
-                                error: 'Eagle item API not available',
-                                message: 'Eagle item API不可用，请确保插件在Eagle环境中运行'
-                            }));
-                            return;
-                        }
-                        
-                        const originalItem = await eagle.item.getById(itemId);
-                        if (!originalItem) {
-                            res.writeHead(404, { 'Content-Type': 'application/json' });
-                            res.end(JSON.stringify({
-                                success: false,
-                                error: 'Item not found',
-                                message: '未找到指定ID的项目'
-                            }));
-                            return;
-                        }
-                        
-                        // 获取库信息以构建文件夹映射
-                        let folderIdMap = {};
-                        if (eagle.library && eagle.library.info && typeof eagle.library.info === 'function') {
-                            try {
-                                const libraryInfo = await eagle.library.info();
-                                if (DataProcessorModule && typeof DataProcessorModule.processLibraryInfo === 'function') {
-                                    const {folderIdMap: idMap} = DataProcessorModule.processLibraryInfo(libraryInfo);
-                                    folderIdMap = idMap;
-                                }
-                            } catch (libraryError) {
-                                console.warn('[API_HANDLERS] 获取库信息失败:', libraryError);
-                            }
-                        }
-                        
-                        // 同步项目数据
-                        const syncResult = await DataSyncModule.syncItemToEagle(originalItem, updateData, folderIdMap);
-                        
-                        res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify(syncResult));
-                    } else {
-                        // 如果数据同步模块不可用，返回默认响应
-                        const result = {
-                            success: true,
-                            message: 'Update request received',
-                            itemId: itemId,
-                            updateData: updateData
-                        };
-                        
-                        res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify(result));
                     }
                 } catch (parseError) {
+                    console.error('[API_HANDLERS] 解析更新数据失败:', parseError);
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({
                         success: false,
-                        error: 'Invalid JSON',
-                        message: parseError.message
+                        error: 'Invalid JSON data'
                     }));
                 }
             });
         } catch (error) {
-            console.error(`[API_HANDLERS] 更新项目失败，ID: ${itemId}`, error);
+            console.error(`[API_HANDLERS] 更新项目失败，ID: ${itemId}:`, error);
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({
                 success: false,
@@ -349,31 +335,18 @@ var APIHandlersModule = (function() {
             
             // 使用eagle.library.info获取库信息
             const libraryInfo = await eagle.library.info();
-            if (libraryInfo) {
-                console.log(`[API_HANDLERS] 成功获取库信息: ${libraryInfo.name}, 包含 ${libraryInfo.folders ? libraryInfo.folders.length : 0} 个文件夹`);
-            } else {
-                console.warn('[API_HANDLERS] 获取到的库信息为空');
-            }
             
-            // 检查数据处理器模块是否可用
-            if (typeof DataProcessorModule !== 'undefined' && 
-                typeof DataProcessorModule.processLibraryInfo === 'function') {
-                // 处理库信息数据
-                const processedLibraryInfo = DataProcessorModule.processLibraryInfo(libraryInfo);
-                console.log('[API_HANDLERS] 库信息处理完成');
-                
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({
-                    success: true,
-                    data: processedLibraryInfo
-                }));
-            } else {
-                // 如果数据处理器不可用，返回原始数据
-                console.warn('[API_HANDLERS] 数据处理器模块不可用，返回原始数据');
+            if (libraryInfo) {
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
                     success: true,
                     data: libraryInfo
+                }));
+            } else {
+                res.writeHead(404, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: false,
+                    error: 'Library info not found'
                 }));
             }
         } catch (error) {
@@ -387,209 +360,12 @@ var APIHandlersModule = (function() {
         }
     }
 
-    /**
-     * 处理同步数据请求
-     */
-    async function handleSyncData(req, res) {
-        try {
-            console.log('[API_HANDLERS] 收到同步数据请求');
-            
-            // 读取请求体
-            let body = '';
-            req.on('data', chunk => {
-                body += chunk.toString();
-            });
-            
-            req.on('end', async () => {
-                try {
-                    // 检查eagle对象是否存在
-                    if (typeof eagle === 'undefined') {
-                        console.error('[API_HANDLERS] Eagle API不可用');
-                        res.writeHead(500, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({
-                            success: false,
-                            error: 'Eagle API not available',
-                            message: 'Eagle API不可用，请确保插件在Eagle环境中运行'
-                        }));
-                        return;
-                    }
-                    
-                    const syncData = JSON.parse(body);
-                    
-                    // 检查数据同步模块是否可用
-                    if (typeof DataSyncModule !== 'undefined' && 
-                        typeof DataSyncModule.syncBatchDataToEagle === 'function') {
-                        
-                        // 获取库信息以构建文件夹映射
-                        let folderIdMap = {};
-                        if (eagle.library && eagle.library.info && typeof eagle.library.info === 'function') {
-                            try {
-                                const libraryInfo = await eagle.library.info();
-                                if (DataProcessorModule && typeof DataProcessorModule.processLibraryInfo === 'function') {
-                                    const {folderIdMap: idMap} = DataProcessorModule.processLibraryInfo(libraryInfo);
-                                    folderIdMap = idMap;
-                                }
-                            } catch (libraryError) {
-                                console.warn('[API_HANDLERS] 获取库信息失败:', libraryError);
-                            }
-                        }
-                        
-                        // 批量同步数据
-                        const syncResult = await DataSyncModule.syncBatchDataToEagle(syncData.items || [], folderIdMap);
-                        
-                        res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify(syncResult));
-                    } else {
-                        // 如果数据同步模块不可用，返回默认响应
-                        const result = {
-                            processed: syncData.items ? syncData.items.length : 0,
-                            timestamp: Date.now()
-                        };
-                        
-                        res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({
-                            success: true,
-                            message: 'Data synced successfully',
-                            data: result
-                        }));
-                    }
-                } catch (parseError) {
-                    res.writeHead(400, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({
-                        success: false,
-                        error: 'Invalid JSON',
-                        message: parseError.message
-                    }));
-                }
-            });
-        } catch (error) {
-            console.error('[API_HANDLERS] 同步数据失败:', error);
-            res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({
-                success: false,
-                error: 'Failed to sync data',
-                message: error.message
-            }));
-        }
-    }
-
-    /**
-     * 处理创建文件夹路径请求
-     */
-    async function handleCreateFolderPath(req, res) {
-        try {
-            console.log('[API_HANDLERS] 收到创建文件夹路径请求');
-            
-            // 读取请求体
-            let body = '';
-            req.on('data', chunk => {
-                body += chunk.toString();
-            });
-            
-            req.on('end', async () => {
-                try {
-                    const requestData = JSON.parse(body);
-                    const { folderPath } = requestData;
-                    
-                    // 检查eagle对象是否存在
-                    if (typeof eagle === 'undefined') {
-                        console.error('[API_HANDLERS] Eagle API不可用');
-                        res.writeHead(500, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({
-                            success: false,
-                            error: 'Eagle API not available',
-                            message: 'Eagle API不可用，请确保插件在Eagle环境中运行'
-                        }));
-                        return;
-                    }
-                    
-                    // 检查DataProcessor模块是否可用
-                    if (typeof DataProcessorModule !== 'undefined' && 
-                        typeof DataProcessorModule.createFolderPath === 'function') {
-                        
-                        // 获取库信息以构建文件夹映射
-                        let folderIdMap = {};
-                        let createdFolders = new Map();
-                        
-                        if (eagle.library && eagle.library.info && typeof eagle.library.info === 'function') {
-                            try {
-                                const libraryInfo = await eagle.library.info();
-                                if (DataProcessorModule && typeof DataProcessorModule.processLibraryInfo === 'function') {
-                                    const {folderIdMap: idMap} = DataProcessorModule.processLibraryInfo(libraryInfo);
-                                    folderIdMap = idMap;
-                                }
-                            } catch (libraryError) {
-                                console.warn('[API_HANDLERS] 获取库信息失败:', libraryError);
-                            }
-                        }
-                        
-                        // 创建文件夹路径
-                        const folderId = await DataProcessorModule.createFolderPath(folderPath, folderIdMap, createdFolders);
-                        
-                        res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({
-                            success: true,
-                            message: 'Folder path processed',
-                            folderPath: folderPath,
-                            folderId: folderId
-                        }));
-                    } else {
-                        // 如果DataProcessor模块不可用，返回默认响应
-                        res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({
-                            success: true,
-                            message: 'Folder path request received',
-                            folderPath: folderPath,
-                            folderId: null
-                        }));
-                    }
-                } catch (parseError) {
-                    res.writeHead(400, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({
-                        success: false,
-                        error: 'Invalid JSON',
-                        message: parseError.message
-                    }));
-                }
-            });
-        } catch (error) {
-            console.error('[API_HANDLERS] 创建文件夹路径失败:', error);
-            res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({
-                success: false,
-                error: 'Failed to create folder path',
-                message: error.message
-            }));
-        }
-    }
-
-    /**
-     * 处理健康检查请求
-     */
-    function handleHealthCheck(req, res) {
-        console.log('[API_HANDLERS] 收到健康检查请求');
-        
-        // 检查eagle对象是否存在
-        const eagleAvailable = typeof eagle !== 'undefined';
-        
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-            status: 'ok',
-            timestamp: new Date().toISOString(),
-            version: '1.0.0',
-            eagleAvailable: eagleAvailable
-        }));
-    }
-
     // 公共接口
     return {
         handleGetItems,
         handleGetItem,
         handleUpdateItem,
-        handleGetLibraryInfo,
-        handleSyncData,
-        handleCreateFolderPath,
-        handleHealthCheck
+        handleGetLibraryInfo
     };
 })();
 

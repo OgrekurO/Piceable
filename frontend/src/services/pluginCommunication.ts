@@ -82,9 +82,25 @@ export async function getItems(): Promise<EagleItem[]> {
         // API返回格式: { success: true, count: number, data: EagleItem[] }
         if (response.data && Array.isArray(response.data)) {
           // 如果response.data本身就是数组
+          console.log('[PLUGIN_COMM] 项目数据格式正确，数组长度:', response.data.length);
+          // 检查前几个项目的thumbnail字段
+          console.log('[PLUGIN_COMM] 前3个项目thumbnail字段:', 
+            response.data.slice(0, 3).map((item: any) => ({
+              id: item.id,
+              thumbnail: item.thumbnail,
+              thumbnailType: typeof item.thumbnail
+            })));
           return response.data;
         } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
           // 如果response.data.data是数组（嵌套结构）
+          console.log('[PLUGIN_COMM] 项目数据格式为嵌套结构，数组长度:', response.data.data.length);
+          // 检查前几个项目的thumbnail字段
+          console.log('[PLUGIN_COMM] 前3个项目thumbnail字段:', 
+            response.data.data.slice(0, 3).map((item: any) => ({
+              id: item.id,
+              thumbnail: item.thumbnail,
+              thumbnailType: typeof item.thumbnail
+            })));
           return response.data.data;
         } else {
           // 如果没有数据或数据格式不正确
@@ -99,6 +115,31 @@ export async function getItems(): Promise<EagleItem[]> {
     }
   } catch (error) {
     console.error('[PLUGIN_COMM] 获取项目列表失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 请求获取单个项目
+ * @param id 项目ID
+ * @returns Promise<EagleItem>
+ */
+export async function getItem(id: string): Promise<EagleItem> {
+  try {
+    console.log(`[PLUGIN_COMM] 获取项目，ID: ${id}`);
+    
+    if (currentMethod === CommunicationMethod.HttpApi) {
+      const response = await get(`/api/v1/item/${id}`);
+      if (response.success) {
+        return response.data;
+      } else {
+        throw new Error(response.error || '获取项目失败');
+      }
+    } else {
+      throw new Error('不支持的通信方式');
+    }
+  } catch (error) {
+    console.error(`[PLUGIN_COMM] 获取项目失败，ID: ${id}:`, error);
     throw error;
   }
 }
@@ -150,49 +191,5 @@ export async function syncDataToEagle(data: Record<string, any>): Promise<boolea
   } catch (error) {
     console.error('[PLUGIN_COMM] 同步数据失败:', error);
     throw error;
-  }
-}
-
-/**
- * 请求导出数据
- * @param format 导出格式
- * @returns Promise<any>
- */
-export async function exportData(format: string): Promise<Record<string, any>> {
-  try {
-    console.log('[PLUGIN_COMM] 导出数据:', { format });
-    
-    if (currentMethod === CommunicationMethod.HttpApi) {
-      const response = await post('/api/v1/export', { format });
-      if (response.success) {
-        return response.data;
-      } else {
-        throw new Error(response.error || '导出数据失败');
-      }
-    } else {
-      throw new Error('不支持的通信方式');
-    }
-  } catch (error) {
-    console.error('[PLUGIN_COMM] 导出数据失败:', error);
-    throw error;
-  }
-}
-
-/**
- * 检查HTTP服务器是否可用
- * @returns Promise<boolean>
- */
-export async function isHttpServerAvailable(): Promise<boolean> {
-  try {
-    console.log('[PLUGIN_COMM] 检查HTTP服务器是否可用');
-    
-    // 使用统一的HTTP客户端检查健康状态
-    const response = await get('/api/v1/health');
-    const isAvailable = response.success;
-    console.log(`[PLUGIN_COMM] HTTP服务器可用性检查结果: ${isAvailable}`);
-    return isAvailable;
-  } catch (error) {
-    console.log('[PLUGIN_COMM] HTTP服务器不可用:', error);
-    return false;
   }
 }

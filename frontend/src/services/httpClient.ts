@@ -1,6 +1,5 @@
 /**
- * HTTP客户端服务 - 与独立HTTP API服务通信
- */
+ * HTTP客户端服务 - 与独立HTTP API服务通信 */
 
 // HTTP客户端 - 用于与独立HTTP API服务通信
 const BASE_URL = 'http://localhost:3001';
@@ -61,16 +60,14 @@ export function post(endpoint: string, data: any) {
 }
 
 /**
- * PUT请求
+ * PUT请求 (使用POST方法替代)
  * @param endpoint API端点
  * @param data 请求数据
  * @returns Promise
  */
 export function put(endpoint: string, data: any) {
-  return request(endpoint, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  });
+  // 由于Eagle插件API只支持POST方法，这里使用POST替代PUT
+  return post(endpoint, data);
 }
 
 /**

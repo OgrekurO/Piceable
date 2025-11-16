@@ -74,11 +74,14 @@ var CommunicationModule = (function() {
             const fs = require('fs');
             const path = require('path');
             
-            // 获取文件路径（移除/static/前缀）
+            // 获取文件路径（移除'/static/'前缀）
             const filePath = decodeURIComponent(parsedUrl.pathname.substring(8)); // 移除'/static/'前缀
             
+            console.log(`[COMMUNICATION] 尝试访问文件: ${filePath}`);
+            
             // 安全检查：确保路径不包含危险字符
-            if (filePath.includes('../') || filePath.includes('..\\') || filePath.startsWith('/')) {
+            // 允许绝对路径（以/开头），但阻止路径遍历攻击
+            if (filePath.includes('../') || filePath.includes('..\\')) {
                 res.writeHead(403, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
                     success: false,
@@ -89,6 +92,7 @@ var CommunicationModule = (function() {
             
             // 检查文件是否存在
             if (!fs.existsSync(filePath)) {
+                console.log(`[COMMUNICATION] 文件不存在: ${filePath}`);
                 res.writeHead(404, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
                     success: false,
@@ -100,10 +104,27 @@ var CommunicationModule = (function() {
             // 检查是否为文件
             const stat = fs.statSync(filePath);
             if (!stat.isFile()) {
+                console.log(`[COMMUNICATION] 路径不是文件: ${filePath}`);
                 res.writeHead(400, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
                     success: false,
                     error: 'Path is not a file'
+                }));
+                return;
+            }
+            
+            // 检查文件访问权限
+            try {
+                // 检查文件是否可读
+                fs.accessSync(filePath, fs.constants.R_OK);
+                console.log(`[COMMUNICATION] 文件可访问: ${filePath}`);
+            } catch (accessError) {
+                console.log(`[COMMUNICATION] 文件访问被拒绝: ${filePath}`, accessError.message);
+                res.writeHead(403, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: false,
+                    error: 'Permission denied',
+                    message: 'File access denied'
                 }));
                 return;
             }
@@ -125,16 +146,23 @@ var CommunicationModule = (function() {
             // 设置缓存头
             res.setHeader('Cache-Control', 'public, max-age=3600'); // 1小时缓存
             
+            // 特殊处理：如果请求的是图片文件，添加额外的安全头
+            if (contentType.startsWith('image/')) {
+                res.setHeader('Accept-Ranges', 'bytes');
+                res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+            }
+            
             // 读取并发送文件
             const fileStream = fs.createReadStream(filePath);
             fileStream.pipe(res);
             
             fileStream.on('error', (error) => {
-                console.error('[COMMUNICATION] 文件读取错误:', error);
+                console.error(`[COMMUNICATION] 文件读取错误: ${filePath}`, error);
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
                     success: false,
-                    error: 'Error reading file'
+                    error: 'Error reading file',
+                    message: error.message
                 }));
             });
             
@@ -143,8 +171,7 @@ var CommunicationModule = (function() {
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({
                 success: false,
-                error: 'Internal Server Error',
-                message: error.message
+                error: error.message
             }));
         }
     }
