@@ -1,37 +1,28 @@
 <template>
   <div class="main-layout">
-    <!-- 遮罩层，点击任意地方（除了侧边页）时收回侧边页 -->
-    <div 
-      v-if="showSidebar" 
-      class="sidebar-backdrop" 
-      @click="showSidebar = false"
-    ></div>
-    
-    <!-- 侧边页 -->
-    <div class="sidebar" :class="{ open: showSidebar }">
-      <div class="sidebar-content">
-        <!-- 侧边页内容区域 -->
-      </div>
-    </div>
-    
     <header class="header">
       <div class="header-left">
         <!-- 功能按钮 -->
-        <div class="menu-button" @click="showSidebar = true">
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <div class="menu-button" @click="toggleSidebar">
+          <svg v-if="!showSidebar" width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M3 12H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             <path d="M3 6H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             <path d="M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
+          <svg v-else width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
         </div>
         <!-- 点击Piceable文字返回主页 -->
-        <h1 class="brand">
+        <span class="brand">
           <router-link to="/" class="brand-link">Piceable</router-link>
-        </h1>
+        </span>
       </div>
       
       <div class="header-center">
-        <div class="search-container">
+        <!-- 搜索框 -->
+        <div class="search-container" v-show="!showSidebar">
           <input 
             type="text" 
             class="search-box" 
@@ -40,27 +31,38 @@
             @input="onSearch"
           />
         </div>
-      </div>
-      
-      <!-- 添加两根装饰竖线 -->
-      <div class="decorative-lines">
-        <div class="line first-line"></div>
-        <div class="line second-line"></div>
-      </div>
-      
-      <div class="header-right">
- 
         
+        <!-- 导航链接 -->
+        <div class="nav-links" v-show="showSidebar">
+          <router-link to="/timeline" class="nav-link" @click="showSidebar = false">时间轴</router-link>
+          <router-link to="/table" class="nav-link" @click="showSidebar = false">表格</router-link>
+          <router-link to="/mindmap" class="nav-link" @click="showSidebar = false">图谱</router-link>
+          <router-link to="/map" class="nav-link" @click="showSidebar = false">地图</router-link>
+        </div>
+      </div>
+      
+
+      <div class="header-right">
         <div class="auth-buttons" v-if="!authStore.isAuth">
-          <router-link to="/login" class="auth-link">登录</router-link>
+          <router-link to="/login" class="auth-link login">登录</router-link>
           <router-link to="/login" class="auth-link register">注册</router-link>
         </div>
         
         <div class="user-info" v-else>
-          <span class="username">{{ authStore.currentUser?.username }}</span>
-          <button class="logout-btn" @click="handleLogout">退出</button>
+          <div class="user-dropdown" @click="toggleUserDropdown">
+            <span class="username">{{ authStore.currentUser?.username }}</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="dropdown-icon">
+              <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            
+            <!-- 下拉菜单 -->
+            <div class="user-dropdown-menu" v-show="showUserDropdown">
+              <router-link to="/admin" class="dropdown-item" v-if="authStore.currentUser?.role === 'admin'">管理面板</router-link>
+              <router-link to="/settings" class="dropdown-item">设置</router-link>
+              <button class="dropdown-item logout-btn" @click="handleLogout">退出</button>
+            </div>
+          </div>
         </div>
-        
       </div>
     </header>
     
@@ -86,8 +88,21 @@ const router = useRouter()
 // 搜索文本
 const searchText = ref('')
 
-// 控制侧边页显示状态
+// 控制导航链接显示状态
 const showSidebar = ref(false)
+
+// 控制用户下拉菜单显示状态
+const showUserDropdown = ref(false)
+
+// 切换导航链接显示状态
+const toggleSidebar = () => {
+  showSidebar.value = !showSidebar.value
+}
+
+// 切换用户下拉菜单显示状态
+const toggleUserDropdown = () => {
+  showUserDropdown.value = !showUserDropdown.value
+}
 
 // 搜索处理函数
 const onSearch = () => {
@@ -96,12 +111,20 @@ const onSearch = () => {
   // 这里可以使用事件总线或Vuex/Pinia状态管理来传递搜索事件
 }
 
-
 // 处理用户登出
 const handleLogout = () => {
+  showUserDropdown.value = false
   authStore.logout()
   router.push('/login')
 }
+
+// 点击其他地方关闭用户下拉菜单
+document.addEventListener('click', (event) => {
+  const userDropdown = document.querySelector('.user-dropdown')
+  if (userDropdown && !userDropdown.contains(event.target as Node)) {
+    showUserDropdown.value = false
+  }
+})
 </script>
 
 <style scoped>
@@ -119,6 +142,7 @@ const handleLogout = () => {
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  position: relative;
 }
 
 .header {
@@ -149,38 +173,32 @@ const handleLogout = () => {
 }
 
 .brand {
-  margin: 0;
-  font-size: 48px; /* 调整字体大小 */
-  font-weight: 900;
-  font-family: 'SimHei', '黑体', 'Heiti SC', 'Microsoft YaHei', sans-serif;
-  line-height: 1;
-  color: #333;
   display: flex;
   align-items: center;
-  height: 100%;
   overflow: hidden;
   width: auto; /* 移除固定宽度，让文字自适应 */
-  margin-left: 5px; /* 根据规范调整与功能按钮的间距 */
-  padding: 0 10px; /* 添加内边距使文字更好填充容器 */
+
 }
 
 .brand-link {
-  text-decoration: none;
-  color: inherit;
+  color: #333;
+  font-size: 20px; /* 调整字体大小 */
+  font-weight: bold;
+  font-family: 'SimHei', '黑体', 'Heiti SC', 'Microsoft YaHei', sans-serif;
 }
 
 .header-center {
   flex: 1;
   display: flex;
   justify-content: center;
-  height: 30px;
-  max-width: 500px; /* 设置最大宽度为500px */
-  margin-left: 50px; /* 调整搜索框与“Piceable”的距离 */
+  align-items: center;
+  height: 100%;
+  margin: 0 auto;
 }
 
 .search-container {
-  width: 100%;
-  height: 100%;
+  width: 30%;
+  height: 30px;
   position: relative;
 }
 
@@ -210,22 +228,10 @@ const handleLogout = () => {
   gap: 1.5rem;
   margin-left: auto;
   height: 100%;
+  position: relative;
 }
 
-.header a {
-  text-decoration: none;
-  color: var(--medium-gray);
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  transition: all 0.3s;
-  font-size: 16px;
-}
 
-.header a:hover,
-.header a.router-link-active {
-  color: var(--dark-gray);
-  font-weight: bold;
-}
 
 .auth-buttons {
   display: flex;
@@ -239,15 +245,30 @@ const handleLogout = () => {
   padding: 0.5rem 1rem;
   border-radius: 6px;
   transition: all 0.3s;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: bold;
   background-color: transparent;
   border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .auth-link:hover {
   color: var(--dark-gray);
   background-color: transparent;
+}
+
+.auth-link.login {
+  background-color: transparent;
+  color: var(--medium-gray);
+  border: none;
+}
+
+.auth-link.login:hover {
+  background-color: transparent;
+  color: var(--dark-gray);
+  border: none;
 }
 
 .auth-link.register {
@@ -268,22 +289,19 @@ const handleLogout = () => {
   gap: 1rem;
 }
 
-/* 添加装饰竖线样式 */
-.decorative-lines {
-  position: absolute;
-  right: 230px; /* 调整装饰线位置 */
-  top: 0;
-  height: 100%;
+.user-dropdown {
+  position: relative;
   display: flex;
-  gap: 30px;
-  pointer-events: none;
   align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: background-color 0.3s;
 }
 
-.line {
-  width: 1.5px; /* 修改装饰线粗细 */
-  height: 100%;
-  background-color: var(--border-color); /* 使用统一的颜色变量 */
+.user-dropdown:hover {
+  background-color: var(--light-gray);
 }
 
 .username {
@@ -291,9 +309,66 @@ const handleLogout = () => {
   color: var(--dark-gray);
 }
 
+.dropdown-icon {
+  transition: transform 0.3s;
+}
+
+.user-dropdown:hover .dropdown-icon {
+  transform: rotate(180deg);
+}
+
+.user-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 150px;
+  z-index: 1000;
+  margin-top: 0.5rem;
+}
+
+.dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  text-decoration: none;
+  color: var(--dark-gray);
+  font-size: 14px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.dropdown-item:hover {
+  background-color: var(--light-gray);
+  color: #000;
+}
+
+.dropdown-item.logout-btn {
+  color: #dc3545;
+  font-weight: normal;
+}
+
+.dropdown-item.logout-btn:hover {
+  background-color: #f8d7da;
+  color: #dc3545;
+}
+
+
+
+.line {
+  width: 1.5px; /* 修改装饰线粗细 */
+  height: 100%;
+  background-color: var(--border-color); /* 使用统一的颜色变量 */
+}
+
 .logout-btn {
   padding: 0.5rem 1rem;
-  background-color: #dc3545;
   color: white;
   border: none;
   border-radius: 6px;
@@ -305,7 +380,6 @@ const handleLogout = () => {
   background-color: #c82333;
 }
 
-
 .content {
   flex: 1;
   padding: 0;
@@ -313,6 +387,7 @@ const handleLogout = () => {
   height: calc(100vh - var(--header-height));
   min-height: calc(100vh - var(--header-height));
   position: relative;
+  margin-top: 0;
 }
 
 .content::before {
@@ -341,38 +416,29 @@ const handleLogout = () => {
   display: none;
 }
 
-/* 侧边页样式 */
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 300px;
-  height: 100vh;
-  background-color: white;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-  transform: translateX(-100%);
-  transition: transform 0.3s ease-in-out;
-  z-index: 1000;
-}
-
-.sidebar.open {
-  transform: translateX(0);
-}
-
-.sidebar-content {
-  padding: 20px;
-  height: 100%;
-  box-sizing: border-box;
-}
-
-/* 遮罩层样式 */
-.sidebar-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
+.nav-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 999;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: var(--dark-gray);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: all 0.3s;
+}
+
+.nav-link:hover,
+.nav-link.router-link-active {
+  background-color: var(--light-gray);
+  color: #000;
+  font-weight: bold;
 }
 </style>
