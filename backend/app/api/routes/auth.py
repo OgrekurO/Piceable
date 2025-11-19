@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from datetime import timedelta
 from app.config import ACCESS_TOKEN_EXPIRE_MINUTES
-from app.models.schemas import Token, User, UserCreate
+from app.models.schemas import Token, User, UserCreate, UserPublic
 from app.auth.jwt import create_access_token
 from app.crud.users import authenticate_user_from_db, create_user_in_db, get_all_users_from_db, update_user_role_in_db
 from app.api.dependencies import get_current_active_user
@@ -44,7 +44,7 @@ async def register_user(user: UserCreate):
     
     return created_user
 
-@router.get("/users", response_model=list[User])
+@router.get("/users", response_model=list[UserPublic])
 async def get_users(current_user: User = Depends(get_current_active_user)):
     # 只有管理员可以获取用户列表
     if current_user.roleId != 1:

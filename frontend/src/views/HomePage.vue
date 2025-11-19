@@ -28,7 +28,7 @@
         </div>
 
         <div class="actions">
-          <router-link to="/items" class="btn primary">查看项目表格</router-link>
+          <router-link to="/table" class="btn primary">查看项目表格</router-link>
           <router-link to="/timeline" class="btn">查看时间线</router-link>
         </div>
       </main>

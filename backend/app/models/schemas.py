@@ -38,6 +38,9 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
+class UserPublic(UserBase):
+    id: int
+
 class User(UserBase):
     id: int
     hashed_password: str
