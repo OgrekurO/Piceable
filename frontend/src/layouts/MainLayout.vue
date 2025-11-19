@@ -20,9 +20,8 @@
       <div class="header-right">
         <nav>
           <router-link to="/">主页</router-link>
-          <router-link to="/mindmap">思维导图</router-link>
           <router-link to="/table">表格视图</router-link>
-          <router-link to="/settings">设置</router-link>
+          <router-link to="/timeline">时间线</router-link>
         </nav>
         
         <div class="auth-buttons" v-if="!authStore.isAuth">

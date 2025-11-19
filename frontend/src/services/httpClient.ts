@@ -147,6 +147,19 @@ export function deleteFromEaglePlugin(endpoint: string) {
   return requestToEaglePlugin(endpoint, { method: 'DELETE' });
 }
 
+/**
+ * PUT请求到Eagle插件
+ * @param endpoint API端点
+ * @param data 请求数据
+ * @returns Promise
+ */
+export function putToEaglePlugin(endpoint: string, data: any) {
+  return requestToEaglePlugin(endpoint, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
 // 定义项目数据类型
 export interface EagleItem {
   id: string;

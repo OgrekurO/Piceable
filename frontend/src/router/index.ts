@@ -15,14 +15,14 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/LoginRegisterPage.vue')
   },
   {
-    path: '/items',
-    name: 'Items',
+    path: '/table',
+    name: 'Table',
     component: () => import('@/views/TablePage.vue'),
     meta: { requiresAuth: true }
   },
   {
-    path: '/items/:id',
-    name: 'ItemDetail',
+    path: '/mindmap',
+    name: 'MindMap',
     component: () => import('@/views/MindMapPage.vue'),
     meta: { requiresAuth: true }
   },

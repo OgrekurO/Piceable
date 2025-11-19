@@ -1,7 +1,7 @@
 <template>
   <div class="toolbar">
     <div class="logo-section">
-      <img src="@/assets/logo.png" alt="Logo" class="logo" />
+      <img src="@/assets/logo.svg" alt="Logo" class="logo" />
       <span class="app-name">Eagle 图谱管理</span>
     </div>
     
