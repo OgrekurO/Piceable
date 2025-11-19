@@ -47,7 +47,9 @@ class User(UserBase):
         allow_population_by_field_name = True
 
 class UserInDB(User):
-    pass
+    class Config:
+        # 允许使用别名，并在序列化时使用别名
+        allow_population_by_field_name = True
 
 class Token(BaseModel):
     access_token: str
