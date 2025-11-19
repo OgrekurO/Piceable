@@ -1,14 +1,7 @@
  <template>
   <MainLayout>
     <div class="table-page">
-      <!-- 顶部工具栏 -->
-      <Toolbar 
-        v-model:searchText="searchText"
-        :pager-config="pagerConfig"
-        @refresh="refreshData"
-        @page-change="handlePageChange"
-        @update:searchText="handleSearchTextUpdate"
-      />
+
       
       <div class="table-container">
         <!-- 表格区域 -->

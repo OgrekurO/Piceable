@@ -30,6 +30,13 @@ class UserBase(BaseModel):
     email: str
     is_active: bool = True
     role_id: int = 1
+    
+    class Config:
+        # 使API返回的字段名与前端保持一致
+        fields = {
+            'is_active': 'isActive',
+            'role_id': 'roleId'
+        }
 
 class UserCreate(UserBase):
     password: str
@@ -37,6 +44,13 @@ class UserCreate(UserBase):
 class User(UserBase):
     id: int
     hashed_password: str
+    
+    class Config:
+        # 使API返回的字段名与前端保持一致
+        fields = {
+            'is_active': 'isActive',
+            'role_id': 'roleId'
+        }
 
 class UserInDB(User):
     pass
