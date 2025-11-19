@@ -5,6 +5,7 @@ from app.config import ACCESS_TOKEN_EXPIRE_MINUTES
 from app.models.schemas import Token, User, UserCreate
 from app.auth.jwt import create_access_token
 from app.crud.users import authenticate_user_from_db, create_user_in_db, get_all_users_from_db, update_user_role_in_db
+from app.api.dependencies import get_current_active_user
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -14,7 +15,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="用户名或密码不正确",
+            detail="用户名或密码错误",
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -30,14 +31,14 @@ async def register_user(user: UserCreate):
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="用户名已存在",
+            detail="用户已存在",
         )
     
     # 创建新用户
     created_user = create_user_in_db(user)
     if not created_user:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="创建用户失败",
         )
     
