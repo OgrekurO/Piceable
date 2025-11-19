@@ -1,4 +1,4 @@
-import { httpClient } from './httpClient'
+import { postToBackend, getFromBackend, putToBackend } from './httpClient'
 import type { User } from '@/types'
 
 /**
@@ -13,8 +13,18 @@ export async function login(username: string, password: string) {
     formData.append('username', username)
     formData.append('password', password)
     
-    const response = await httpClient.post('/api/auth/token', formData)
-    const { access_token } = response.data
+    // 使用原始fetch发送表单数据
+    const response = await fetch('http://localhost:8001/api/auth/token', {
+      method: 'POST',
+      body: formData,
+    })
+    
+    if (!response.ok) {
+      throw new Error(`HTTP错误: ${response.status} ${response.statusText}`)
+    }
+    
+    const data = await response.json()
+    const { access_token } = data
     return { success: true, token: access_token }
   } catch (error: any) {
     console.error('登录失败:', error)
@@ -32,8 +42,8 @@ export async function login(username: string, password: string) {
  */
 export async function register(userData: { username: string; email: string; password: string }) {
   try {
-    const response = await httpClient.post('/api/auth/register', userData)
-    return { success: true, user: response.data }
+    const response = await postToBackend('/api/auth/register', userData)
+    return { success: true, user: response }
   } catch (error: any) {
     console.error('注册失败:', error)
     return { 
@@ -49,8 +59,8 @@ export async function register(userData: { username: string; email: string; pass
  */
 export async function getCurrentUser(): Promise<User | null> {
   try {
-    const response = await httpClient.get('/api/users/me')
-    return response.data
+    const response = await getFromBackend('/api/users/me')
+    return response
   } catch (error) {
     console.error('获取用户信息失败:', error)
     return null
@@ -63,8 +73,8 @@ export async function getCurrentUser(): Promise<User | null> {
  */
 export async function getAllUsers(): Promise<User[] | null> {
   try {
-    const response = await httpClient.get('/api/auth/users')
-    return response.data
+    const response = await getFromBackend('/api/auth/users')
+    return response
   } catch (error) {
     console.error('获取用户列表失败:', error)
     return null
@@ -79,8 +89,8 @@ export async function getAllUsers(): Promise<User[] | null> {
  */
 export async function updateUserRole(userId: number, roleId: number) {
   try {
-    const response = await httpClient.put(`/api/auth/users/${userId}/role`, { role_id: roleId })
-    return { success: true, data: response.data }
+    const response = await putToBackend(`/api/auth/users/${userId}/role`, { role_id: roleId })
+    return { success: true, data: response }
   } catch (error: any) {
     console.error('更新用户角色失败:', error)
     return { 

@@ -126,13 +126,16 @@ export function postToBackend(endpoint: string, data: any) {
 }
 
 /**
- * PUT请求到Eagle插件
+ * PUT请求到后端API
  * @param endpoint API端点
  * @param data 请求数据
  * @returns Promise
  */
-export function putToEaglePlugin(endpoint: string, data: any) {
-  return postToEaglePlugin(endpoint, data);
+export function putToBackend(endpoint: string, data: any) {
+  return requestToBackend(endpoint, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
 }
 
 /**
