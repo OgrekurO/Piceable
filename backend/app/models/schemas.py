@@ -28,15 +28,12 @@ class ExportOptions(BaseModel):
 class UserBase(BaseModel):
     username: str
     email: str
-    is_active: bool = True
-    role_id: int = 1
+    isActive: bool = True
+    roleId: int = 1
     
     class Config:
-        # 使API返回的字段名与前端保持一致
-        fields = {
-            'is_active': 'isActive',
-            'role_id': 'roleId'
-        }
+        # 允许使用别名，并在序列化时使用别名
+        allow_population_by_field_name = True
 
 class UserCreate(UserBase):
     password: str
@@ -46,11 +43,8 @@ class User(UserBase):
     hashed_password: str
     
     class Config:
-        # 使API返回的字段名与前端保持一致
-        fields = {
-            'is_active': 'isActive',
-            'role_id': 'roleId'
-        }
+        # 允许使用别名，并在序列化时使用别名
+        allow_population_by_field_name = True
 
 class UserInDB(User):
     pass

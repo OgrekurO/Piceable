@@ -8,9 +8,9 @@ def get_user_from_db(db, username: str):
     
     # 检查数据库类型
     if conn.row_factory:  # SQLite
-        cur.execute("SELECT id, username, email, hashed_password, is_active, role_id FROM users WHERE username = ?", (username,))
+        cur.execute("SELECT id, username, email, hashed_password, is_active as isActive, role_id as roleId FROM users WHERE username = ?", (username,))
     else:  # PostgreSQL
-        cur.execute("SELECT id, username, email, hashed_password, is_active, role_id FROM users WHERE username = %s", (username,))
+        cur.execute("SELECT id, username, email, hashed_password, is_active as isActive, role_id as roleId FROM users WHERE username = %s", (username,))
     
     user_row = cur.fetchone()
     cur.close()
