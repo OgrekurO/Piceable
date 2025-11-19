@@ -47,7 +47,7 @@ async def register_user(user: UserCreate):
 @router.get("/users", response_model=list[User])
 async def get_users(current_user: User = Depends(get_current_active_user)):
     # 只有管理员可以获取用户列表
-    if current_user.role_id != 1:
+    if current_user.roleId != 1:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="权限不足",
@@ -63,7 +63,7 @@ async def update_user_role(
     current_user: User = Depends(get_current_active_user)
 ):
     # 只有管理员可以更新用户角色
-    if current_user.role_id != 1:
+    if current_user.roleId != 1:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="权限不足",

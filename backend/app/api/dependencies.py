@@ -24,13 +24,13 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     return user
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)):
-    if not current_user.is_active:
+    if not current_user.isActive:
         raise HTTPException(status_code=400, detail="用户未激活")
     return current_user
 
 async def get_current_admin_user(current_user: User = Depends(get_current_active_user)):
     """检查当前用户是否为管理员"""
-    if current_user.role_id != 1:
+    if current_user.roleId != 1:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="需要管理员权限",

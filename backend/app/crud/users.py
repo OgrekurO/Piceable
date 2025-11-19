@@ -58,15 +58,15 @@ def create_user_in_db(user: UserCreate):
         return dict(user_row)
 
 def get_all_users_from_db():
-    """获取所有用户列表"""
+    """获取所有用户"""
     conn = get_db_connection()
     cur = conn.cursor()
     
     # 检查数据库类型
     if conn.row_factory:  # SQLite
-        cur.execute("SELECT id, username, email, is_active, role_id FROM users")
+        cur.execute("SELECT id, username, email, is_active as isActive, role_id as roleId FROM users")
     else:  # PostgreSQL
-        cur.execute("SELECT id, username, email, is_active, role_id FROM users")
+        cur.execute("SELECT id, username, email, is_active as isActive, role_id as roleId FROM users")
     
     users_rows = cur.fetchall()
     cur.close()
