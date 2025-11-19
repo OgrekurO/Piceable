@@ -56,7 +56,7 @@ const initializeTable = async () => {
       {
         title: "预览",
         field: "thumbnail",
-        formatter: function(cell) {
+        formatter: function(cell: any) {
           const imageData = cell.getValue()
           
           if (imageData) {
@@ -76,14 +76,14 @@ const initializeTable = async () => {
         width: 200,
         sorter: "string",
         validator: ["required"],
-        cellClick: function(e, cell) {
+        cellClick: function(e: any, cell: any) {
           console.log('[EDIT] 名称单元格被点击，ID:', cell.getRow().getData().id)
         },
-        cellDblClick: function(e, cell) {
+        cellDblClick: function(e: any, cell: any) {
           console.log('[EDIT] 名称单元格被双击，ID:', cell.getRow().getData().id)
           cell.edit()
         },
-        cellEdited: function(cell) {
+        cellEdited: function(cell: any) {
           console.log('[EDIT] 单元格编辑完成:', cell.getField(), '新值:', cell.getValue(), '行ID:', cell.getRow().getData().id)
           emit('cellEdited', cell.getField(), cell.getValue(), cell.getRow().getData().id)
           
@@ -119,22 +119,19 @@ const initializeTable = async () => {
         title: "标签",
         field: "tags",
         editor: "input",
-        width: 200,
-        cellClick: function(e, cell) {
+        width: 150,
+        sorter: "string",
+        validator: ["required"],
+        cellClick: function(e: any, cell: any) {
           console.log('[EDIT] 标签单元格被点击，ID:', cell.getRow().getData().id)
         },
-        cellDblClick: function(e, cell) {
+        cellDblClick: function(e: any, cell: any) {
           console.log('[EDIT] 标签单元格被双击，ID:', cell.getRow().getData().id)
           cell.edit()
         },
-        cellEdited: function(cell) {
+        cellEdited: function(cell: any) {
           console.log('[EDIT] 单元格编辑完成:', cell.getField(), '新值:', cell.getValue(), '行ID:', cell.getRow().getData().id)
           emit('cellEdited', cell.getField(), cell.getValue(), cell.getRow().getData().id)
-          
-          // 自动同步数据到Eagle
-          setTimeout(() => {
-            emit('syncData')
-          }, 100)
         }
       },
       {

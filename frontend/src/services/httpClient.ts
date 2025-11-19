@@ -1,19 +1,22 @@
 /**
  * HTTP客户端服务 - 与独立HTTP API服务通信 */
 
+import { getAccessToken } from './authService';
+
 // HTTP客户端 - 用于与独立HTTP API服务通信
-const BASE_URL = 'http://localhost:3001';
+const EAGLE_PLUGIN_BASE_URL = 'http://localhost:3001';
+const BACKEND_API_BASE_URL = 'http://localhost:8001';
 
 /**
- * 发送HTTP请求
+ * 发送HTTP请求到Eagle插件
  * @param endpoint API端点
  * @param options 请求选项
  * @returns Promise
  */
-export async function request(endpoint: string, options: RequestInit = {}) {
+export async function requestToEaglePlugin(endpoint: string, options: RequestInit = {}) {
   try {
-    const url = `${BASE_URL}${endpoint}`;
-    console.log(`[HTTP_CLIENT] 发送请求: ${options.method || 'GET'} ${url}`);
+    const url = `${EAGLE_PLUGIN_BASE_URL}${endpoint}`;
+    console.log(`[HTTP_CLIENT] 发送请求到Eagle插件: ${options.method || 'GET'} ${url}`);
     
     const response = await fetch(url, {
       ...options,
@@ -38,45 +41,107 @@ export async function request(endpoint: string, options: RequestInit = {}) {
 }
 
 /**
- * GET请求
+ * 发送HTTP请求到后端API
  * @param endpoint API端点
+ * @param options 请求选项
  * @returns Promise
  */
-export function get(endpoint: string) {
-  return request(endpoint, { method: 'GET' });
+export async function requestToBackend(endpoint: string, options: RequestInit = {}) {
+  try {
+    const url = `${BACKEND_API_BASE_URL}${endpoint}`;
+    console.log(`[HTTP_CLIENT] 发送请求到后端API: ${options.method || 'GET'} ${url}`);
+    
+    // 添加认证头
+    const token = getAccessToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
+    
+    if (token && !headers['Authorization']) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP错误: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log(`[HTTP_CLIENT] 收到响应:`, data);
+    
+    return data;
+  } catch (error) {
+    console.error(`[HTTP_CLIENT] 请求失败:`, error);
+    throw error;
+  }
 }
 
 /**
- * POST请求
+ * GET请求到Eagle插件
+ * @param endpoint API端点
+ * @returns Promise
+ */
+export function getFromEaglePlugin(endpoint: string) {
+  return requestToEaglePlugin(endpoint, { method: 'GET' });
+}
+
+/**
+ * GET请求到后端API
+ * @param endpoint API端点
+ * @returns Promise
+ */
+export function getFromBackend(endpoint: string) {
+  return requestToBackend(endpoint, { method: 'GET' });
+}
+
+/**
+ * POST请求到Eagle插件
  * @param endpoint API端点
  * @param data 请求数据
  * @returns Promise
  */
-export function post(endpoint: string, data: any) {
-  return request(endpoint, {
+export function postToEaglePlugin(endpoint: string, data: any) {
+  return requestToEaglePlugin(endpoint, {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
 /**
- * PUT请求 (使用POST方法替代)
+ * POST请求到后端API
  * @param endpoint API端点
  * @param data 请求数据
  * @returns Promise
  */
-export function put(endpoint: string, data: any) {
-  // 由于Eagle插件API只支持POST方法，这里使用POST替代PUT
-  return post(endpoint, data);
+export function postToBackend(endpoint: string, data: any) {
+  return requestToBackend(endpoint, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
 }
 
 /**
- * DELETE请求
+ * PUT请求到Eagle插件
+ * @param endpoint API端点
+ * @param data 请求数据
+ * @returns Promise
+ */
+export function putToEaglePlugin(endpoint: string, data: any) {
+  return postToEaglePlugin(endpoint, data);
+}
+
+/**
+ * DELETE请求到Eagle插件
  * @param endpoint API端点
  * @returns Promise
  */
-export function del(endpoint: string) {
-  return request(endpoint, { method: 'DELETE' });
+export function deleteFromEaglePlugin(endpoint: string) {
+  return requestToEaglePlugin(endpoint, { method: 'DELETE' });
 }
 
 // 定义项目数据类型
@@ -106,7 +171,11 @@ interface ApiResponse<T> {
  */
 export async function getItems(): Promise<EagleItem[]> {
   console.log('[HTTP_CLIENT] 获取项目列表');
-  return request<EagleItem[]>('/api/items');
+  const response = await requestToEaglePlugin<{ success: boolean; data: EagleItem[]; count: number }>('/api/items');
+  if (response.success) {
+    return response.data;
+  }
+  throw new Error(response.error || '获取项目列表失败');
 }
 
 /**
@@ -116,7 +185,11 @@ export async function getItems(): Promise<EagleItem[]> {
  */
 export async function getItem(id: string): Promise<EagleItem> {
   console.log(`[HTTP_CLIENT] 获取项目 ${id}`);
-  return request<EagleItem>(`/api/item/${id}`);
+  const response = await requestToEaglePlugin<{ success: boolean; data: EagleItem }>('/api/item/' + id);
+  if (response.success) {
+    return response.data;
+  }
+  throw new Error(response.error || '获取项目失败');
 }
 
 /**
@@ -127,7 +200,7 @@ export async function getItem(id: string): Promise<EagleItem> {
  */
 export async function updateItem(id: string, data: Partial<EagleItem>): Promise<any> {
   console.log(`[HTTP_CLIENT] 更新项目 ${id}`);
-  return request<any>(`/api/item/${id}`, {
+  return requestToEaglePlugin<any>(`/api/item/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   });
@@ -140,7 +213,7 @@ export async function updateItem(id: string, data: Partial<EagleItem>): Promise<
  */
 export async function createItem(data: Partial<EagleItem>): Promise<any> {
   console.log('[HTTP_CLIENT] 创建项目');
-  return request<any>('/api/items', {
+  return requestToEaglePlugin<any>('/api/items', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -153,7 +226,7 @@ export async function createItem(data: Partial<EagleItem>): Promise<any> {
  */
 export async function deleteItem(id: string): Promise<any> {
   console.log(`[HTTP_CLIENT] 删除项目 ${id}`);
-  return request<any>(`/api/item/${id}`, {
+  return requestToEaglePlugin<any>(`/api/item/${id}`, {
     method: 'DELETE',
   });
 }
@@ -164,7 +237,11 @@ export async function deleteItem(id: string): Promise<any> {
  */
 export async function getLibraryInfo(): Promise<any> {
   console.log('[HTTP_CLIENT] 获取库信息');
-  return request<any>('/api/library');
+  const response = await requestToEaglePlugin<{ success: boolean; data: any }>('/api/library');
+  if (response.success) {
+    return response.data;
+  }
+  throw new Error(response.error || '获取库信息失败');
 }
 
 /**
@@ -174,7 +251,7 @@ export async function getLibraryInfo(): Promise<any> {
  */
 export async function syncData(data: any): Promise<any> {
   console.log('[HTTP_CLIENT] 同步数据');
-  return request<any>('/api/sync', {
+  return requestToEaglePlugin<any>('/api/sync', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -187,7 +264,7 @@ export async function syncData(data: any): Promise<any> {
  */
 export async function exportData(options: any): Promise<any> {
   console.log('[HTTP_CLIENT] 导出数据');
-  return request<any>('/api/export', {
+  return requestToEaglePlugin<any>('/api/export', {
     method: 'POST',
     body: JSON.stringify(options),
   });
@@ -199,7 +276,7 @@ export async function exportData(options: any): Promise<any> {
  */
 export async function isServerAvailable(): Promise<boolean> {
   try {
-    await request('/api/library');
+    await requestToEaglePlugin('/api/library');
     return true;
   } catch (error) {
     return false;

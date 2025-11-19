@@ -7,7 +7,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./eagle-plugin:/usr/share/nginx/html
+      - ./frontend/dist:/usr/share/nginx/html
     depends_on:
       - backend
 
@@ -18,9 +18,11 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=sqlite:///db/data.db
+      - DATABASE_URL=postgresql://user:password@database:5432/eagle_ontology
     volumes:
       - ./db:/app/db
+    depends_on:
+      - database
 
   database:
     # 数据库服务

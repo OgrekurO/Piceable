@@ -1,6 +1,6 @@
 import { ref, watch } from 'vue'
 import type { VxeGridPropTypes } from 'vxe-table'
-import type { PagerEvents } from 'vxe-pc-ui'
+import type { VxePagerEvents } from 'vxe-pc-ui'
 
 export function usePagination() {
   // 表格配置
@@ -15,7 +15,7 @@ export function usePagination() {
     // 每行大约高度为60px，加上表头和一些边距
     const rowHeight = 60
     const headerHeight = 50
-    const totalHeight = gridOptions.value.pageSize * rowHeight + headerHeight
+    const totalHeight = (gridOptions.value.pageSize || 50) * rowHeight + headerHeight
     
     // 设置最小和最大高度
     const minHeight = 500
@@ -27,7 +27,7 @@ export function usePagination() {
   }
 
   // 处理页面变化
-  const handlePageChange: PagerEvents.PageChange = ({ currentPage, pageSize }) => {
+  const handlePageChange: VxePagerEvents.PageChange = ({ currentPage, pageSize }) => {
     gridOptions.value.currentPage = currentPage
     gridOptions.value.pageSize = pageSize
   }

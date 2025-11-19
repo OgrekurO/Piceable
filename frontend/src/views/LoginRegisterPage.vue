@@ -110,9 +110,11 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage, FormInstance, FormRules } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import type { User } from '@/types'
+import { login as loginApi, register as registerApi, getCurrentUser } from '@/services/authService'
 
 // 获取认证存储和路由实例
 const authStore = useAuthStore()
@@ -150,11 +152,11 @@ const registerForm = reactive({
 const loginRules = reactive<FormRules>({
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '用户名长度应在 3-20 个字符之间', trigger: 'blur' }
+    { min: 2, max: 20, message: '用户名长度应在 2-20 个字符之间', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 20, message: '密码长度应在 6-20 个字符之间', trigger: 'blur' }
+    { min: 5, max: 20, message: '密码长度应在 5-20 个字符之间', trigger: 'blur' }
   ]
 })
 
@@ -196,30 +198,49 @@ const onTabChange = (tabName: string) => {
 const handleLogin = async () => {
   if (!loginFormRef.value) return
   
-  await loginFormRef.value.validate((valid) => {
+  await loginFormRef.value.validate(async (valid) => {
     if (valid) {
       loginLoading.value = true
       
-      // 模拟登录请求
-      setTimeout(() => {
-        // 这里应该是实际的登录 API 调用
-        const mockUser: User = {
-          id: 1,
-          username: loginForm.username,
-          email: 'user@example.com',
-          isActive: true,
-          roleId: 1
+      try {
+        // 实际登录请求
+        const formData = new FormData()
+        formData.append("username", loginForm.username)
+        formData.append("password", loginForm.password)
+        
+        const response = await fetch('http://localhost:8001/api/auth/token', {
+          method: 'POST',
+          body: formData
+        })
+        
+        const data = await response.json()
+        
+        if (response.ok) {
+          // 获取用户信息
+          const userResponse = await fetch('http://localhost:8001/api/users/me', {
+            headers: {
+              'Authorization': `Bearer ${data.access_token}`
+            }
+          })
+          
+          const userData = await userResponse.json()
+          
+          // 设置用户认证状态
+          authStore.login(userData, data.access_token)
+          
+          ElMessage.success('登录成功')
+          // 登录成功后返回之前的页面或主页
+          const redirect = route.query.redirect || '/'
+          router.push(redirect as string)
+        } else {
+          ElMessage.error(data.detail || '登录失败')
         }
-        
-        // 设置用户认证状态
-        authStore.login(mockUser)
-        
-        ElMessage.success('登录成功')
-        // 登录成功后返回之前的页面或主页
-        const redirect = route.query.redirect || '/'
-        router.push(redirect as string)
+      } catch (error) {
+        console.error('登录错误:', error)
+        ElMessage.error('登录过程中发生错误')
+      } finally {
         loginLoading.value = false
-      }, 1000)
+      }
     }
   })
 }
@@ -228,23 +249,32 @@ const handleLogin = async () => {
 const handleRegister = async () => {
   if (!registerFormRef.value) return
   
-  await registerFormRef.value.validate((valid) => {
+  await registerFormRef.value.validate(async (valid) => {
     if (valid) {
       registerLoading.value = true
       
-      // 模拟注册请求
-      setTimeout(() => {
-        // 这里应该是实际的注册 API 调用
+      try {
+        // 实际注册请求
+        await registerApi({
+          username: registerForm.username,
+          email: registerForm.email,
+          password: registerForm.password
+        })
+        
         ElMessage.success('注册成功，请登录')
         activeTab.value = 'login'
-        registerLoading.value = false
         
         // 清空注册表单
         registerForm.username = ''
         registerForm.email = ''
         registerForm.password = ''
         registerForm.confirmPassword = ''
-      }, 1000)
+      } catch (error: any) {
+        console.error('注册错误:', error)
+        ElMessage.error(error.message || '注册过程中发生错误')
+      } finally {
+        registerLoading.value = false
+      }
     }
   })
 }

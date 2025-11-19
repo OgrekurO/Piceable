@@ -3,7 +3,7 @@
  * 使用HTTP API进行通信
  */
 
-import { get, post, put } from './httpClient';
+import { getFromEaglePlugin as get, postToEaglePlugin as post, putToEaglePlugin as put } from './httpClient';
 
 // 定义项目数据类型
 export interface EagleItem {

@@ -1,25 +1,33 @@
 import { defineStore } from 'pinia'
 import type { User } from '@/types'
+import { setAccessToken as saveToken, clearAccessToken } from '@/services/authService'
 
 interface AuthState {
   user: User | null
   isAuthenticated: boolean
+  accessToken: string | null
 }
 
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     user: null,
-    isAuthenticated: false
+    isAuthenticated: false,
+    accessToken: null
   }),
   
   actions: {
     /**
      * 用户登录
      * @param user 用户信息
+     * @param token 访问令牌
      */
-    login(user: User) {
+    login(user: User, token?: string) {
       this.user = user
       this.isAuthenticated = true
+      if (token) {
+        this.accessToken = token
+        saveToken(token)
+      }
     },
     
     /**
@@ -28,6 +36,8 @@ export const useAuthStore = defineStore('auth', {
     logout() {
       this.user = null
       this.isAuthenticated = false
+      this.accessToken = null
+      clearAccessToken()
     },
     
     /**
@@ -36,6 +46,14 @@ export const useAuthStore = defineStore('auth', {
      */
     updateUserInfo(user: User) {
       this.user = user
+    },
+    
+    /**
+     * 设置访问令牌
+     * @param token 访问令牌
+     */
+    setAccessToken(token: string) {
+      this.accessToken = token
     }
   },
   
@@ -48,6 +66,11 @@ export const useAuthStore = defineStore('auth', {
     /**
      * 检查用户是否已认证
      */
-    isAuth: (state) => state.isAuthenticated
+    isAuth: (state) => state.isAuthenticated,
+    
+    /**
+     * 获取访问令牌
+     */
+    getToken: (state) => state.accessToken
   }
 })

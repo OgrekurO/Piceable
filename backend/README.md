@@ -8,6 +8,32 @@
 - FastAPI (Web 框架)
 - Uvicorn (ASGI 服务器)
 - Pydantic (数据验证)
+- SQLite/PostgreSQL (数据库)
+
+## 项目结构
+
+```
+app/                    # 主应用目录
+├── main.py             # 应用入口点
+├── config.py           # 配置文件
+├── models/             # 数据模型
+│   └── schemas.py
+├── database/           # 数据库相关
+│   ├── connection.py
+│   └── init_db.py
+├── auth/               # 认证相关
+│   ├── security.py
+│   └── jwt.py
+├── crud/               # 数据访问层
+│   ├── items.py
+│   └── users.py
+└── api/                # API路由
+    ├── dependencies.py
+    └── routes/
+        ├── auth.py
+        ├── items.py
+        └── library.py
+```
 
 ## 使用方法
 
@@ -17,15 +43,32 @@
 pip install -r requirements.txt
 ```
 
+### 初始化数据库
+
+```bash
+python init_db.py
+```
+
 ### 运行服务
 
 ```bash
-python main.py
+python -m app.main
 ```
 
-服务将在 http://localhost:3001 启动。
+服务将在 http://localhost:8001 启动。
 
 ## API 接口
+
+### 认证相关
+
+- `POST /api/auth/token` - 用户登录，获取访问令牌
+- `POST /api/auth/register` - 用户注册
+
+### 用户相关
+
+- `GET /api/users/me` - 获取当前用户信息
+
+### 数据相关
 
 - `GET /` - 根路径，返回欢迎信息
 - `GET /api/items` - 获取项目列表
@@ -76,5 +119,26 @@ python main.py
 ```json
 {
   "format": "string"
+}
+```
+
+### User（用户）
+
+```json
+{
+  "id": "integer",
+  "username": "string",
+  "email": "string",
+  "is_active": "boolean",
+  "role_id": "integer"
+}
+```
+
+### Token（访问令牌）
+
+```json
+{
+  "access_token": "string",
+  "token_type": "string"
 }
 ```
