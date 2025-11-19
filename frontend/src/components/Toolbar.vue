@@ -1,95 +1,142 @@
 <template>
   <div class="toolbar">
-    <div class="toolbar-left">
-      <el-button @click="handleRefresh" size="small" icon="Refresh">刷新</el-button>
-      <el-input 
-        v-model="searchTextLocal" 
-        placeholder="搜索..." 
-        size="small" 
-        style="width: 500px; margin-left: 10px;"
-        clearable
-        @clear="handleSearchClear"
-        @input="handleSearchInput"
-      />
+    <div class="logo-section">
+      <img src="@/assets/logo.png" alt="Logo" class="logo" />
+      <span class="app-name">Eagle 图谱管理</span>
     </div>
-    <div class="toolbar-right">
-      <!-- 分页组件 -->
-      <vxe-pager 
-        v-if="pagerConfig"
-        v-bind="pagerConfig"
-        @page-change="handlePageChange"
-      />
+    
+    <div class="nav-section">
+      <el-menu 
+        :default-active="activeIndex" 
+        mode="horizontal" 
+        :ellipsis="false"
+        @select="handleSelect"
+      >
+        <el-menu-item index="/">首页</el-menu-item>
+        <el-menu-item index="/items">项目管理</el-menu-item>
+        <el-menu-item index="/timeline">时间线</el-menu-item>
+        <el-menu-item 
+          v-if="authStore.user && isAdmin(authStore.user)" 
+          index="/admin"
+        >
+          管理员控制台
+        </el-menu-item>
+      </el-menu>
+    </div>
+    
+    <div class="user-section">
+      <div v-if="authStore.isAuthenticated" class="user-info">
+        <el-dropdown @command="handleUserCommand">
+          <span class="el-dropdown-link">
+            {{ authStore.user?.username }}
+            <el-icon class="el-icon--right">
+              <arrow-down />
+            </el-icon>
+          </span>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="profile">个人资料</el-dropdown-item>
+              <el-dropdown-item command="logout">退出登录</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </div>
+      <div v-else>
+        <el-button @click="$router.push('/login')">登录</el-button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import type { PagerEvents } from 'vxe-pc-ui'
-import type { VxeGridPropTypes } from 'vxe-table'
+import { ref, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { useAuthStore } from '@/stores/auth'
+import { isAdmin } from '@/services/authService'
 
-// 定义属性
-const props = defineProps<{
-  searchText: string
-  pagerConfig?: VxeGridPropTypes.PagerConfig
-}>()
+const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
 
-// 定义事件
-const emit = defineEmits<{
-  (e: 'refresh'): void
-  (e: 'update:searchText', value: string): void
-  (e: 'page-change', value: PagerEvents.PageChange): void
-}>()
+const activeIndex = ref('/')
 
-// 本地搜索文本
-const searchTextLocal = ref(props.searchText)
+// 监听路由变化，更新激活的菜单项
+watch(
+  () => route.path,
+  (newPath) => {
+    activeIndex.value = newPath
+  },
+  { immediate: true }
+)
 
-// 监听搜索文本变化
-watch(() => props.searchText, (newVal) => {
-  searchTextLocal.value = newVal
-})
-
-// 处理刷新
-const handleRefresh = () => {
-  emit('refresh')
+const handleSelect = (key: string) => {
+  router.push(key)
 }
 
-// 处理搜索输入
-const handleSearchInput = () => {
-  emit('update:searchText', searchTextLocal.value)
-}
-
-// 处理搜索清除
-const handleSearchClear = () => {
-  searchTextLocal.value = ''
-  emit('update:searchText', '')
-}
-
-// 处理页面变化
-const handlePageChange: PagerEvents.PageChange = (params) => {
-  emit('page-change', params)
+const handleUserCommand = (command: string) => {
+  if (command === 'logout') {
+    authStore.logout()
+    router.push('/login')
+    ElMessage.success('已退出登录')
+  } else if (command === 'profile') {
+    // 个人资料功能可以在这里实现
+    ElMessage.info('个人资料功能正在开发中')
+  }
 }
 </script>
 
 <style scoped>
 .toolbar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 8px 16px;
-  background-color: #f5f5f5;
-  border-bottom: 1px solid #ddd;
-  min-height: 40px;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 60px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
 }
 
-.toolbar-left,
-.toolbar-right {
+.logo-section {
   display: flex;
   align-items: center;
-  gap: 10px;
 }
 
-.toolbar-right {
-  flex-shrink: 0;
+.logo {
+  height: 40px;
+  margin-right: 10px;
+}
+
+.app-name {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+.nav-section {
+  flex: 1;
+  margin: 0 20px;
+}
+
+.user-section {
+  display: flex;
+  align-items: center;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+}
+
+.el-dropdown-link {
+  cursor: pointer;
+  color: #333;
+  display: flex;
+  align-items: center;
 }
 </style>

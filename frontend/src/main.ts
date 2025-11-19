@@ -5,6 +5,8 @@ import { createPinia } from 'pinia'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+import App from './App.vue'
+import router from './router'
 
 // 引入 Vxe-Table
 import VXETable from 'vxe-table'
@@ -13,9 +15,6 @@ import 'vxe-table/lib/style.css'
 // 引入Vxe-UI组件
 import VXEUIGlobal from 'vxe-pc-ui'
 import 'vxe-pc-ui/lib/style.css'
-
-import App from './App.vue'
-import router from './router'
 
 const app = createApp(App)
 

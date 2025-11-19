@@ -56,3 +56,41 @@ def create_user_in_db(user: UserCreate):
     
     if user_row:
         return dict(user_row)
+
+def get_all_users_from_db():
+    """获取所有用户列表"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # 检查数据库类型
+    if conn.row_factory:  # SQLite
+        cur.execute("SELECT id, username, email, is_active, role_id FROM users")
+    else:  # PostgreSQL
+        cur.execute("SELECT id, username, email, is_active, role_id FROM users")
+    
+    users_rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    
+    users = []
+    for row in users_rows:
+        users.append(dict(row))
+    
+    return users
+
+def update_user_role_in_db(user_id: int, role_id: int):
+    """更新用户角色"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # 检查数据库类型
+    if conn.row_factory:  # SQLite
+        cur.execute("UPDATE users SET role_id = ? WHERE id = ?", (role_id, user_id))
+    else:  # PostgreSQL
+        cur.execute("UPDATE users SET role_id = %s WHERE id = %s", (role_id, user_id))
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+    
+    return cur.rowcount > 0

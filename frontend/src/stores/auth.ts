@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import type { User } from '@/types'
-import { setAccessToken as saveToken, clearAccessToken } from '@/services/authService'
+import { setAccessToken as saveToken, clearAccessToken, getAccessToken } from '@/services/authService'
+import { getCurrentUser } from '@/services/authService'
 
 interface AuthState {
   user: User | null
@@ -54,6 +55,24 @@ export const useAuthStore = defineStore('auth', {
      */
     setAccessToken(token: string) {
       this.accessToken = token
+    },
+    
+    /**
+     * 从本地存储恢复认证状态
+     */
+    async restoreAuth() {
+      const token = getAccessToken()
+      if (token) {
+        this.accessToken = token
+        const user = await getCurrentUser()
+        if (user) {
+          this.user = user
+          this.isAuthenticated = true
+        } else {
+          // 如果无法获取用户信息，清除令牌
+          this.logout()
+        }
+      }
     }
   },
   

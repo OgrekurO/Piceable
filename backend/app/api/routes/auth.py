@@ -4,7 +4,7 @@ from datetime import timedelta
 from app.config import ACCESS_TOKEN_EXPIRE_MINUTES
 from app.models.schemas import Token, User, UserCreate
 from app.auth.jwt import create_access_token
-from app.crud.users import authenticate_user_from_db, create_user_in_db
+from app.crud.users import authenticate_user_from_db, create_user_in_db, get_all_users_from_db, update_user_role_in_db
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -42,3 +42,37 @@ async def register_user(user: UserCreate):
         )
     
     return created_user
+
+@router.get("/users", response_model=list[User])
+async def get_users(current_user: User = Depends(get_current_active_user)):
+    # 只有管理员可以获取用户列表
+    if current_user.role_id != 1:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="权限不足",
+        )
+    
+    users = get_all_users_from_db()
+    return users
+
+@router.put("/users/{user_id}/role")
+async def update_user_role(
+    user_id: int, 
+    role_id: int,
+    current_user: User = Depends(get_current_active_user)
+):
+    # 只有管理员可以更新用户角色
+    if current_user.role_id != 1:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="权限不足",
+        )
+    
+    success = update_user_role_in_db(user_id, role_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="用户未找到",
+        )
+    
+    return {"message": "用户角色更新成功"}
