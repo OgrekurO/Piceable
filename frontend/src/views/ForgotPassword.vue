@@ -67,15 +67,16 @@
             class="submit-btn" 
             :loading="resetLoading"
             @click="handleResetPassword"
-            style="width: 100%; margin-bottom: 16px;"
+            style="width: 100%; margin-bottom: 16px; font-weight: bold;"
           >
             重置密码
           </el-button>
         </el-form-item>
 
         <div style="text-align: center; margin-top: 16px;">
-          <router-link to="/login" style="color: #409EFF; font-weight: bold; font-size: 12.8px;">
-            返回登录
+          <span style="color: #777; font-size: 12px;">已有账号？</span>
+          <router-link to="/login" style="color: #777; font-weight: bold; margin-left: 4px; font-size: 12px;">
+            立即登录
           </router-link>
         </div>
       </el-form>
