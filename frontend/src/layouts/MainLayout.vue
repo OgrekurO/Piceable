@@ -15,8 +15,8 @@
           </svg>
         </div>
         <!-- 点击Piceable文字返回主页 -->
-        <span class="brand">
-          <router-link to="/" class="brand-link">Piceable</router-link>
+        <span class="logo">
+          <router-link to="/" class="logo-link">Piceable</router-link>
         </span>
       </div>
       
@@ -41,7 +41,6 @@
         </div>
       </div>
       
-
       <div class="header-right">
         <div class="auth-buttons" v-if="!authStore.isAuth">
           <router-link to="/login" class="auth-link login">登录</router-link>
@@ -57,7 +56,7 @@
             
             <!-- 下拉菜单 -->
             <div class="user-dropdown-menu" v-show="showUserDropdown">
-              <router-link to="/admin" class="dropdown-item" v-if="authStore.currentUser?.role === 'admin'">管理面板</router-link>
+              <router-link to="/admin" class="dropdown-item" v-if="authStore.currentUser?.roleId === 1">管理面板</router-link>
               <router-link to="/settings" class="dropdown-item">设置</router-link>
               <button class="dropdown-item logout-btn" @click="handleLogout">退出</button>
             </div>
@@ -130,11 +129,7 @@ document.addEventListener('click', (event) => {
 <style scoped>
 /* 定义CSS变量 */
 :root {
-  --header-height: 100px; /* 设置导航栏高度为固定100px */
-  --border-color: #606060; /* 保持边缘线颜色 */
-  --light-gray: #f8f9fa;
-  --medium-gray: #aaaaaa;
-  --dark-gray: #303030;
+  --header-height: 1vh; /* 设置导航栏高度为固定100px */
 }
 
 .main-layout {
@@ -150,7 +145,7 @@ document.addEventListener('click', (event) => {
   align-items: center;
   padding: 0 1rem;
   height: var(--header-height);
-  background-color: white;
+  background-color: var(--color-background);
   border-bottom: 1.5px solid var(--border-color); /* 使用统一的颜色变量 */
   position: relative;
   z-index: 100;
@@ -159,7 +154,6 @@ document.addEventListener('click', (event) => {
 .header-left {
   display: flex;
   align-items: center;
-  margin-left: 35px; /* 根据规范调整功能按钮距离左侧边缘的距离 */
 }
 
 .header-left .menu-button {
@@ -172,16 +166,15 @@ document.addEventListener('click', (event) => {
   cursor: pointer;
 }
 
-.brand {
+.logo {
   display: flex;
   align-items: center;
   overflow: hidden;
   width: auto; /* 移除固定宽度，让文字自适应 */
-
 }
 
-.brand-link {
-  color: #333;
+.logo-link {
+  color: var(--color-text);
   font-size: 20px; /* 调整字体大小 */
   font-weight: bold;
   font-family: 'SimHei', '黑体', 'Heiti SC', 'Microsoft YaHei', sans-serif;
@@ -193,13 +186,14 @@ document.addEventListener('click', (event) => {
   justify-content: center;
   align-items: center;
   height: 100%;
-  margin: 0 auto;
+  margin: 0 auto; /* 居中对齐 */
 }
 
 .search-container {
   width: 30%;
   height: 30px;
   position: relative;
+  min-width: 200px; /* 设置最小宽度 */
 }
 
 .search-box {
@@ -209,7 +203,7 @@ document.addEventListener('click', (event) => {
   font-size: 14px;
   width: 100%;
   height: 100%;
-  background-color: var(--light-gray);
+  background-color: var(--vt-c-white-mute);
   transition: all 0.1s;
   box-sizing: border-box;
 }
@@ -222,6 +216,33 @@ document.addEventListener('click', (event) => {
   width: 100%;
 }
 
+.nav-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  width: 100%;
+  height: 30px;
+  min-width: 200px; /* 设置最小宽度 */
+}
+
+.nav-link {
+  text-decoration: none;
+  color: var(--color-text);
+  font-size: 16px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: all 0.3s;
+}
+
+.nav-link:hover,
+.nav-link.router-link-active {
+  background-color: var(--light-gray);
+  color: #000;
+  font-weight: bold;
+}
+
 .header-right {
   display: flex;
   align-items: center;
@@ -232,7 +253,6 @@ document.addEventListener('click', (event) => {
 }
 
 
-
 .auth-buttons {
   display: flex;
   gap: 0.1rem;
@@ -241,12 +261,11 @@ document.addEventListener('click', (event) => {
 
 .auth-link {
   text-decoration: none;
-  color: var(--medium-gray);
-  padding: 0.5rem 1rem;
+  color: var(--color-text);
+  padding: 0rem 0.5rem;
   border-radius: 6px;
   transition: all 0.3s;
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 16px;
   background-color: transparent;
   border: none;
   display: flex;
@@ -255,7 +274,7 @@ document.addEventListener('click', (event) => {
 }
 
 .auth-link:hover {
-  color: var(--dark-gray);
+  color: var(--color-text);
   background-color: transparent;
 }
 
@@ -306,7 +325,8 @@ document.addEventListener('click', (event) => {
 
 .username {
   font-weight: 500;
-  color: var(--dark-gray);
+  font-size: 16px;
+  color: var(--color-text);
 }
 
 .dropdown-icon {
@@ -350,21 +370,13 @@ document.addEventListener('click', (event) => {
 }
 
 .dropdown-item.logout-btn {
-  color: #dc3545;
+  color: var(--danger-color);
   font-weight: normal;
 }
 
 .dropdown-item.logout-btn:hover {
   background-color: #f8d7da;
-  color: #dc3545;
-}
-
-
-
-.line {
-  width: 1.5px; /* 修改装饰线粗细 */
-  height: 100%;
-  background-color: var(--border-color); /* 使用统一的颜色变量 */
+  color: var(--danger-color);
 }
 
 .logout-btn {
@@ -377,7 +389,7 @@ document.addEventListener('click', (event) => {
 }
 
 .logout-btn:hover {
-  background-color: #c82333;
+  background-color: var(--danger-color);
 }
 
 .content {
@@ -400,7 +412,8 @@ document.addEventListener('click', (event) => {
   background-image: 
     linear-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
-  background-size: 80px 80px;
+  background-size: 
+    calc(100% / 30) calc(100% / 21);
   background-repeat: repeat;
   pointer-events: none;
   z-index: -1;
@@ -416,29 +429,15 @@ document.addEventListener('click', (event) => {
   display: none;
 }
 
-.nav-links {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 30px;
-  width: 100%;
-  height: 100%;
-}
-
-.nav-link {
-  text-decoration: none;
-  color: var(--dark-gray);
-  font-size: 14px;
-  font-weight: 500;
-  padding: 8px 16px;
-  border-radius: 6px;
-  transition: all 0.3s;
-}
-
-.nav-link:hover,
-.nav-link.router-link-active {
-  background-color: var(--light-gray);
-  color: #000;
-  font-weight: bold;
+/* 媒体查询：当屏幕宽度较小时隐藏搜索框 */
+@media (max-width: 600px) {
+  .search-container {
+    display: none;
+  }
+  
+  .nav-links {
+    width: auto;
+    min-width: unset;
+  }
 }
 </style>
