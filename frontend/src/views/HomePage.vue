@@ -1,35 +1,11 @@
 <template>
   <MainLayout>
     <div class="home-page">
-      <header>
-        <h1>Eagle Ontology Manager</h1>
-        <p>基于本体论的Eagle资源管理工具</p>
-      </header>
 
       <main>
-        <div class="features">
-          <div class="feature-card">
-            <div class="feature-icon">📊</div>
-            <h3>数据可视化</h3>
-            <p>通过思维导图和表格形式展示Eagle资源</p>
-          </div>
-          
-          <div class="feature-card">
-            <div class="feature-icon">🔄</div>
-            <h3>数据同步</h3>
-            <p>支持与Eagle插件进行数据同步</p>
-          </div>
-          
-          <div class="feature-card">
-            <div class="feature-icon">🌐</div>
-            <h3>HTTP API</h3>
-            <p>采用HTTP API作为主要通信方式</p>
-          </div>
-        </div>
-
         <div class="actions">
           <router-link to="/table" class="btn primary">查看项目表格</router-link>
-          <router-link to="/mindmap" class="btn">查看思维导图</router-link>
+          <router-link to="/timeline" class="btn">查看时间线</router-link>
         </div>
       </main>
     </div>
@@ -47,8 +23,11 @@ import MainLayout from '@/layouts/MainLayout.vue'
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  height: calc(100vh - 120px); /* 减去MainLayout header的高度 */
-  overflow-y: auto;
+  min-height: calc(100vh - var(--header-height));
+  background-image: linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+  background-size: 80px 80px; 
+  background-repeat: repeat; /* 确保背景网格重复填充整个区域 */
 }
 
 header {
@@ -68,41 +47,6 @@ header p {
   color: #666;
 }
 
-.features {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 30px;
-  margin-bottom: 40px;
-}
-
-.feature-card {
-  background: #f8f9fa;
-  padding: 30px;
-  border-radius: 8px;
-  text-align: center;
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.feature-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-}
-
-.feature-icon {
-  font-size: 3rem;
-  margin-bottom: 20px;
-}
-
-.feature-card h3 {
-  font-size: 1.5rem;
-  margin-bottom: 10px;
-  color: #333;
-}
-
-.feature-card p {
-  color: #666;
-  line-height: 1.6;
-}
 
 .actions {
   text-align: center;
