@@ -2,7 +2,7 @@
   <div class="forgot-password-page">
     <div class="form-container">
       <div class="form-header">
-        <h2 style="font-size: 28px; margin-bottom: 0px;">忘记密码</h2>
+        <h2 style="font-size: 28px; margin-bottom: 1px;">忘记密码</h2>
         <p style="font-size: 12px; color: #777; margin-bottom: 24px;">请输入您的账号信息和新密码</p>
       </div>
       
@@ -33,7 +33,7 @@
             class="code-button" 
             :disabled="codeButtonDisabled"
             @click="getCode"
-            style="position: absolute; right: 1px; top: 1px; bottom: 1px; border-top-left-radius: 0; border-bottom-left-radius: 0; height: calc(100% - 2px);"
+            style="position: absolute; right: 0px; top: 0px; bottom: 0px; border-top-left-radius: 0; border-bottom-left-radius: 0; "
           >
             {{ codeButtonText }}
           </el-button>
@@ -67,7 +67,7 @@
             class="submit-btn" 
             :loading="resetLoading"
             @click="handleResetPassword"
-            style="width: 100%; margin-bottom: 4px; font-weight: bold; background-color: #409EFF; border-color: #409EFF;"
+            style="width: 100%; margin-bottom: 4px; font-weight: bold;"
           >
             重置密码
           </el-button>
@@ -232,5 +232,13 @@ onMounted(() => {
 .submit-btn {
   width: 100%;
   margin-bottom: 16px;
+}
+
+/* 确保primary按钮样式与登录页面一致 */
+:deep(.el-button--primary) {
+  background-color: var(--light-gray);
+  color: #000000; /* 黑色字体 */
+  border: none; /* 去除描边 */
+  font-weight: bold;
 }
 </style>
