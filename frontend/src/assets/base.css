@@ -40,7 +40,7 @@
   --color-button:var(--vt-c-black);
   --color-text-button: var(--vt-c-white);
 
-
+  --color-table-border: var(--vt-c-black);
   --color-border: var(--vt-c-gray);
   --color-border-hover: var(--vt-c-divider-light-1);
 
@@ -67,6 +67,8 @@
     --color-text-mute: var(--vt-c-text-dark-2);
   }
 }
+
+
 
 *,
 *::before,

@@ -1,5 +1,4 @@
 <template>
-  <main-layout>
     <!-- 工具栏 -->
     <div class="toolbar">
       <div class="toolbar-left">
@@ -38,7 +37,6 @@
       <div v-else-if="error">加载失败: {{ error }}</div>
       <div v-else-if="!mindmapData">暂无数据</div>
     </div>
-  </main-layout>
 </template>
 
 <script setup lang="ts">

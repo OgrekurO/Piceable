@@ -75,14 +75,16 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
   
-  // 如果需要认证但用户未登录
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    // 尝试从本地存储恢复认证状态
-    if (authStore.restoreAuth) {
-      await authStore.restoreAuth()
+  // 只有需要认证的路由才进行登录检查
+  if (to.meta.requiresAuth) {
+    // 如果未认证，尝试从本地存储恢复
+    if (!authStore.isAuthenticated) {
+      if (authStore.restoreAuth) {
+        await authStore.restoreAuth()
+      }
     }
     
-    // 如果仍然未认证，则重定向到登录页
+    // 如果仍然未认证，重定向到登录页
     if (!authStore.isAuthenticated) {
       next('/login')
       return

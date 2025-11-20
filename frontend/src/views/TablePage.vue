@@ -1,8 +1,5 @@
  <template>
-  <MainLayout>
     <div class="table-page">
-
-      
       <div class="table-container">
         <!-- 表格区域 -->
         <ItemTable
@@ -23,19 +20,15 @@
         />
       </div>
     </div>
-  </MainLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import MainLayout from '../layouts/MainLayout.vue'
-import Toolbar from '../components/Toolbar.vue'
 import ItemTable from '../components/ItemTable.vue'
 import DetailPanel from '../components/DetailPanel.vue'
 import { useItems } from '../services/useItems'
 import { useSearch } from '../services/useSearch'
 import { usePagination } from '../services/usePagination'
-import type { VxeGridPropTypes } from 'vxe-table'
 
 // 定义数据类型
 interface Item {

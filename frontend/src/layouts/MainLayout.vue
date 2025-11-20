@@ -40,7 +40,7 @@
           <router-link to="/timeline" class="nav-link" @click="showSidebar = false">时间轴</router-link>
           <router-link to="/table" class="nav-link" @click="showSidebar = false">表格</router-link>
           <router-link to="/mindmap" class="nav-link" @click="showSidebar = false">图谱</router-link>
-          <router-link to="/map" class="nav-link" @click="showSidebar = false">地图</router-link>
+          <router-link to="" class="nav-link" @click="showSidebar = false">地图</router-link>
         </div>
       </div>
       
@@ -69,7 +69,7 @@
     </header>
     
     <main class="content">
-      <slot />
+      <router-view />
     </main>
     
     <footer class="footer" style="display: none;">
@@ -139,7 +139,6 @@ document.addEventListener('click', (event) => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  overflow: hidden;
   position: relative;
 }
 
@@ -406,29 +405,13 @@ document.addEventListener('click', (event) => {
 .content {
   flex: 1;
   padding: 0;
-  overflow: hidden;
   height: calc(100vh - var(--header-height));
   min-height: calc(100vh - var(--header-height));
   position: relative;
   margin-top: 0;
 }
 
-.content::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: 
-    linear-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
-  background-size: 
-    calc(100% / 30) calc(100% / 21);
-  background-repeat: repeat;
-  pointer-events: none;
-  z-index: -1;
-}
+
 
 .footer {
   padding: 0.8rem 1rem;
