@@ -68,7 +68,7 @@
 
         <div style="text-align: center; margin-top: 0px;">
           <span style="color: #777; font-size: 12px;">已有账号？</span>
-          <router-link to="/login" style="color: #777; font-weight: bold; margin-left: 4px; font-size: 12px;">
+          <router-link to="/login" style="color: #777; margin-left: 4px; font-size: 12px;">
             立即登录
           </router-link>
         </div>
@@ -174,30 +174,31 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: white;
+  background-color: var(--color-background);
 }
 
 .form-container {
   width: 100%;
   max-width: 360px;
   padding: 24px;
-  background: white;
+  background: var(--color-background);
   border-radius: 8px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
 }
 
 .form-header h2 {
   margin: 0;
-  color: #333;
-  font-size: 28.8px;
+  color: var(--color-text);
+  font-size: 28px;
 }
 
 .submit-btn {
   width: 100%;
-  margin-bottom: 4px;
-  background-color: var(--light-gray); /* 浅灰色背景 */
-  color: #000000; /* 黑色字体 */
+  margin-bottom: 16px;
+  background-color: var(--color-button); /* 浅灰色背景 */
+  color: var(--color-text-button); /* 黑色字体 */
   border: none; /* 去除描边 */
   font-weight: bold;
 }
+
 </style>

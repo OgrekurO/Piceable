@@ -2,7 +2,7 @@
   <div class="login-page">
     <div class="form-container">
       <div class="form-header">
-        <h2 style="font-size: 28px; margin-bottom: 1px;">登录</h2>
+        <h2 style="font-size: 28px; margin-bottom: 1px;">Piceable</h2>
         <p style="font-size: 12px; color: #777; margin-bottom: 28px;">欢迎回来！请输入您的账号信息。</p>
       </div>
 
@@ -34,9 +34,14 @@
         </el-form-item>
 
         <el-form-item>
-          <router-link to="/forgot-password" style="color: #777; font-size: 12px; margin-bottom: 0px;">
-            忘记密码？
-          </router-link>
+          <div class="link-container">
+            <router-link to="/forgot-password" class="form-link">
+              忘记密码？
+            </router-link>
+            <router-link to="/register" class="form-link">
+              立即注册
+            </router-link>
+          </div>
         </el-form-item>
 
         <el-form-item>
@@ -51,12 +56,6 @@
           </el-button>
         </el-form-item>
 
-        <div style="text-align: center; margin-top: 0px;">
-          <span style="color: #777; font-size: 12px;">还没有账号？</span>
-          <router-link to="/register" style="color: #777; font-weight: bold; margin-left: 4px; font-size: 12px;">
-            立即注册
-          </router-link>
-        </div>
       </el-form>
     </div>
   </div>
@@ -183,31 +182,50 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: white;
+  background-color: var(--color-background);
 }
 
 .form-container {
   width: 100%;
   max-width: 360px;
   padding: 24px;
-  background: white;
+  background: var(--color-background);
   border-radius: 8px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
 }
 
 .form-header h2 {
   margin: 0;
-  color: #000000;
+  color: var(--color-text);
   font-size: 28px;
+}
+
+.link-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.form-link {
+  color: var(--color-text-mute);
+  font-size: 12px;
+  margin-bottom: 0px;
+  text-decoration: none;
+}
+
+.form-link:hover {
+  color: var(--color-text);
 }
 
 .submit-btn {
   width: 100%;
   margin-bottom: 16px;
-  background-color: var(--light-gray); /* 浅灰色背景 */
-  color: #000000; /* 黑色字体 */
+  background-color: var(--color-button); /* 浅灰色背景 */
+  color: var(--color-text-button); /* 黑色字体 */
   border: none; /* 去除描边 */
   font-weight: bold;
 }
+
+
 
 </style>

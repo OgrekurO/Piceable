@@ -30,6 +30,9 @@
             v-model="searchText"
             @input="onSearch"
           />
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </div>
         
         <!-- 导航链接 -->
@@ -164,6 +167,7 @@ document.addEventListener('click', (event) => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  color: var(--color-text);
 }
 
 .logo {
@@ -190,14 +194,14 @@ document.addEventListener('click', (event) => {
 }
 
 .search-container {
-  width: 30%;
+  width: 40%;
   height: 30px;
   position: relative;
   min-width: 200px; /* 设置最小宽度 */
 }
 
 .search-box {
-  padding: 6px 10px;
+  padding: 6px 30px 6px 10px; /* 为图标留出空间 */
   border: none;
   border-radius: 6px;
   font-size: 14px;
@@ -216,6 +220,15 @@ document.addEventListener('click', (event) => {
   width: 100%;
 }
 
+.search-icon {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--medium-gray);
+  pointer-events: none; /* 图标不响应鼠标事件 */
+}
+
 .nav-links {
   display: flex;
   justify-content: center;
@@ -230,18 +243,16 @@ document.addEventListener('click', (event) => {
   text-decoration: none;
   color: var(--color-text);
   font-size: 16px;
-  font-weight: 500;
   padding: 8px 16px;
   border-radius: 6px;
   transition: all 0.3s;
 }
 
-.nav-link:hover,
-.nav-link.router-link-active {
-  background-color: var(--light-gray);
-  color: #000;
+.nav-link:hover{
+  color: var(--color-text);
   font-weight: bold;
 }
+
 
 .header-right {
   display: flex;
@@ -280,25 +291,25 @@ document.addEventListener('click', (event) => {
 
 .auth-link.login {
   background-color: transparent;
-  color: var(--medium-gray);
+  color: var(--color-text-mute);
   border: none;
 }
 
 .auth-link.login:hover {
   background-color: transparent;
-  color: var(--dark-gray);
+  color: var(--color-text);
   border: none;
 }
 
 .auth-link.register {
   background-color: transparent;
-  color: var(--medium-gray);
+  color: var(--color-text-mute);
   border: none;
 }
 
 .auth-link.register:hover {
   background-color: transparent;
-  color: var(--dark-gray);
+  color: var(--color-text);
   border: none;
 }
 
@@ -320,7 +331,7 @@ document.addEventListener('click', (event) => {
 }
 
 .user-dropdown:hover {
-  background-color: var(--light-gray);
+  background-color: var(--color-background);
 }
 
 .username {
@@ -341,7 +352,7 @@ document.addEventListener('click', (event) => {
   position: absolute;
   top: 100%;
   right: 0;
-  background-color: white;
+  background-color: var(--color-background);
   border: 1px solid var(--border-color);
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -355,7 +366,7 @@ document.addEventListener('click', (event) => {
   width: 100%;
   padding: 0.75rem 1rem;
   text-decoration: none;
-  color: var(--dark-gray);
+  color: var(--color-text-mute);
   font-size: 14px;
   border: none;
   background: none;
@@ -365,7 +376,7 @@ document.addEventListener('click', (event) => {
 }
 
 .dropdown-item:hover {
-  background-color: var(--light-gray);
+  background-color: var(--color-text);
   color: #000;
 }
 

@@ -211,21 +211,21 @@ onMounted(() => {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: white;
+  background-color: var(--color-background);
 }
 
 .form-container {
   width: 100%;
   max-width: 360px;
   padding: 24px;
-  background: white;
+  background: var(--color-background);
   border-radius: 8px;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
 }
 
 .form-header h2 {
   margin: 0;
-  color: #333;
+  color:var(--color-text);
   font-size: 28.8px;
 }
 
