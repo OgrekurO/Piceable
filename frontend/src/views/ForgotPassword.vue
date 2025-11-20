@@ -2,8 +2,8 @@
   <div class="forgot-password-page">
     <div class="form-container">
       <div class="form-header">
-        <h2 style="font-size: 28.8px; margin-bottom: 8px;">忘记密码</h2>
-        <p style="font-size: 12.8px; color: #777; margin-bottom: 24px;">请输入您的账号信息和新密码</p>
+        <h2 style="font-size: 28px; margin-bottom: 0px;">忘记密码</h2>
+        <p style="font-size: 12px; color: #777; margin-bottom: 24px;">请输入您的账号信息和新密码</p>
       </div>
       
       <el-form 
@@ -18,7 +18,7 @@
             v-model="forgotForm.account" 
             placeholder="用户名/邮箱/手机号" 
             prefix-icon="User"
-            style="margin-bottom: 16px;"
+            style="margin-bottom: 4px;"
           />
         </el-form-item>
         
@@ -27,7 +27,7 @@
             v-model="forgotForm.code" 
             placeholder="验证码" 
             prefix-icon="Lock"
-            style="margin-bottom: 16px;"
+            style="margin-bottom: 4px;"
           />
           <el-button 
             class="code-button" 
@@ -46,7 +46,7 @@
             placeholder="新密码" 
             prefix-icon="Lock"
             show-password
-            style="margin-bottom: 16px;"
+            style="margin-bottom: 4px;"
           />
         </el-form-item>
         
@@ -57,7 +57,7 @@
             placeholder="确认新密码" 
             prefix-icon="Lock"
             show-password
-            style="margin-bottom: 16px;"
+            style="margin-bottom: 4px;"
           />
         </el-form-item>
         
@@ -67,13 +67,13 @@
             class="submit-btn" 
             :loading="resetLoading"
             @click="handleResetPassword"
-            style="width: 100%; margin-bottom: 16px; font-weight: bold;"
+            style="width: 100%; margin-bottom: 4px; font-weight: bold; background-color: #409EFF; border-color: #409EFF;"
           >
             重置密码
           </el-button>
         </el-form-item>
 
-        <div style="text-align: center; margin-top: 16px;">
+        <div style="text-align: center; margin-top: 4px;">
           <span style="color: #777; font-size: 12px;">已有账号？</span>
           <router-link to="/login" style="color: #777; font-weight: bold; margin-left: 4px; font-size: 12px;">
             立即登录
