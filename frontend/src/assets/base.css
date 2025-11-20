@@ -31,8 +31,6 @@
   --medium-gray: #86868b;
   --dark-gray: #1d1d1f;
   --border-color: #d2d2d7;
-  /* 注释掉header-height的定义，避免与MainLayout.vue中的定义冲突 */
-  /* --header-height: 44px; */
   --toolbar-height: 44px;
 }
 

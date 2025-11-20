@@ -158,4 +158,57 @@ const changeUserRole = async (user: User) => {
 .settings-content {
   padding: 20px 0;
 }
+
+/* 将按钮的蓝色替换为base.css中的统一黑色 */
+.black-button {
+  background-color: var(--vt-c-black) !important;
+  border-color: var(--vt-c-black) !important;
+  color: var(--vt-c-white) !important;
+}
+
+.black-button:hover {
+  background-color: var(--vt-c-black-soft) !important;
+  border-color: var(--vt-c-black-soft) !important;
+  color: var(--vt-c-white) !important;
+}
+
+/* 将标签的蓝色替换为base.css中的统一黑色 */
+.black-tag {
+  background-color: var(--vt-c-black) !important;
+  border-color: var(--vt-c-black) !important;
+  color: var(--vt-c-white) !important;
+}
+
+/* 修改标签页的蓝色边框为base.css中的统一黑色 */
+:deep(.el-tabs__item.is-active) {
+  color: var(--vt-c-black) !important;
+}
+
+:deep(.el-tabs__active-bar) {
+  background-color: var(--vt-c-black) !important;
+}
+
+:deep(.el-button--primary) {
+  background-color: var(--vt-c-black) !important;
+  border-color: var(--vt-c-black) !important;
+  color: var(--vt-c-white) !important;
+}
+
+:deep(.el-button--primary:hover) {
+  background-color: var(--vt-c-black-soft) !important;
+  border-color: var(--vt-c-black-soft) !important;
+  color: var(--vt-c-white) !important;
+}
+
+:deep(.el-table__row .el-button--primary) {
+  background-color: var(--vt-c-black) !important;
+  border-color: var(--vt-c-black) !important;
+  color: var(--vt-c-white) !important;
+}
+
+:deep(.el-table__row .el-button--primary:hover) {
+  background-color: var(--vt-c-black-soft) !important;
+  border-color: var(--vt-c-black-soft) !important;
+  color: var(--vt-c-white) !important;
+}
 </style>

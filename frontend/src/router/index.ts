@@ -6,37 +6,58 @@ import { isAdmin } from '@/services/authService'
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    name: 'Home',
-    component: () => import('@/views/HomePage.vue')
+    component: () => import('@/layouts/MainLayout.vue'),
+    children: [
+      {
+        path: '',
+        name: 'Home',
+        component: () => import('@/views/HomePage.vue')
+      },
+      {
+        path: '/table',
+        name: 'Table',
+        component: () => import('@/views/TablePage.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: '/mindmap',
+        name: 'MindMap',
+        component: () => import('@/views/MindMapPage.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: '/admin',
+        name: 'Admin',
+        component: () => import('@/views/AdminDashboard.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: '/timeline',
+        name: 'Timeline',
+        component: () => import('@/views/TimeLine.vue'),
+        meta: { requiresAuth: true }
+      }
+    ]
   },
   {
     path: '/login',
     name: 'Login',
-    component: () => import('@/views/LoginRegisterPage.vue')
+    component: () => import('@/views/LoginPage.vue')
   },
   {
-    path: '/table',
-    name: 'Table',
-    component: () => import('@/views/TablePage.vue'),
-    meta: { requiresAuth: true }
+    path: '/phone-login',
+    name: 'PhoneLogin',
+    component: () => import('@/views/PhoneLogin.vue')
   },
   {
-    path: '/mindmap',
-    name: 'MindMap',
-    component: () => import('@/views/MindMapPage.vue'),
-    meta: { requiresAuth: true }
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/RegisterPage.vue')
   },
   {
-    path: '/admin',
-    name: 'Admin',
-    component: () => import('@/views/AdminDashboard.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true }
-  },
-  {
-    path: '/timeline',
-    name: 'Timeline',
-    component: () => import('@/views/TimeLine.vue'),
-    meta: { requiresAuth: true }
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: () => import('@/views/ForgotPassword.vue')
   }
 ]
 

@@ -53,7 +53,7 @@
         
         <div class="auth-buttons" v-if="!authStore.isAuth">
           <router-link to="/login" class="auth-link">登录</router-link>
-          <router-link to="/login" class="auth-link register">注册</router-link>
+          <router-link to="/register" class="auth-link register">注册</router-link>
         </div>
         
         <div class="user-info" v-else>
@@ -375,4 +375,3 @@ const handleLogout = () => {
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 999;
 }
-</style>
