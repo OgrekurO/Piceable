@@ -39,7 +39,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useMapStore } from '@/stores/map';
+import { useMapStore } from '@/stores/mapStore';
 
 // 语言选项
 const LANGUAGES = [

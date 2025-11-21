@@ -3,7 +3,7 @@
     class="label-toggle" 
     :class="{ 'active': showLabels }"
     @click="handleToggle"
-    :title="showLabels ? '隐藏地名 (Hide Labels)' : '显示地名 (Show Labels)'
+    :title="showLabels ? '隐藏地名 (Hide Labels)' : '显示地名 (Show Labels)'"
   >
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="4 7 4 4 20 4 20 7"></polyline>
@@ -16,7 +16,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useMapStore } from '@/stores/map';
+import { useMapStore } from '@/stores/mapStore';
 
 const mapStore = useMapStore();
 

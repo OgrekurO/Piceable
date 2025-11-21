@@ -52,7 +52,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { useMapStore } from '@/stores/map';
+import { useMapStore } from '@/stores/mapStore';
 
 // 地图样式配置
 const MAP_STYLES = [
@@ -202,8 +202,8 @@ const handleLayerSelect = (layerId: string) => {
   inset: 0;
   opacity: 30%;
   background: linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc), linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc);
-  backgroundSize: 20px 20px;
-  backgroundPosition: 0 0, 10px 10px;
+  background-size: 20px 20px;
+  background-position: 0 0, 10px 10px;
 }
 
 .layer-check {

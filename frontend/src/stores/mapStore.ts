@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 // 修复导入路径，使用相对路径确保正确解析
-import type { DataRecord, Bookmark, Annotation } from '../types/map.ts';
+import type { DataRecord, Bookmark, Annotation, SearchResult } from '../types/map.ts';
 
 // 添加调试信息
 console.log('mapStore.ts: Successfully imported DataRecord, Bookmark, Annotation from ../types/map.ts');
@@ -41,7 +41,9 @@ export const useMapStore = defineStore('map', {
     currentView: {
       center: [34.0, 108.0] as [number, number],
       zoom: 4
-    }
+    },
+    showLabels: true,
+    showRoads: true
   }),
 
   getters: {
@@ -60,7 +62,7 @@ export const useMapStore = defineStore('map', {
       if (!state.searchTerm) return data;
       const lowerTerm = state.searchTerm.toLowerCase();
       return data.filter(record => {
-        return Object.values(record).some(val => 
+        return Object.values(record).some(val =>
           String(val).toLowerCase().includes(lowerTerm)
         );
       });
@@ -72,35 +74,35 @@ export const useMapStore = defineStore('map', {
       this.rawData = data;
       this.columns = Object.keys(data[0] || {});
     },
-    
+
     setSelectedRecordId(id: string | null) {
       this.selectedRecordId = id;
     },
-    
+
     setHoveredRecordId(id: string | null) {
       this.hoveredRecordId = id;
     },
-    
+
     setSearchTerm(term: string) {
       this.searchTerm = term;
     },
-    
+
     setIsSidebarOpen(isOpen: boolean) {
       this.isSidebarOpen = isOpen;
     },
-    
+
     setTargetLanguage(lang: string) {
       this.targetLanguage = lang;
     },
-    
+
     setActiveLayer(layer: string) {
       this.activeLayer = layer;
     },
-    
+
     setGroupByColumn(col: string | null) {
       this.groupByColumn = col;
       this.hiddenCategories = [];
-      
+
       if (!col) {
         this.categoryColors = {};
         return;
@@ -109,11 +111,11 @@ export const useMapStore = defineStore('map', {
       const uniqueValues = Array.from(new Set(this.rawData.map(r => String(r[col] || 'Unknown'))));
       const newColors: Record<string, string> = {};
       uniqueValues.forEach((val, index) => {
-        newColors[val] = COLOR_PALETTE[index % COLOR_PALETTE.length];
+        newColors[val] = COLOR_PALETTE[index % COLOR_PALETTE.length] || '#000000';
       });
       this.categoryColors = newColors;
     },
-    
+
     toggleCategoryVisibility(value: string) {
       const index = this.hiddenCategories.indexOf(value);
       if (index === -1) {
@@ -122,7 +124,7 @@ export const useMapStore = defineStore('map', {
         this.hiddenCategories.splice(index, 1);
       }
     },
-    
+
     addBookmark(name: string, view: { center: [number, number], zoom: number, layer: string }) {
       const newBookmark: Bookmark = {
         id: Date.now().toString(),
@@ -133,7 +135,7 @@ export const useMapStore = defineStore('map', {
       this.bookmarks.push(newBookmark);
       localStorage.setItem('palladio_bookmarks', JSON.stringify(this.bookmarks));
     },
-    
+
     updateBookmark(id: string, name: string) {
       const bookmark = this.bookmarks.find(b => b.id === id);
       if (bookmark) {
@@ -141,17 +143,17 @@ export const useMapStore = defineStore('map', {
         localStorage.setItem('palladio_bookmarks', JSON.stringify(this.bookmarks));
       }
     },
-    
+
     removeBookmark(id: string) {
       this.bookmarks = this.bookmarks.filter(b => b.id !== id);
       localStorage.setItem('palladio_bookmarks', JSON.stringify(this.bookmarks));
     },
-    
+
     addAnnotation(annotation: Annotation) {
       this.annotations.push(annotation);
       localStorage.setItem('palladio_annotations', JSON.stringify(this.annotations));
     },
-    
+
     updateAnnotation(id: string, data: Partial<Annotation>) {
       const annotation = this.annotations.find(a => a.id === id);
       if (annotation) {
@@ -159,22 +161,30 @@ export const useMapStore = defineStore('map', {
         localStorage.setItem('palladio_annotations', JSON.stringify(this.annotations));
       }
     },
-    
+
     removeAnnotation(id: string) {
       this.annotations = this.annotations.filter(a => a.id !== id);
       localStorage.setItem('palladio_annotations', JSON.stringify(this.annotations));
     },
-    
+
     setIsAnnotationMode(isMode: boolean) {
       this.isAnnotationMode = isMode;
     },
-    
+
     setSearchResult(result: SearchResult | null) {
       this.searchResult = result;
     },
-    
+
     setCurrentView(view: { center: [number, number], zoom: number }) {
       this.currentView = view;
+    },
+
+    setShowLabels(show: boolean) {
+      this.showLabels = show;
+    },
+
+    setShowRoads(show: boolean) {
+      this.showRoads = show;
     }
   }
 });

@@ -1,102 +1,66 @@
 <!-- components/MapView.vue -->
 <template>
-
-  <!-- 容器：只保留语义类名 -->
-  <div class="map-container">
-
-     <!-- 地图挂载点 -->
-    <div ref="mapContainer" class="map-element"></div>
-
-    <!-- 标注表单 -->
-    <AnnotationForm 
-      :is-open="isAnnotationFormOpen"
-      :initial-data="editingAnnotation"
-      :location="tempAnnotationLoc"
-      @cancel="isAnnotationFormOpen = false; editingAnnotation = undefined"
-      @submit="handleAnnotationSubmit"
-    />
-
-    <!-- 地图控件区域 -->
-    <div class="map-controls-wrapper">
-      <div class="controls-group">
-        
-        <!-- 1. 图层切换器 -->
-        <div class="control-item layer-switcher" @mouseenter="showLayerPanel = true" @mouseleave="showLayerPanel = false">
-           <button class="control-btn" title="切换底图">
-             <Layers :size="18" />
-           </button>
-           
-           <!-- 图层面板 -->
-           <transition name="fade-slide">
-             <div v-if="showLayerPanel" class="panel layer-panel">
-                <div class="panel-header">
-                   <h4>地图风格 (Base Map)</h4>
-                   <span>预览</span>
-                </div>
-                <div class="layer-grid">
-                   <div 
-                     v-for="style in MAP_STYLES"
-                     :key="style.id"
-                     @click="mapStore.activeLayer = style.id"
-                     class="layer-card"
-                     :class="{ active: activeLayer === style.id }"
-                   >
-                      <div class="preview-box" :style="{ backgroundColor: style.previewColor }">
-                        <div class="preview-overlay" :style="{ filter: style.filter }"></div>
-                        <div v-if="activeLayer === style.id" class="check-mark">
-                           <div class="check-circle">
-                             <Check :size="12" color="white" />
-                           </div>
-                        </div>
-                      </div>
-                      <div class="layer-name">
-                        {{ style.name.split(' ')[0] }}
-                      </div>
-                   </div>
-                </div>
-             </div>
-           </transition>
-        </div>
-
-        <!-- 2. 语言切换器 -->
-        <div class="control-item language-switcher">
-           <button class="control-btn" @click="showLangMenu = !showLangMenu" title="Translation / 翻译">
-             <Languages :size="18" />
-           </button>
-           
-           <div v-if="showLangMenu" class="menu language-menu">
-              <div class="menu-header">选择显示语言</div>
-              <button
-                v-for="lang in LANGUAGES"
-                :key="lang.code"
-                @click="mapStore.targetLanguage = lang.code; showLangMenu = false"
-                class="menu-item"
-                :class="{ active: targetLanguage === lang.code }"
-              >
-                {{ lang.label }}
-                <Check v-if="targetLanguage === lang.code" :size="14" />
-              </button>
-           </div>
-        </div>
-
-        <!-- 3. 地名标签开关 -->
-        <button 
-             @click="showLabels = !showLabels"
-             class="control-btn"
-             :class="{ 'btn-disabled': !showLabels }"
-             :title="showLabels ? '隐藏地名' : '显示地名'"
-           >
-             <Type :size="18" />
-             <div v-if="!showLabels" class="strike-through" />
-        </button>
-
-      </div>
+  <div class="map-layout">
+    
+    <!-- 侧边栏容器 -->
+    <div class="sidebar-container" :class="{ 'sidebar-open': isSidebarOpen }">
+      <MapSidebar />
     </div>
 
+    <!-- 主内容区域 -->
+    <div class="main-content">
+      
+      <!-- 展开侧边栏按钮 -->
+      <button 
+        v-if="!isSidebarOpen"
+        @click="mapStore.setIsSidebarOpen(true)"
+        class="sidebar-toggle-btn"
+        title="展开侧边栏"
+      >
+        <PanelLeftOpen :size="20" />
+      </button>
+
+      <!-- 地图挂载点 -->
+      <div ref="mapContainer" class="map-element"></div>
+
+      <!-- 标注表单 -->
+      <AnnotationForm 
+        :is-open="isAnnotationFormOpen"
+        :initial-data="editingAnnotation"
+        :location="tempAnnotationLoc"
+        @cancel="isAnnotationFormOpen = false; editingAnnotation = undefined"
+        @submit="handleAnnotationSubmit"
+      />
+
+      <!-- 地图控件区域 -->
+      <div class="map-controls-wrapper">
+        <div class="controls-group">
+          
+          <!-- 1. 图层切换器 -->
+          <LayerSwitcher />
+
+          <!-- 2. 语言切换器 -->
+          <LanguageSwitcher />
+
+          <!-- 3. 地名标签开关 -->
+          <LabelToggle />
+        
+          <!-- Road Toggle -->
+          <button 
+            class="label-toggle" 
+            :class="{ active: showRoads }"
+            @click="mapStore.setShowRoads(!showRoads)"
+            title="显示/隐藏道路"
+          >
+            <component :is="showRoads ? Route : RouteOff" :size="18" />
+          </button>
+
+        </div>
+      </div>
+  
+    </div>
   </div>
 </template>
-
-
 
 <script setup lang="ts">
 import { onMounted, ref, shallowRef, watch, onUnmounted, h, render } from 'vue';
@@ -104,65 +68,24 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useMapStore } from '@/stores/mapStore';
 import { storeToRefs } from "pinia";
-import { Languages, Check, Layers, Type } from "lucide-vue-next";
+import { PanelLeftOpen, Route, RouteOff } from 'lucide-vue-next';
 import PopupCard from '@/components/map/PopupCard.vue';
 import AnnotationForm from '@/components/map/AnnotationForm.vue';
+import LayerSwitcher from '@/components/map/LayerSwitcher.vue';
+import LanguageSwitcher from '@/components/map/LanguageSwitcher.vue';
+import LabelToggle from '@/components/map/LabelToggle.vue';
+import MapSidebar from '@/components/map/mapSidebar.vue';
 import type { DataRecord, Annotation, SearchResult } from '../types/index.ts';
-
-// --- Constants ---
-const MAP_STYLES = [
-  {
-    id: 'streets',
-    name: '标准 (Streets)',
-    type: 'm',
-    filter: '',
-    previewColor: '#f8f9fa',
-  },
-  {
-    id: 'satellite',
-    name: '卫星 (Satellite)',
-    type: 'y',
-    filter: '',
-    previewColor: '#0f172a',
-  },
-  {
-    id: 'terrain',
-    name: '地形 (Terrain)',
-    type: 'p',
-    filter: '',
-    previewColor: '#ecfccb',
-  },
-  {
-    id: 'light',
-    name: '淡色 (Light)',
-    type: 'm',
-    filter: 'grayscale(100%) contrast(90%) brightness(105%)',
-    previewColor: '#ffffff',
-  },
-  {
-    id: 'dark',
-    name: '深色 (Dark)',
-    type: 'm',
-    filter: 'invert(100%) hue-rotate(180deg) brightness(90%) contrast(90%) grayscale(20%)',
-    previewColor: '#171717',
-  }
-];
-
 import { parseCSV } from '@/services/fileUploadService';
-
-const LANGUAGES = [
-  { code: 'zh-CN', label: '中文 (简体)' },
-  { code: 'en', label: 'English' },
-  { code: 'ja', label: '日本語' },
-  { code: 'fr', label: 'Français' },
-];
+import { MAP_STYLES } from '@/constants/map';
 
 // --- Store ---
 const mapStore = useMapStore();
 const { 
   filteredData, rawData, selectedRecordId, isSidebarOpen, 
   targetLanguage, activeLayer, annotations, searchResult,
-  isAnnotationMode, groupByColumn, categoryColors, relationColumn 
+  isAnnotationMode, groupByColumn, categoryColors, relationColumn,
+  showLabels, showRoads
 } = storeToRefs(mapStore);
 
 // --- Local State ---
@@ -174,10 +97,6 @@ const dataLayerRef = shallowRef<L.FeatureGroup | null>(null);
 const relationLayerRef = shallowRef<L.FeatureGroup | null>(null);
 const annotationLayerRef = shallowRef<L.FeatureGroup | null>(null);
 const searchLayerRef = shallowRef<L.FeatureGroup | null>(null);
-
-const showLangMenu = ref(false);
-const showLayerPanel = ref(false);
-const showLabels = ref(true);
 
 // Annotation Form State
 const isAnnotationFormOpen = ref(false);
@@ -221,7 +140,7 @@ watch(isAnnotationMode, (mode) => {
   }
 });
 
-// 2。更新瓦片图层
+// 2. 更新瓦片图层
 const updateTileLayer = () => {
   if (!map.value) return;
   
@@ -230,11 +149,16 @@ const updateTileLayer = () => {
   const oldLayer = tileLayerRef.value;
   
   // 获取当前样式配置
-  const currentStyle = MAP_STYLES.find(s => s.id === activeLayer.value) || MAP_STYLES[0];
+  const currentStyle = MAP_STYLES.find(s => s.id === activeLayer.value) || MAP_STYLES[0]!;
   
   // 2. 构建 URL
-  // s.e:l|p.v:off 代表 style.element:labels | property.visibility:off
-  const apistyle = !showLabels.value ? '&apistyle=s.e:l|p.v:off' : '';
+  // s.e:l|p.v:off -> Labels off
+  // s.t:3|p.v:off -> Roads off (s.t:3 = feature:road)
+  const styles: string[] = [];
+  if (!showLabels.value) styles.push('s.e:l|p.v:off');
+  if (!showRoads.value) styles.push('s.t:3|p.v:off');
+  
+  const apistyle = styles.length > 0 ? `&apistyle=${encodeURIComponent(styles.join(','))}` : '';
   
   // 确保 targetLanguage.value 存在，默认为 zh-CN
   const lang = targetLanguage.value || 'zh-CN';
@@ -286,7 +210,7 @@ const updateTileLayer = () => {
   }
 };
 
-watch([activeLayer, targetLanguage, showLabels], updateTileLayer);
+watch([activeLayer, targetLanguage, showLabels, showRoads], updateTileLayer);
 
 // 3. 处理数据点和关系
 watch([filteredData, groupByColumn, categoryColors, relationColumn], () => {
@@ -340,28 +264,25 @@ watch([filteredData, groupByColumn, categoryColors, relationColumn], () => {
 }, { deep: true });
 
 // 4. 处理注释
-watch(annotations, (newAnnos) => {
-  if (!map.value || !annotationLayerRef.value) return;
-  annotationLayerRef.value.clearLayers();
+// 4. 处理注释
+watch([annotations, annotationLayerRef], ([newAnnos, layer]) => {
+  if (!map.value || !layer) return;
+  layer.clearLayers();
 
   newAnnos.forEach(anno => {
+    const categoryEmoji = {
+      'landmark': '🏛️',
+      'home': '🏠',
+      'work': '💼',
+      'default': '🚩'
+    }[anno.category || 'default'] || '🚩';
+
     const iconHtml = `
-        <div style="position: relative;">
-           <div style="
-              background-color: ${anno.category === 'default' ? '#e63946' : '#2a9d8f'}; 
-              width: 14px; height: 14px; 
-              border-radius: 50%; 
-              border: 2px solid white; 
-              box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-           "></div>
-           <div style="
-              position: absolute; top: -20px; left: 50%; transform: translateX(-50%);
-              background: white; padding: 1px 4px; border-radius: 3px;
-              font-size: 10px; white-space: nowrap; font-weight: bold;
-              box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-              opacity: 0.9;
-              display: block;
-           ">
+        <div class="custom-annotation-marker">
+           <div class="marker-pin" style="background-color: ${anno.category === 'default' ? '#e63946' : '#2a9d8f'};">
+              <span class="marker-emoji">${categoryEmoji}</span>
+           </div>
+           <div class="marker-label">
               ${anno.label}
            </div>
         </div>
@@ -423,7 +344,7 @@ watch(searchResult, (result) => {
         popupAnchor: [0, -24]
     });
 
-    const marker = L.marker([result.lat, result.lng], { icon: searchIcon });
+    const marker = L.marker([result.record.lat, result.record.lng], { icon: searchIcon });
     
     const popup = bindVuePopup(marker, PopupCard, {
         data: result,
@@ -496,9 +417,24 @@ const handleAnnotationSubmit = (data: { label: string; note: string; category: s
     editingAnnotation.value = undefined;
 };
 
+// 处理 FlyTo 事件
+const handleFlyTo = (event: Event) => {
+  const customEvent = event as CustomEvent;
+  const { lat, lng, zoom } = customEvent.detail;
+  if (map.value) {
+    map.value.flyTo([lat, lng], zoom || 14, {
+      animate: true,
+      duration: 1.5
+    });
+  }
+};
+
 // 地图初始化
 onMounted(async () => {
   if (!mapContainer.value) return;
+
+  // 监听 FlyTo 事件
+  window.addEventListener('map:flyTo', handleFlyTo);
 
   // 初始化地图
   map.value = L.map(mapContainer.value, {
@@ -550,6 +486,7 @@ onMounted(async () => {
 
 // 地图销毁
 onUnmounted(() => {
+  window.removeEventListener('map:flyTo', handleFlyTo);
   if (map.value) {
     map.value.remove();
   }
@@ -559,10 +496,64 @@ onUnmounted(() => {
 
 <style scoped>
 /* --- 基础布局 --- */
-.map-container {
-  position: relative;
+.map-layout {
+  display: flex;
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+/* --- 侧边栏 --- */
+.sidebar-container {
+  width: 0;
+  height: 100%;
+  background-color: white;
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.1);
+  z-index: 500;
+  transition: all 0.3s ease-in-out;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(-100%);
+  flex-shrink: 0;
+}
+
+.sidebar-container.sidebar-open {
+  width: 320px; /* w-80 */
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* --- 主内容区域 --- */
+.main-content {
+  flex: 1;
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+/* --- 侧边栏展开按钮 --- */
+.sidebar-toggle-btn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 400;
+  background-color: white;
+  padding: 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  color: #4b5563; /* text-gray-600 */
+  transition: background-color 0.2s, color 0.2s;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-toggle-btn:hover {
+  background-color: #f9fafb; /* bg-gray-50 */
+  color: #1f2937; /* text-gray-800 */
 }
 
 .map-element {
@@ -593,180 +584,32 @@ onUnmounted(() => {
   gap: 12px;
 }
 
-/* --- 通用按钮样式 --- */
-.control-btn {
-  background-color: white;
+.label-toggle {
+  background: white;
   width: 34px;
   height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 4px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  border: 1px solid #d1d5db;
-  color: #374151;
+  border: 1px solid #dcdfe6;
   cursor: pointer;
-  transition: background-color 0.2s, color 0.2s;
-  position: relative;
-}
-
-.control-btn:hover {
-  background-color: #f9fafb;
-}
-
-.control-btn.btn-disabled {
-  background-color: #f3f4f6;
-  color: #9ca3af;
-}
-
-.strike-through {
-  position: absolute;
-  width: 20px;
-  height: 2px;
-  background-color: #9ca3af;
-  transform: rotate(45deg);
-  border-radius: 999px;
-}
-
-/* --- 面板与菜单通用 --- */
-.panel, .menu {
-  position: absolute;
-  right: 40px;
-  top: 0;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
-  overflow: hidden;
-}
-
-/* --- 图层面板样式 --- */
-.layer-panel {
-  width: 320px;
-  padding: 12px;
-}
-
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.panel-header h4 {
-  font-size: 12px;
-  font-weight: bold;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.panel-header span {
-  font-size: 10px;
-  color: #9ca3af;
-}
-
-.layer-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-
-.layer-card {
-  cursor: pointer;
-  border-radius: 6px;
-  overflow: hidden;
-  border: 2px solid #f3f4f6;
   transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   position: relative;
 }
 
-.layer-card:hover {
-  border-color: #d1d5db;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+/* --- 注释点样式 --- */
+
+:deep(.leaflet-interactive) {
+  cursor: pointer;
 }
 
-/* 选中状态 */
-.layer-card.active {
-  border-color: var(--primary-color); /* palladio-blue */
-  box-shadow: 0 0 0 1px var(--primary-color);
-}
-
-.preview-box {
-  height: 56px;
-  width: 100%;
-  background-color: #e5e5e5;
-  position: relative;
-}
-
-.preview-overlay {
-  position: absolute;
-  inset: 0;
-  opacity: 0.3;
-  background-image: linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc);
-  background-size: 20px 20px;
-}
-
-.check-mark {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(1px);
-}
-
-.check-circle {
-  background-color: var(--primary-color);
-  border-radius: 999px;
-  padding: 2px;
-}
-
-.layer-name {
-  font-size: 10px;
-  text-align: center;
-  padding: 6px 0;
-  font-weight: 500;
-  color: #374151;
-  background-color: white;
-  border-top: 1px solid #f9fafb;
-}
-
-/* --- 语言菜单样式 --- */
-.language-menu {
-  width: 160px;
-}
-
-.menu-header {
-  padding: 8px 12px;
-  background-color: #f9fafb;
-  border-bottom: 1px solid #f3f4f6;
-  font-size: 12px;
-  font-weight: bold;
-  color: #6b7280;
-}
-
-.menu-item {
-  width: 100%;
-  text-align: left;
-  padding: 8px 12px;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  transition: background-color 0.2s;
-  color: #374151;
-}
-
-.menu-item:hover {
-  background-color: #f9fafb;
-}
-
-.menu-item.active {
-  background-color: #eff6ff;
-  color: var(--primary-color);
-  font-weight: 500;
+/* 鼠标悬停时放大并改变颜色 */
+:deep(.leaflet-interactive:hover) {
+  stroke: rgb(238, 238, 238);
+  stroke-width: 1px;
+  filter: drop-shadow(0 0 4px rgba(0,0,0,0.5));
 }
 
 /* --- Vue Transition 动画 --- */
@@ -779,5 +622,51 @@ onUnmounted(() => {
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateX(10px);
+}
+
+/* --- Custom Annotation Marker --- */
+:deep(.custom-annotation-marker) {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+:deep(.marker-pin) {
+  width: 30px;
+  height: 30px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  transition: transform 0.2s;
+}
+
+:deep(.marker-pin:hover) {
+  transform: rotate(-45deg) scale(1.1);
+}
+
+:deep(.marker-emoji) {
+  transform: rotate(45deg); /* Counter-rotate emoji */
+  font-size: 14px;
+  line-height: 1;
+}
+
+:deep(.marker-label) {
+  position: absolute;
+  top: -24px;
+  background-color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  pointer-events: none;
+  opacity: 0.9;
 }
 </style>
