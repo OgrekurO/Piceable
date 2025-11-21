@@ -40,7 +40,7 @@
           <router-link to="/timeline" class="nav-link" @click="showSidebar = false">时间轴</router-link>
           <router-link to="/table" class="nav-link" @click="showSidebar = false">表格</router-link>
           <router-link to="/mindmap" class="nav-link" @click="showSidebar = false">图谱</router-link>
-          <router-link to="" class="nav-link" @click="showSidebar = false">地图</router-link>
+          <router-link to="/map" class="nav-link" @click="showSidebar = false">地图</router-link>
         </div>
       </div>
       
@@ -130,10 +130,6 @@ document.addEventListener('click', (event) => {
 </script>
 
 <style scoped>
-/* 定义CSS变量 */
-:root {
-  --header-height: 1vh; /* 设置导航栏高度为固定100px */
-}
 
 .main-layout {
   display: flex;
@@ -146,7 +142,7 @@ document.addEventListener('click', (event) => {
   display: flex;
   align-items: center;
   padding: 0 1rem;
-  height: var(--header-height);
+  height: 10vh;
   background-color: var(--color-background);
   border-bottom: 1.5px solid var(--border-color); /* 使用统一的颜色变量 */
   position: relative;
@@ -375,7 +371,7 @@ document.addEventListener('click', (event) => {
 }
 
 .dropdown-item:hover {
-  background-color: var(--color-text);
+  background-color: var(--color-background);
   color: #000;
 }
 

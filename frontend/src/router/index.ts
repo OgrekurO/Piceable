@@ -36,6 +36,12 @@ const routes: RouteRecordRaw[] = [
         name: 'Timeline',
         component: () => import('@/views/TimeLine.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: '/map',
+        name: 'Map',
+        component: () => import('@/views/MapView.vue'),
+        meta: { requiresAuth: false }
       }
     ]
   },

@@ -120,7 +120,7 @@ const handleLogin = async () => {
         
         if (response.ok) {
           // 获取用户信息
-          const userResponse = await fetch('http://localhost:8001/api/users/me', {
+          const userResponse = await fetch('http://localhost:8001/api/auth/users/me', {
             headers: {
               'Authorization': `Bearer ${data.access_token}`
             }

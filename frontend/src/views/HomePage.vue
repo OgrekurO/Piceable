@@ -5,10 +5,18 @@
         <h1>你的数据库</h1>
         <el-button type="primary" @click="createProject">创建项目</el-button>
 
+        <!-- 创建项目弹窗组件 -->
+        <CreateProjectDialog
+          v-model="dialogVisible"
+          @upload-file="handleUploadFile"
+          @sync-eagle="handleSyncFromEagle"
+        />
+
         <div class="table-container">
           <vxe-table class="project-table"
             :data="projects" 
-            :row-config="{isHover: true}">
+            :row-config="{isHover: true}"
+            @cell-click="handleProjectClick">
             <vxe-column type="seq" width="100" title="#" />
             <vxe-column field="name" title="项目名称" />
             <vxe-column width="200" field="date" title="最后修改时间" />
@@ -16,30 +24,120 @@
         </div>
       </main>
     </div>
-</template>
+  </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 // 引入 Vxe-Table
 import 'vxe-table/lib/style.css'
-import { VXETable, VxeTable, VxeColumn } from 'vxe-table'
-
-// 注册组件
-VXETable.use(VxeTable)
-VXETable.use(VxeColumn)
+import {VxeTable, VxeColumn } from 'vxe-table'
+import CreateProjectDialog from '@/components/uploadFile/CreateProjectDialog.vue';
+import { getProjects } from '@/services/projectService';
 
 const router = useRouter();
 
-const projects = ref([
+// 控制弹窗显示
+const dialogVisible = ref(false);
+
+// 项目数据
+const projects = ref<any[]>([
   { name: '工业博物馆', date: '11月16日' },
   { name: '开水间自媒体素材', date: '11月10日' }
 ]);
 
 const createProject = () => {
-  // 跳转到创建项目的页面或弹出创建项目的对话框
-  router.push('/create-project');
+  console.log('[HomePage] createProject 被调用');
+  // 检查用户是否已登录
+  const token = localStorage.getItem('access_token');
+  console.log('[HomePage] token:', token ? '存在' : '不存在');
+  if (!token) {
+    // 如果未登录，跳转到登录页
+    console.log('[HomePage] 未登录，跳转到登录页');
+    router.push('/login');
+    return;
+  }
+  // 显示创建项目弹窗
+  console.log('[HomePage] 显示创建项目弹窗');
+  dialogVisible.value = true;
 };
+
+// 上传文件选项
+const handleUploadFile = async () => {
+  console.log('用户选择上传文件');
+  // 关闭弹窗
+  dialogVisible.value = false;
+  // 重新加载项目列表
+  await loadProjects();
+  // 跳转到表格页面
+  router.push('/table?source=upload');
+};
+
+// 从Eagle同步选项
+const handleSyncFromEagle = () => {
+  console.log('用户选择从Eagle同步');
+  // 关闭弹窗
+  dialogVisible.value = false;
+  // 跳转到表格页面
+  router.push('/table?source=eagle');
+};
+
+// 处理项目点击事件
+const handleProjectClick = ({ row }: { row: any }) => {
+  console.log('[HomePage] 点击项目:', row);
+  // 跳转到项目的表格页面
+  router.push(`/table?projectId=${row.id}&source=upload`);
+};
+
+// 加载项目列表
+const loadProjects = async () => {
+  try {
+    console.log('[HomePage] 开始加载项目列表...');
+    const data = await getProjects();
+    console.log('[HomePage] 获取到项目数据:', data);
+    // 转换数据格式以匹配现有表格，保留 id 用于导航
+    projects.value = data.map(project => ({
+      id: project.id,
+      name: project.name,
+      date: formatDate(project.last_modified)
+    }));
+    console.log('[HomePage] 项目列表已更新:', projects.value);
+  } catch (error) {
+    console.error('[HomePage] 加载项目列表失败:', error);
+    // 如果是认证错误，清除 token 并跳转到登录页
+    if (error instanceof Error && error.message.includes('401')) {
+      localStorage.removeItem('access_token');
+      router.push('/login');
+    }
+  }
+};
+
+// 格式化日期
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffTime = Math.abs(now.getTime() - date.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays <= 1) {
+    return '今天';
+  } else if (diffDays <= 2) {
+    return '昨天';
+  } else if (diffDays <= 7) {
+    return `${diffDays}天前`;
+  } else {
+    return `${date.getMonth() + 1}月${date.getDate()}日`;
+  }
+};
+
+// 组件挂载时加载项目列表
+onMounted(async () => {
+  // 检查用户是否已登录
+  const token = localStorage.getItem('access_token');
+  if (token) {
+    await loadProjects();
+  }
+});
 </script>
 
 <style scoped>
@@ -93,16 +191,13 @@ const createProject = () => {
   margin-left: -20px;
 }
 
-/* 确保表格使用指定的边框颜色 */
-.project-table {
-}
-
-.project-table .vxe-table--header-wrapper {
-  background-color: #fafafa !important;
+.project-table :deep .vxe-table--header-wrapper {
+  background-color: var(--color-background-transparent) !important;
+  font-size: 14px;
 }
 
 /* 表头样式 */
-.project-table ::v-deep .vxe-header--column {
+.project-table :deep .vxe-header--column {
   font-weight: bold;
   text-align: left;
   color: #575757;
@@ -110,7 +205,7 @@ const createProject = () => {
 }
 
 /* 表格内容样式 */
-.project-table ::v-deep .vxe-body--column {
+.project-table :deep .vxe-body--column {
   height: 50px;
   line-height: 80px;
   font-size: 20px;
@@ -123,19 +218,17 @@ const createProject = () => {
 }
 
 /* 移除最后一列的右边框 */
-.project-table ::v-deep .vxe-body--column:last-child {
+.project-table :deep .vxe-body--column:last-child {
   border-right: none;
 }
 
 /* 表格行底部边框 */
-.project-table ::v-deep .vxe-body--row {
+.project-table :deep .vxe-body--row {
   border-bottom: 1px solid var(--color-table-border);
 }
 
 /* 表格行悬停效果 */
-.project-table ::v-deep .vxe-body--row:hover {
+.project-table :deep .vxe-body--row:hover {
   background-color: #2ce418;
 }
-
-
 </style>

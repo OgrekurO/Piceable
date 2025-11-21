@@ -24,6 +24,10 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+@router.get("/users/me", response_model=UserPublic)
+async def read_users_me(current_user: User = Depends(get_current_active_user)):
+    return current_user
+
 @router.post("/register", response_model=User)
 async def register_user(user: UserCreate):
     # 检查用户是否已存在

@@ -1,10 +1,11 @@
 /* color palette from <https://github.com/vuejs/theme> */
 :root {
-  --vt-c-primary: #adcb01;
+  --vt-c-primary: #1ec700;
 
   --vt-c-white: #ffffff;
   --vt-c-white-soft: #f8f8f8;
   --vt-c-white-mute: #f2f2f2;
+  --vt-c-white-transparent: rgba(255, 255, 255, 0.409);
 
   --vt-c-gray: #888888;
 
@@ -28,16 +29,20 @@
 :root {
   --primary-color: var(--vt-c-primary);
   --success-color: #54e57b;
-  --warning-color: #ffee34;/*警告色*/
-  --danger-color: #cb1400;/*错误色*/
+  --warning-color: #ffee34;
+  /*警告色*/
+  --danger-color: #cb1400;
+  /*错误色*/
 
   --border-color: var(--vt-c-divider-light-2);
+
 
   --color-background: var(--vt-c-white);
   --color-background-soft: var(--vt-c-white-soft);
   --color-background-mute: var(--vt-c-white-mute);
+  --color-background-transparent: var(--vt-c-white-transparent);
 
-  --color-button:var(--vt-c-black);
+  --color-button: var(--vt-c-black);
   --color-text-button: var(--vt-c-white);
 
   --color-table-border: var(--vt-c-black);
@@ -49,6 +54,7 @@
   --color-text-mute: var(--vt-c-text-light-2);
 
   --section-gap: 160px;
+  --header-height: 5vh;
 }
 
 @media (prefers-color-scheme: dark) {

@@ -1,7 +1,7 @@
 /**
  * 项目类型定义文件
  */
-
+export type { DataRecord, Annotation, SearchResult } from './map.ts'
 export type { User } from './user.ts'
 
 // 角色信息

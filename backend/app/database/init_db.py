@@ -46,47 +46,37 @@ def init_db():
             print("默认管理员用户已存在。")
             
         # 创建项目表 (SQLite)
+        # 添加 source_type, source_metadata, description, schema
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS projects (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                description TEXT,
+                source_type TEXT DEFAULT 'manual',
+                source_metadata TEXT,
+                schema TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                user_id INTEGER NOT NULL,
+                items_count INTEGER DEFAULT 0,
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
+        """)
+        
+        # 创建数据项表 (SQLite) - 使用动态 data 字段
         cur.execute("""
             CREATE TABLE IF NOT EXISTS items (
                 id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                folders TEXT DEFAULT '[]',
-                tags TEXT DEFAULT '[]',
-                annotation TEXT,
-                url TEXT,
-                lastModified INTEGER,
-                thumbnail TEXT
+                data TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                project_id INTEGER,
+                user_id INTEGER,
+                FOREIGN KEY (project_id) REFERENCES projects (id),
+                FOREIGN KEY (user_id) REFERENCES users (id)
             )
         """)
         
-        # 创建库信息表 (SQLite)
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS library_info (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                path TEXT NOT NULL,
-                itemsCount INTEGER DEFAULT 0,
-                version TEXT
-            )
-        """)
-        
-        # 插入默认管理员用户（如果不存在）
-        cur.execute("SELECT * FROM users WHERE username = ?", ("admin",))
-        if cur.fetchone() is None:
-            hashed_password = get_password_hash("admin")
-            cur.execute("""
-                INSERT INTO users (username, email, hashed_password, is_active, role_id)
-                VALUES (?, ?, ?, ?, ?)
-            """, ("admin", "admin@example.com", hashed_password, 1, 1))
-        
-        # 插入库信息（如果不存在）
-        cur.execute("SELECT * FROM library_info LIMIT 1")
-        if cur.fetchone() is None:
-            cur.execute("""
-                INSERT INTO library_info (name, path, itemsCount, version)
-                VALUES (?, ?, ?, ?)
-            """, ("示例库", "/path/to/library", 0, "1.0.0"))
-            
         # 提交更改
         conn.commit()
         
@@ -171,56 +161,40 @@ def init_db():
 
         # 创建项目表 (PostgreSQL)
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS items (
-                id VARCHAR(50) PRIMARY KEY,
-                name TEXT NOT NULL,
-                folders JSONB DEFAULT '[]',
-                tags JSONB DEFAULT '[]',
-                annotation TEXT,
-                url TEXT,
-                lastModified BIGINT,
-                thumbnail TEXT
-            )
-        """)
-        
-        # 创建库信息表 (PostgreSQL)
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS library_info (
+            CREATE TABLE IF NOT EXISTS projects (
                 id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL,
-                path TEXT NOT NULL,
-                itemsCount INTEGER DEFAULT 0,
-                version TEXT
+                description TEXT,
+                source_type TEXT DEFAULT 'manual',
+                source_metadata JSONB,
+                schema JSONB,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                user_id INTEGER NOT NULL REFERENCES users(id),
+                items_count INTEGER DEFAULT 0
             )
         """)
         
-        # 插入库信息（如果不存在）
-        cur.execute("SELECT * FROM library_info LIMIT 1")
-        if cur.fetchone() is None:
-            cur.execute("""
-                INSERT INTO library_info (name, path, itemsCount, version)
-                VALUES (%s, %s, %s, %s)
-            """, ("示例库", "/path/to/library", 0, "1.0.0"))
-
+        # 创建数据项表 (PostgreSQL) - 使用动态 data 字段
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS items (
+                id VARCHAR(255) PRIMARY KEY,
+                data JSONB NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                project_id INTEGER REFERENCES projects(id),
+                user_id INTEGER REFERENCES users(id)
+            )
+        """)
+        
         # 提交更改
         conn.commit()
-
+        
         # 关闭游标和连接
         cur.close()
         conn.close()
-
+        
         print("PostgreSQL数据库初始化完成！")
-    
-def init_db_wrapper():
-    try:
-        init_db()
-    except psycopg2.OperationalError as e:
-        print(f"数据库连接错误: {e}")
-        print("请确保：")
-        print("1. PostgreSQL服务正在运行")
-        print("2. 用户名和密码正确")
-        print("3. PostgreSQL已正确安装和配置")
-        sys.exit(1)
-    except Exception as e:
-        print(f"发生错误: {e}")
-        sys.exit(1)
+
+if __name__ == "__main__":
+    init_db()
