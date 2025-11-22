@@ -1,9 +1,10 @@
 <template>
     <div class="home-page">
       <main>
-        <h1>可视化</h1>
+        <h1>直观编辑</h1>
         <h1>你的数据库</h1>
         <el-button type="primary" @click="createProject">创建项目</el-button>
+        <el-button @click="$router.push('/mindmap')" style="margin-right: 10px;">知识图谱</el-button>
 
         <!-- 创建项目弹窗组件 -->
         <CreateProjectDialog
@@ -19,6 +20,7 @@
             @cell-click="handleProjectClick">
             <vxe-column type="seq" width="100" title="#" />
             <vxe-column field="name" title="项目名称" />
+            <vxe-column field="description" title="项目简介" />
             <vxe-column width="200" field="date" title="最后修改时间" />
           </vxe-table>
         </div>

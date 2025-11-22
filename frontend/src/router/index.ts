@@ -23,7 +23,7 @@ const routes: RouteRecordRaw[] = [
         path: '/mindmap',
         name: 'MindMap',
         component: () => import('@/views/MindMapPage.vue'),
-        meta: { requiresAuth: true }
+        meta: { requiresAuth: false }
       },
       {
         path: '/admin',
@@ -50,7 +50,7 @@ const routes: RouteRecordRaw[] = [
     name: 'Login',
     component: () => import('@/views/LoginPage.vue')
   },
-   {
+  {
     path: '/settings',
     name: 'Settings',
     component: () => import('@/views/SettingsPage.vue')
@@ -80,7 +80,7 @@ const router = createRouter({
 // 全局前置守卫
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
-  
+
   // 只有需要认证的路由才进行登录检查
   if (to.meta.requiresAuth) {
     // 如果未认证，尝试从本地存储恢复
@@ -89,14 +89,14 @@ router.beforeEach(async (to, from, next) => {
         await authStore.restoreAuth()
       }
     }
-    
+
     // 如果仍然未认证，重定向到登录页
     if (!authStore.isAuthenticated) {
       next('/login')
       return
     }
   }
-  
+
   // 如果需要管理员权限
   if (to.meta.requiresAdmin) {
     // 确保用户信息已加载
@@ -105,7 +105,7 @@ router.beforeEach(async (to, from, next) => {
         await authStore.restoreAuth()
       }
     }
-    
+
     // 检查是否为管理员
     if (!authStore.user || !isAdmin(authStore.user)) {
       console.error('权限不足')
@@ -113,7 +113,7 @@ router.beforeEach(async (to, from, next) => {
       return
     }
   }
-  
+
   next()
 })
 
