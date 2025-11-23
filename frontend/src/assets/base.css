@@ -34,8 +34,6 @@
   --danger-color: #cb1400;
   /*错误色*/
 
-  --border-color: var(--vt-c-divider-light-2);
-
 
   --color-background: var(--vt-c-white);
   --color-background-soft: var(--vt-c-white-soft);

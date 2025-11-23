@@ -262,9 +262,8 @@ const handleEditClosed = async (params: any) => {
     const isNewRow = row.id.startsWith('new_')
     
     if (isNewRow) {
-      // 新行：暂时不保存，只更新本地数据
-      // 用户可以继续编辑其他单元格
-      console.log('[TablePage] 新行编辑，暂不保存到数据库')
+      // 新行：更新本地数据，并保存到数据库
+      console.log('[TablePage] 新行编辑，保存到数据库')
       
       // 更新本地数据
       const itemIndex = projectItems.value.findIndex(item => item.id === row.id)
@@ -272,8 +271,44 @@ const handleEditClosed = async (params: any) => {
         projectItems.value[itemIndex] = { ...row }
       }
       
-      // 标记这一行有未保存的更改
-      // 可以在后续添加一个"保存"按钮来批量保存新行
+      // 保存新行到数据库
+      if (currentProjectId.value && currentTableId.value) {
+        const newItemData = {
+          ...row.data,
+          id: undefined // 不传递临时ID
+        };
+        
+        const response = await fetch('http://localhost:8001/api/items', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          },
+          body: JSON.stringify({
+            projectId: currentProjectId.value,
+            tableId: currentTableId.value,
+            data: newItemData
+          })
+        })
+        
+        if (!response.ok) {
+          throw new Error(`创建失败: ${response.statusText}`)
+        }
+        
+        const result = await response.json()
+        console.log('[TablePage] 新行创建成功:', result)
+        
+        // 更新行ID为数据库中的真实ID
+        if (itemIndex !== -1) {
+          projectItems.value[itemIndex].id = result.id
+        }
+        
+        // 如果当前选中的是这一行，也更新 selectedRow
+        if (selectedRow.value && selectedRow.value.id === row.id) {
+          selectedRow.value = JSON.parse(JSON.stringify(projectItems.value[itemIndex]))
+        }
+      }
+      
       return
     }
     
@@ -403,7 +438,7 @@ const updateSelectedRowField = (field: string, event: Event) => {
 // 处理新增行
 const handleAddRow = (newRow: any) => {
   projectItems.value.push(newRow)
-  // TODO: 调用API保存新行
+  // 不再需要在这里调用API保存新行，而是在编辑关闭时保存
 }
 
 // 处理新增列

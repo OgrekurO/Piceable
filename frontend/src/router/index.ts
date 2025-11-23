@@ -32,9 +32,9 @@ const routes: RouteRecordRaw[] = [
         meta: { requiresAuth: true, requiresAdmin: true }
       },
       {
-        path: '/timeline',
-        name: 'Timeline',
-        component: () => import('@/views/TimeLine.vue'),
+        path: '/coordinate',
+        name: 'Coordinate',
+        component: () => import('@/views/CoordinatePage.vue'),
         meta: { requiresAuth: true }
       },
       {

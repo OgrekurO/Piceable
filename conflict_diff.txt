@@ -1,6 +1,0 @@
-diff --git a/pre-plugin b/pre-plugin
---- a/pre-plugin
-+++ b/pre-plugin
-@@ -1 +1 @@
--Subproject commit 229d4dffdb9ecda52a20c781d274e939338e3083
-+Subproject commit 229d4dffdb9ecda52a20c781d274e939338e3083-dirty

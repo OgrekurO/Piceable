@@ -1,39 +1,83 @@
 # Piceable
 
-Piceable 是一个基于 Web 的轻量级思维导图工具，旨在提供简洁、可扩展的可视化知识管理功能。
+Piceable 是一个基于 Web 的轻量级数据可视化管理工具，提供多种数据展示方式，包括表格、2D坐标、3D坐标、思维导图和地图视图。
 
 ## 项目结构
 
 ```
 .
-├── backend/                 # 后端服务
-│   ├── main.py             # FastAPI后端服务
-│   └── requirements.txt    # Python依赖
-├── db/                      # 数据库相关文件
-├── eagle-plugin/            # Eagle插件（作为数据桥接）
-├── frontend/                # 前端应用（独立的网页应用）
-├── pre-plugin/              # 之前的插件版本
-├── 项目辅助文档/             # 项目文档
-│   ├── 0 需求文档 2.0.md    # 需求文档
-│   ├── 技术文档.md           # 技术文档
-│   ├── 开发计划清单.md        # 开发计划清单
-│   ├── 通信机制说明.md        # 通信机制说明
-│   └── 迁移计划/            # 迁移计划
-├── docker-compose.yml       # Docker编排文件
-└── README.md                # 项目说明文档
+├── backend/                      # 后端服务 (FastAPI)
+│   ├── app/                     # 应用核心目录
+│   │   ├── api/                # API路由定义
+│   │   │   └── routes/        # 各模块路由
+│   │   ├── auth/               # 认证模块(JWT)
+│   │   ├── crud/               # 数据库操作
+│   │   ├── database/           # 数据库配置和初始化
+│   │   ├── models/             # 数据模型定义
+│   │   └── schemas/            # Pydantic模型/数据验证
+│   ├── main.py                 # 应用入口文件
+│   └── requirements.txt        # Python依赖
+├── frontend/                    # 前端应用 (Vue3)
+│   ├── public/                 # 静态资源
+│   └── src/                    # 源代码目录
+│       ├── assets/             # 静态资源(图片、样式等)
+│       ├── components/         # 可复用组件
+│       ├── constants/          # 常量定义
+│       ├── layouts/            # 页面布局组件
+│       ├── router/             # 路由配置
+│       ├── services/           # HTTP服务和业务逻辑
+│       ├── stores/             # 状态管理(Pinia)
+│       ├── types/              # TypeScript类型定义
+│       ├── utils/              # 工具函数
+│       ├── views/              # 页面组件
+│       ├── App.vue             # 根组件
+│       └── main.ts             # 应用入口文件
+├── eagle-plugin/                # Eagle插件（数据桥接）
+│   ├── manifest.json           # 插件配置文件
+│   └── main.js                 # 插件入口文件
+├── 项目辅助文档/                 # 项目文档
+│   ├── docs/                   # API和技术文档
+│   ├── 开发计划清单.md           # 开发计划
+│   ├── 技术文档.md              # 技术架构说明
+│   └── 需求文档 2.0.md         # 产品需求文档
+├── docker-compose.yml          # Docker编排配置
+└── README.md                   # 项目说明文档
 ```
 
-## 各组件说明
+## 技术栈
 
-### 前端应用 (frontend/)
-基于Vue3构建的现代化前端界面，是一个独立的网页应用，用于展示和管理思维导图数据。
-- 独立运行的网页应用
-- 通过HTTP API与后端服务和Eagle插件通信
-- 展示从后端获取的数据（源自Eagle和用户管理等）
+- **前端**: Vue 3, Pinia, Vite, Element Plus, Vxe-Table, D3.js, Three.js
+- **后端**: FastAPI (Python), SQLite
+- **数据可视化**: D3.js (思维导图), Three.js (3D坐标), Leaflet (地图)
 
-#### 使用方法
+## 功能特性
+
+- 用户认证和权限管理
+- 项目和数据管理
+- 多种数据可视化展示方式
+- 表格数据编辑和导出
+- 管理员面板（用户管理）
+
+## 快速开始
+
+### 后端服务
+
 ```bash
 # 安装依赖
+cd backend
+pip install -r requirements.txt
+
+# 运行服务
+python main.py
+```
+
+后端服务默认运行在 http://localhost:8001
+
+### 前端应用
+
+```bash
+# 安装依赖
+cd frontend
 npm install
 
 # 开发模式运行
@@ -41,108 +85,16 @@ npm run dev
 
 # 构建生产版本
 npm run build
-
-# 预览生产版本
-npm run preview
 ```
 
-### 后端服务 (backend/)
-提供HTTP API服务，使用FastAPI（Python）实现，处理用户管理等核心业务功能：
-- 用户管理、权限控制、数据持久化等核心业务功能
-- 为前端应用提供用户相关数据访问接口
-
-#### 使用方法
-```bash
-# 安装依赖
-pip install -r requirements.txt
-
-# 运行服务
-python main.py
-```
-
-默认运行在 http://localhost:3001
-
-### Eagle插件 (eagle-plugin/)
-运行在Eagle内部的插件，作为数据桥接：
-- 运行在Eagle应用内部
-- 通过Eagle API访问和操作数据
-- 启动HTTP服务为前端提供实时Eagle数据
-
-#### 使用方法
-1. 在Eagle中安装插件
-2. 插件会自动启动HTTP服务
-3. 前端应用通过API与插件通信获取数据
-
-### 数据流说明
-```
-┌─────────────────┐               ┌────────────────────┐               ┌──────────────┐
-│   前端应用      │               │ Eagle插件(桥接)    │               │   Eagle应用  │
-│ (独立网页)      │               │ (可启动HTTP服务)   │               │              │
-└─────────────────┘               └────────────────────┘               └──────────────┘
-         ▲                                  │                                     ▲
-         │                                  │                                     │
-         │                           eagle.api 调用                        eagle.api
-         │                                  ▼                                     │
-         │                       ┌────────────────────┐                          │
-         │                       │  Eagle 数据源      │◄─────────────────────────┘
-         │                       └────────────────────┘
-         │                                  │
-         │                           HTTP服务(实时数据)
-         │                                  ▼
-         │                       ┌────────────────────┐
-         │                       │   FastAPI 后端     │
-         │                       │   (用户管理等)     │
-         │                       └────────────────────┘
-         │                                │      ▲
-         │                         ORM/SQL│      │
-         │                                ▼      │
-         │                       ┌────────────────────┐
-         │                       │   数据库           │
-         │                       │ (PostgreSQL/SQLite)│
-         │                       └────────────────────┘
-         │                                │
-         └────────────────────────────────┘
-
-┌─────────────────┐
-│   外部网页      │
-│   (浏览器)      │
-└─────────────────┘
-         │
-    HTTP 请求
-         ▼
-┌────────────────────┐
-│   FastAPI 后端     │
-│   (用户管理等)     │
-└────────────────────┘
-         │
-    查询数据库
-         ▼
-┌────────────────────┐
-│   数据库           │
-│ (用户数据等)       │
-└────────────────────┘
-```
+前端应用默认运行在 http://localhost:5173
 
 ## 开发流程
 
-1. 安装后端依赖并启动后端服务（处理用户管理等）：
-   ```bash
-   cd backend
-   pip install -r requirements.txt
-   python main.py
-   ```
+1. 启动后端服务
+2. 启动前端开发服务
+3. 访问前端应用进行开发和测试
 
-2. 在另一个终端中安装前端依赖并启动前端开发服务：
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
+## 目前状态
 
-3. 在Eagle中安装并启用插件（如果需要Eagle集成）：
-   - 打开Eagle
-   - 进入插件管理
-   - 安装eagle-plugin目录中的插件
-
-4. 访问前端应用：
-   打开浏览器访问 http://localhost:5173 （默认的Vite开发服务器端口）
+项目核心功能已完成，包括用户管理、项目管理、数据可视化展示等。Eagle插件部分尚未完全实现。

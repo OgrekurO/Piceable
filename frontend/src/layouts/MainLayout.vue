@@ -66,7 +66,7 @@
         
         <!-- 导航链接 -->
         <div class="nav-links" v-show="showSidebar">
-          <router-link :to="{ path: '/timeline', query: { projectId: currentProjectId, source: currentSource } }" class="nav-link" @click="showSidebar = false">时间轴</router-link>
+          <router-link :to="{ path: '/coordinate', query: { projectId: currentProjectId, source: currentSource } }" class="nav-link" @click="showSidebar = false">坐标</router-link>
           <router-link :to="{ path: '/table', query: { projectId: currentProjectId, source: currentSource } }" class="nav-link" @click="showSidebar = false">表格</router-link>
           <router-link :to="{ path: '/mindmap', query: { projectId: currentProjectId, source: currentSource } }" class="nav-link" @click="showSidebar = false">图谱</router-link>
           <router-link :to="{ path: '/map', query: { projectId: currentProjectId, source: currentSource } }" class="nav-link" @click="showSidebar = false">地图</router-link>
@@ -137,7 +137,7 @@ const showProjectDropdown = ref(false)
 
 // 计算属性：是否显示项目切换器（非主页时显示）
 const shouldShowProjectSwitcher = computed(() => {
-  const viewPages = ['/timeline', '/table', '/mindmap', '/map']
+  const viewPages = ['/coordinate', '/table', '/mindmap', '/map']
   return viewPages.some(page => route.path.startsWith(page))
 })
 
