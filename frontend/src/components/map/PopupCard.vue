@@ -1,9 +1,9 @@
 <template>
   <div class="popup-card">
     <div class="popup-header">
-      <h3 v-if="type === 'record'">{{ data.label }}</h3>
-      <h3 v-if="type === 'annotation'">{{ data.label }}</h3>
-      <h3 v-if="type === 'search'">搜索结果: {{ data.label }}</h3>
+      <h3 v-if="type === 'record'">{{ (data as any).primaryLabel || (data as any).label }}</h3>
+      <h3 v-if="type === 'annotation'">{{ (data as any).label }}</h3>
+      <h3 v-if="type === 'search'">搜索结果: {{ (data as any).label }}</h3>
       <button class="close-btn" @click="handleClose">
         ×
       </button>
@@ -11,14 +11,14 @@
 
     <div class="popup-content">
       <div v-if="type === 'record'" class="record-details">
-        <div v-for="(value, key) in data" :key="key" class="record-field">
+        <div v-for="(value, key) in ((data as any).data || data)" :key="key" class="record-field">
           <strong>{{ key }}:</strong> {{ value }}
         </div>
       </div>
 
       <div v-if="type === 'annotation'" class="annotation-details">
-        <p><strong>描述:</strong> {{ data.note }}</p>
-        <p><strong>类别:</strong> {{ data.category }}</p>
+        <p><strong>描述:</strong> {{ (data as any).note }}</p>
+        <p><strong>类别:</strong> {{ (data as any).category }}</p>
       </div>
 
       <div v-if="type === 'search'" class="search-result">
@@ -42,10 +42,11 @@
 <script setup lang="ts">
 import { defineProps, defineEmits } from 'vue';
 import type { DataRecord, Annotation, SearchResult } from '@/types/map';
+import type { VisualEntity } from '@/types/entity';
 
 const props = defineProps({
   data: {
-    type: Object as () => DataRecord | Annotation | SearchResult,
+    type: Object as () => DataRecord | Annotation | SearchResult | VisualEntity,
     required: true
   },
   type: {

@@ -1,7 +1,23 @@
+<!--
+  GraphSidebar.vue - 图谱侧边栏组件
+
+  功能：
+  1. 显示图谱中选中节点的详细信息
+  2. 提供图谱可视化配置选项
+  3. 数据导入导出功能
+  4. 图谱统计信息展示
+
+  主要特性：
+  - 三标签页设计（详情/设置/数据）
+  - 响应式配置更新
+  - 数据导入导出支持
+  - 节点属性完整展示
+-->
 <template>
   <div class="graph-sidebar">
     <!-- Tabs -->
     <div class="tabs">
+      <!-- 循环渲染三个标签页：详情、设置、数据 -->
       <button 
         v-for="tab in ['details', 'settings', 'data']" 
         :key="tab"
@@ -57,8 +73,9 @@
         </div>
       </div>
 
-      <!-- Settings Tab -->
+      <!-- 设置面板 Settings Tab -->
       <div v-if="activeTab === 'settings'" class="settings-panel">
+        <!-- 物理引擎开关：控制图谱节点是否启用自动布局 -->
         <div class="setting-group">
           <label>物理引擎 (Physics)</label>
           <div class="toggle-wrapper">
@@ -71,6 +88,7 @@
           </div>
         </div>
 
+        <!-- 节点着色依据：根据节点属性对节点进行分类着色 -->
         <div class="setting-group">
           <label>着色字段 (Color By)</label>
           <select v-model="localConfig.nodeColorBy" @change="emitConfig">
@@ -80,6 +98,7 @@
           </select>
         </div>
 
+        <!-- 节点图片显示开关 -->
         <div class="setting-group">
           <label>显示图片</label>
           <div class="toggle-wrapper">
@@ -88,6 +107,7 @@
           </div>
         </div>
 
+        <!-- 节点大小映射开关：根据节点连接数调整节点大小 -->
         <div class="setting-group">
           <label>节点大小映射</label>
           <div class="toggle-wrapper">
@@ -96,6 +116,7 @@
           </div>
         </div>
 
+        <!-- 节点大小调节子设置 -->
         <div v-if="localConfig.nodeSizeByLinks" class="setting-subgroup">
           <label>最小节点半径</label>
           <input 
@@ -122,8 +143,10 @@
           <span class="value-display">{{ localConfig.maxNodeRadius }}px</span>
         </div>
 
+        <!-- 力参数调整区域 -->
         <h3 class="section-title">力参数调整</h3>
 
+        <!-- 排斥力参数调节 -->
         <div class="setting-group">
           <label>排斥力 (Charge Force)</label>
           <input 
@@ -137,6 +160,7 @@
           <span class="value-display">{{ localConfig.forceStrength }}</span>
         </div>
 
+        <!-- 中心力强度调节 -->
         <div class="setting-group">
           <label>中心力强度 (Center Force)</label>
           <input 
@@ -150,6 +174,7 @@
           <span class="value-display">{{ localConfig.centerForce }}</span>
         </div>
 
+        <!-- 碰撞半径调节 -->
         <div class="setting-group">
           <label>碰撞半径 (Collision Radius)</label>
           <input 
@@ -163,6 +188,7 @@
           <span class="value-display">{{ localConfig.collideRadius }}px</span>
         </div>
 
+        <!-- 碰撞力强度调节 -->
         <div class="setting-group">
           <label>碰撞力强度 (Collision Strength)</label>
           <input 
@@ -175,10 +201,29 @@
           />
           <span class="value-display">{{ localConfig.collideStrength }}</span>
         </div>
+
+        <!-- 节点标签字段选择 -->
+        <div class="setting-item">
+          <label class="setting-label">节点标签字段</label>
+          <select 
+            :value="localConfig.nodeLabelField" 
+            @change="e => { localConfig.nodeLabelField = (e.target as HTMLSelectElement).value; emitConfig(); }"
+            class="setting-select"
+          >
+            <option 
+              v-for="option in nodeFieldOptions" 
+              :key="option.value" 
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
       </div>
 
       <!-- Data Tab -->
       <div v-if="activeTab === 'data'" class="data-panel">
+        <!-- 图谱统计信息展示 -->
         <div class="stats-card">
           <div class="stat-item">
             <span class="stat-val">{{ graphStats.nodes }}</span>
@@ -190,6 +235,7 @@
           </div>
         </div>
 
+        <!-- 数据导入功能区 -->
         <div class="action-group">
           <h3>导入数据</h3>
           <p class="help-text">支持 CSV 格式 (Elements.csv, Connections.csv)</p>
@@ -205,28 +251,113 @@
           </div>
         </div>
 
+        <!-- 数据导出功能区 -->
         <div class="action-group">
           <h3>导出数据</h3>
-          <button class="btn-primary" @click="$emit('export-data', 'png')">导出图片 (PNG)</button>
-          <button class="btn-secondary" @click="$emit('export-data', 'excel')">导出 Excel</button>
-          <button class="btn-secondary" @click="$emit('export-data', 'json')">导出 JSON</button>
+          <p class="help-text">将当前图谱数据导出为标准格式</p>
+          <div class="export-buttons">
+            <button class="btn-secondary" @click="$emit('export-data', 'csv')">
+              导出为 CSV
+            </button>
+            <button class="btn-secondary" @click="$emit('export-data', 'json')">
+              导出为 JSON
+            </button>
+          </div>
+        </div>
+        
+        <!-- 实体和关系映射 -->
+        <div class="action-group">
+          <h3>数据映射配置</h3>
+          <p class="help-text">配置项目中的表格数据如何映射为实体和关系</p>
+          
+          <div class="mapping-config">
+            <div class="mapping-section">
+              <h4>实体表格</h4>
+              <div class="table-list">
+                <div 
+                  v-for="table in availableTables" 
+                  :key="table.id"
+                  class="table-item"
+                  :class="{ selected: table.type === 'entity' }"
+                  @click="setTableType(table.id, 'entity')"
+                >
+                  <span>{{ table.name }}</span>
+                  <span v-if="table.type === 'entity'" class="badge">实体</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mapping-section">
+              <h4>关系表格</h4>
+              <div class="table-list">
+                <div 
+                  v-for="table in availableTables" 
+                  :key="table.id"
+                  class="table-item"
+                  :class="{ selected: table.type === 'relationship' }"
+                  @click="setTableType(table.id, 'relationship')"
+                >
+                  <span>{{ table.name }}</span>
+                  <span v-if="table.type === 'relationship'" class="badge">关系</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mapping-info" v-if="relationshipTable">
+              <h4>关系字段识别</h4>
+              <p>系统已识别以下字段用于表示关系：</p>
+              <ul>
+                <li><strong>源节点字段:</strong> {{ relationshipFields.source || '未识别' }}</li>
+                <li><strong>目标节点字段:</strong> {{ relationshipFields.target || '未识别' }}</li>
+                <li><strong>关系类型字段:</strong> {{ relationshipFields.type || '未识别' }}</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
-
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed, watch } from 'vue';
 import * as d3 from 'd3';
 
 const props = defineProps<{
   selectedNode: any;
   graphStats: { nodes: number, links: number };
+  nodes?: any[]; // 添加nodes属性用于动态获取字段
+  availableTables?: Array<{id: string, name: string, type?: 'entity' | 'relationship'}>; // 添加表格数据
+  relationshipFields?: { source?: string; target?: string; type?: string }; // 添加关系字段信息
 }>();
 
-const emit = defineEmits(['update-config', 'import-data', 'export-data']);
+// 自动识别关系字段
+const autoDetectRelationshipFields = (headers: string[]) => {
+  const fields: { source?: string; target?: string; type?: string } = {};
+  
+  // 常见的源节点字段名
+  const sourceFieldNames = ['From', 'from', 'source', 'Source', 'Start', 'start', '起点', '源'];
+  // 常见的目标节点字段名
+  const targetFieldNames = ['To', 'to', 'target', 'Target', 'End', 'end', '终点', '目标'];
+  // 常见的关系类型字段名
+  const typeFieldNames = ['Type', 'type', 'Relation', 'relation', 'Relationship', 'relationship', '类型', '关系'];
+  
+  headers.forEach(header => {
+    if (sourceFieldNames.includes(header) && !fields.source) {
+      fields.source = header;
+    }
+    if (targetFieldNames.includes(header) && !fields.target) {
+      fields.target = header;
+    }
+    if (typeFieldNames.includes(header) && !fields.type) {
+      fields.type = header;
+    }
+  });
+  
+  return fields;
+};
+
+const emit = defineEmits(['update-config', 'import-data', 'export-data', 'update-table-mapping']);
 
 const activeTab = ref('details');
 
@@ -241,7 +372,55 @@ const localConfig = reactive({
   maxNodeRadius: 20,
   centerForce: 1,
   collideRadius: 40,
-  collideStrength: 0.1
+  collideStrength: 0.1,
+  nodeLabelField: 'label' // 添加节点标签字段配置，默认为'label'
+});
+
+// 计算可用的节点字段选项
+const nodeFieldOptions = computed(() => {
+  // 如果有选中节点，从选中节点获取字段
+  if (props.selectedNode) {
+    const fields = Object.keys(props.selectedNode)
+      .filter(key => 
+        (typeof props.selectedNode[key] === 'string' || 
+         typeof props.selectedNode[key] === 'number') &&
+        props.selectedNode[key] !== null &&
+        props.selectedNode[key] !== undefined
+      )
+      .filter(key => !['x', 'y', 'vx', 'vy', 'index', 'fx', 'fy', '_radius'].includes(key));
+    
+    return fields.map(field => ({
+      value: field,
+      label: field.charAt(0).toUpperCase() + field.slice(1)
+    }));
+  }
+  
+  // 如果没有选中节点，但从nodes数组中可以获取字段
+  if (props.nodes && props.nodes.length > 0) {
+    // 获取第一个节点的字段作为示例
+    const firstNode = props.nodes[0];
+    const fields = Object.keys(firstNode)
+      .filter(key => 
+        (typeof firstNode[key] === 'string' || 
+         typeof firstNode[key] === 'number') &&
+        firstNode[key] !== null &&
+        firstNode[key] !== undefined
+      )
+      .filter(key => !['x', 'y', 'vx', 'vy', 'index', 'fx', 'fy', '_radius'].includes(key));
+    
+    return fields.map(field => ({
+      value: field,
+      label: field.charAt(0).toUpperCase() + field.slice(1)
+    }));
+  }
+  
+  // 如果没有选中节点，但有统计数据，尝试从统计数据中获取字段
+  // 注意：这需要父组件传递nodes数据
+  return [
+    { value: 'label', label: '名称' },
+    { value: 'id', label: 'ID' },
+    { value: 'type', label: '类型' }
+  ];
 });
 
 const emitConfig = () => {
@@ -273,6 +452,16 @@ const filterProps = (node: any) => {
   const { id, label, x, y, vx, vy, index, image, description, tags, ...rest } = node;
   return rest;
 };
+
+// 设置表格类型（实体或关系）
+const setTableType = (tableId: string, type: 'entity' | 'relationship') => {
+  emit('update-table-mapping', { tableId, type });
+};
+
+// 计算当前被标记为关系的表格
+const relationshipTable = computed(() => {
+  return props.availableTables?.find(table => table.type === 'relationship');
+});
 
 // File Handling
 const tempNodes = ref<any[]>([]);
@@ -588,5 +777,79 @@ const checkAndEmitImport = () => {
 .setting-subgroup label {
   font-size: 13px;
   color: #6b7280;
+}
+
+.mapping-config {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.mapping-section {
+  margin-bottom: 15px;
+}
+
+.mapping-section h4 {
+  margin: 0 0 10px 0;
+  font-weight: 600;
+  color: #374151;
+}
+
+.table-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.table-item {
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.table-item:hover {
+  background-color: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.table-item.selected {
+  background-color: #eff6ff;
+  border-color: #3b82f6;
+}
+
+.mapping-info {
+  background-color: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 15px;
+}
+
+.mapping-info h4 {
+  margin: 0 0 8px 0;
+  color: #0369a1;
+}
+
+.mapping-info ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.mapping-info li {
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.badge {
+  background-color: #3b82f6;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
 }
 </style>

@@ -59,7 +59,7 @@ export async function register(userData: { username: string; email: string; pass
  */
 export async function getCurrentUser(): Promise<User | null> {
   try {
-    const response = await getFromBackend('/api/users/me')
+    const response = await getFromBackend('/api/auth/users/me')
     return response
   } catch (error) {
     console.error('获取用户信息失败:', error)

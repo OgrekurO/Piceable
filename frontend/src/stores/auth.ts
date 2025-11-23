@@ -55,24 +55,47 @@ export const useAuthStore = defineStore('auth', {
      */
     setAccessToken(token: string) {
       this.accessToken = token
+      saveToken(token)
     },
     
     /**
      * 从本地存储恢复认证状态
      */
     async restoreAuth() {
-      const token = getAccessToken()
-      if (token) {
-        this.accessToken = token
-        const user = await getCurrentUser()
-        if (user) {
-          this.user = user
-          this.isAuthenticated = true
+      console.log('[AUTH] 开始恢复认证状态')
+      try {
+        // 从localStorage获取访问令牌
+        const accessToken = getAccessToken()
+        console.log('[AUTH] 从localStorage获取的访问令牌:', accessToken)
+        
+        if (accessToken) {
+          // 设置访问令牌到store
+          this.accessToken = accessToken
+          
+          // 验证令牌有效性并获取用户信息
+          const user = await getCurrentUser()
+          console.log('[AUTH] 获取到的用户信息:', user)
+          
+          if (user) {
+            this.user = user
+            this.isAuthenticated = true
+            console.log('[AUTH] 认证状态恢复成功')
+          } else {
+            // 如果无法获取用户信息，清除令牌
+            console.log('[AUTH] 无法获取用户信息，清除认证状态')
+            this.logout()
+          }
         } else {
-          // 如果无法获取用户信息，清除令牌
-          this.logout()
+          console.log('[AUTH] localStorage中未找到访问令牌')
         }
+      } catch (error) {
+        console.error('[AUTH] 恢复认证状态失败:', error)
+        // 如果获取用户信息失败，清除令牌
+        this.logout()
       }
+      
+      console.log('[AUTH] 最终认证状态 - isAuthenticated:', this.isAuthenticated)
+      return this.isAuthenticated
     }
   },
   
@@ -90,6 +113,6 @@ export const useAuthStore = defineStore('auth', {
     /**
      * 获取访问令牌
      */
-    getToken: (state) => state.accessToken
+    token: (state) => state.accessToken
   }
 })

@@ -59,13 +59,14 @@
 // 定义数据类型
 interface Item {
   id: string
-  thumbnail: string
-  name: string
-  folders: string[] | string
-  tags: string[] | string
-  annotation: string
-  lastModified: number | string
-  url: string
+  thumbnail?: string
+  name?: string
+  folders?: string[] | string
+  tags?: string[] | string
+  annotation?: string
+  lastModified?: number | string
+  url?: string
+  [key: string]: any
 }
 
 // 定义属性
@@ -95,12 +96,13 @@ const formatValue = (value: string[] | string | undefined): string => {
 
 <style scoped>
 .detail-panel {
-  width: 300px;
-  background-color: var(--light-gray);
+  width: 100%;
+  background-color: var(--color-background);
   padding: 20px;
-  border-left: 1px solid #ddd;
+  border-left: 1px solid var(--color-border);
   height: 100%;
   overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .detail-header {
@@ -117,7 +119,7 @@ const formatValue = (value: string[] | string | undefined): string => {
   width: 100%;
   height: 200px;
   border-radius: 4px;
-  outline: var(--medium-gray) 0.5px solid;
+  outline: var(--color-border) 0.5px solid;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -141,10 +143,10 @@ const formatValue = (value: string[] | string | undefined): string => {
 .detail-item input,
 .detail-item textarea {
   padding: 8px;
-  border: 0.5px solid var(--medium-gray);
+  border: 0.5px solid var(--color-border);
   border-radius: 4px;
   font-size: 13px;
-  background-color: var(--light-gray);
+  background-color: var(--color-background);
 }
 
 .detail-item input:focus,
@@ -167,7 +169,7 @@ const formatValue = (value: string[] | string | undefined): string => {
 
 .divider {
   height: 0.5px;
-  background-color: var(--medium-gray);
+  background-color: var(--color-border);
   margin: 5px 0;
 }
 

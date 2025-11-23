@@ -4,7 +4,6 @@
         <h1>直观编辑</h1>
         <h1>你的数据库</h1>
         <el-button type="primary" @click="createProject">创建项目</el-button>
-        <el-button @click="$router.push('/mindmap')" style="margin-right: 10px;">知识图谱</el-button>
 
         <!-- 创建项目弹窗组件 -->
         <CreateProjectDialog
@@ -17,13 +16,23 @@
           <vxe-table class="project-table"
             :data="projects" 
             :row-config="{isHover: true}"
-            @cell-click="handleProjectClick">
+            :menu-config="menuConfig"
+            @cell-click="handleProjectClick"
+            @menu-click="handleMenuClick">
             <vxe-column type="seq" width="100" title="#" />
             <vxe-column field="name" title="项目名称" />
             <vxe-column field="description" title="项目简介" />
             <vxe-column width="200" field="date" title="最后修改时间" />
           </vxe-table>
         </div>
+
+        <!-- 删除确认弹窗 -->
+        <DeleteConfirmDialog
+          v-model="deleteDialogVisible"
+          :project-name="projectToDelete?.name || ''"
+          :loading="deleting"
+          @confirm="confirmDelete"
+        />
       </main>
     </div>
   </template>
@@ -31,22 +40,40 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus';
 // 引入 Vxe-Table
 import 'vxe-table/lib/style.css'
 import {VxeTable, VxeColumn } from 'vxe-table'
 import CreateProjectDialog from '@/components/uploadFile/CreateProjectDialog.vue';
-import { getProjects } from '@/services/projectService';
+import DeleteConfirmDialog from '@/components/dialog/DeleteConfirmDialog.vue';
+import { getProjects, deleteProject } from '@/services/projectService';
 
 const router = useRouter();
 
 // 控制弹窗显示
 const dialogVisible = ref(false);
 
+// 删除确认弹窗
+const deleteDialogVisible = ref(false);
+const projectToDelete = ref<any>(null);
+const deleting = ref(false);
+
 // 项目数据
 const projects = ref<any[]>([
   { name: '工业博物馆', date: '11月16日' },
   { name: '开水间自媒体素材', date: '11月10日' }
 ]);
+
+// 右键菜单配置
+const menuConfig = {
+  body: {
+    options: [
+      [
+        { code: 'delete', name: '删除项目', prefixIcon: 'vxe-icon-delete', className: 'menu-delete' }
+      ]
+    ]
+  }
+};
 
 const createProject = () => {
   console.log('[HomePage] createProject 被调用');
@@ -91,6 +118,41 @@ const handleProjectClick = ({ row }: { row: any }) => {
   router.push(`/table?projectId=${row.id}&source=upload`);
 };
 
+// 处理右键菜单点击
+const handleMenuClick = ({ menu, row }: { menu: any; row: any }) => {
+  console.log('[HomePage] 菜单点击:', menu.code, row);
+  if (menu.code === 'delete') {
+    // 显示删除确认弹窗
+    projectToDelete.value = row;
+    deleteDialogVisible.value = true;
+  }
+};
+
+// 确认删除项目
+const confirmDelete = async () => {
+  if (!projectToDelete.value) return;
+  
+  deleting.value = true;
+  try {
+    console.log('[HomePage] 删除项目:', projectToDelete.value.id);
+    await deleteProject(projectToDelete.value.id);
+    
+    ElMessage.success(`项目 "${projectToDelete.value.name}" 已删除`);
+    
+    // 关闭弹窗
+    deleteDialogVisible.value = false;
+    projectToDelete.value = null;
+    
+    // 重新加载项目列表
+    await loadProjects();
+  } catch (error) {
+    console.error('[HomePage] 删除项目失败:', error);
+    ElMessage.error('删除项目失败，请重试');
+  } finally {
+    deleting.value = false;
+  }
+};
+
 // 加载项目列表
 const loadProjects = async () => {
   try {
@@ -101,6 +163,7 @@ const loadProjects = async () => {
     projects.value = data.map(project => ({
       id: project.id,
       name: project.name,
+      description: project.description,
       date: formatDate(project.last_modified)
     }));
     console.log('[HomePage] 项目列表已更新:', projects.value);
@@ -232,5 +295,15 @@ onMounted(async () => {
 /* 表格行悬停效果 */
 .project-table :deep .vxe-body--row:hover {
   background-color: #2ce418;
+}
+
+/* 右键菜单删除项样式 */
+.project-table :deep .vxe-context-menu .menu-delete {
+  color: #f56c6c;
+}
+
+.project-table :deep .vxe-context-menu .menu-delete:hover {
+  background-color: #fef0f0;
+  color: #f56c6c;
 }
 </style>

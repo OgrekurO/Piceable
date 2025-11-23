@@ -18,7 +18,36 @@
         <span class="logo">
           <router-link to="/" class="logo-link">Piceable</router-link>
         </span>
+        <!-- 项目切换下拉菜单 -->
+        <div class="project-switcher" v-if="shouldShowProjectSwitcher">
+          <div class="project-dropdown" @click="toggleProjectDropdown">
+            <span class="current-project">{{ currentProjectName }}</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="dropdown-icon">
+              <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            
+            <!-- 项目下拉菜单 -->
+            <div class="project-dropdown-menu" v-show="showProjectDropdown">
+              <div class="dropdown-item" 
+                v-for="project in projects" 
+                :key="project.id"
+                :class="{ active: project.id === currentProjectId }"
+                @click.stop="selectProject(project)">
+                <span class="project-name">{{ project.name }}</span>
+                <span class="project-count">{{ project.items_count }} 项</span>
+              </div>
+              <div class="dropdown-divider"></div>
+              <router-link to="/" class="dropdown-item create-project" @click.stop="showProjectDropdown = false">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span>创建新项目</span>
+              </router-link>
+            </div>
+          </div>
+        </div>
       </div>
+
       
       <div class="header-center">
         <!-- 搜索框 -->
@@ -37,10 +66,10 @@
         
         <!-- 导航链接 -->
         <div class="nav-links" v-show="showSidebar">
-          <router-link to="/timeline" class="nav-link" @click="showSidebar = false">时间轴</router-link>
-          <router-link to="/table" class="nav-link" @click="showSidebar = false">表格</router-link>
-          <router-link to="/mindmap" class="nav-link" @click="showSidebar = false">图谱</router-link>
-          <router-link to="/map" class="nav-link" @click="showSidebar = false">地图</router-link>
+          <router-link :to="{ path: '/timeline', query: { projectId: currentProjectId, source: currentSource } }" class="nav-link" @click="showSidebar = false">时间轴</router-link>
+          <router-link :to="{ path: '/table', query: { projectId: currentProjectId, source: currentSource } }" class="nav-link" @click="showSidebar = false">表格</router-link>
+          <router-link :to="{ path: '/mindmap', query: { projectId: currentProjectId, source: currentSource } }" class="nav-link" @click="showSidebar = false">图谱</router-link>
+          <router-link :to="{ path: '/map', query: { projectId: currentProjectId, source: currentSource } }" class="nav-link" @click="showSidebar = false">地图</router-link>
         </div>
       </div>
       
@@ -79,13 +108,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useMapStore } from '@/stores/mapStore'
+import { getProjects, type Project, onProjectUpdate } from '@/services/projectService'
+import { getUploadedItems } from '@/services/uploadedItemsService'
 
 // 获取认证存储和路由实例
 const authStore = useAuthStore()
 const router = useRouter()
+const route = useRoute()
+const mapStore = useMapStore()
 
 // 搜索文本
 const searchText = ref('')
@@ -96,6 +130,31 @@ const showSidebar = ref(false)
 // 控制用户下拉菜单显示状态
 const showUserDropdown = ref(false)
 
+// 项目相关状态
+const projects = ref<Project[]>([])
+const currentProjectId = ref<number | null>(null)
+const showProjectDropdown = ref(false)
+
+// 计算属性：是否显示项目切换器（非主页时显示）
+const shouldShowProjectSwitcher = computed(() => {
+  const viewPages = ['/timeline', '/table', '/mindmap', '/map']
+  return viewPages.some(page => route.path.startsWith(page))
+})
+
+// 计算属性：当前项目名称
+const currentProjectName = computed(() => {
+  if (!currentProjectId.value) return '选择项目'
+  const project = projects.value.find(p => p.id === currentProjectId.value)
+  return project?.name || '选择项目'
+})
+
+// 计算属性：当前项目来源类型
+const currentSource = computed(() => {
+  if (!currentProjectId.value) return 'upload'
+  const project = projects.value.find(p => p.id === currentProjectId.value)
+  return project?.source_type === 'eagle' ? 'eagle' : 'upload'
+})
+
 // 切换导航链接显示状态
 const toggleSidebar = () => {
   showSidebar.value = !showSidebar.value
@@ -104,6 +163,11 @@ const toggleSidebar = () => {
 // 切换用户下拉菜单显示状态
 const toggleUserDropdown = () => {
   showUserDropdown.value = !showUserDropdown.value
+}
+
+// 切换项目下拉菜单显示状态
+const toggleProjectDropdown = () => {
+  showProjectDropdown.value = !showProjectDropdown.value
 }
 
 // 搜索处理函数
@@ -120,11 +184,110 @@ const handleLogout = () => {
   router.push('/login')
 }
 
+// 获取项目列表
+const fetchProjects = async () => {
+  try {
+    projects.value = await getProjects()
+    
+    // 如果有路由参数中的 projectId，使用它
+    const routeProjectId = route.query.projectId
+    if (routeProjectId) {
+      currentProjectId.value = parseInt(routeProjectId as string)
+    } else if (projects.value.length > 0 && !currentProjectId.value) {
+      // 否则默认选择第一个项目
+      currentProjectId.value = projects.value[0].id
+    }
+    
+    // 加载当前项目数据
+    if (currentProjectId.value !== null) {
+      await loadProjectData(currentProjectId.value)
+    }
+  } catch (error) {
+    console.error('获取项目列表失败:', error)
+  }
+}
+
+// 加载项目数据到 mapStore
+const loadProjectData = async (projectId: number) => {
+  try {
+    const items = await getUploadedItems(projectId)
+    const project = projects.value.find(p => p.id === projectId)
+    
+    if (project && project.schema) {
+      // 更新 mapStore
+      mapStore.loadItems(items, project.schema)
+      
+      console.log(`[MainLayout] 已加载项目 ${project.name} 的数据，共 ${items.length} 项`)
+    }
+  } catch (error) {
+    console.error('加载项目数据失败:', error)
+  }
+}
+
+// 选择项目
+const selectProject = async (project: Project) => {
+  showProjectDropdown.value = false
+  currentProjectId.value = project.id
+  
+  // 更新路由参数
+  router.push({
+    path: route.path,
+    query: {
+      ...route.query,
+      projectId: project.id.toString()
+    }
+  })
+  
+  // 加载项目数据
+  await loadProjectData(project.id)
+}
+
+// 监听路由变化
+watch(() => route.query.projectId, (newProjectId) => {
+  if (newProjectId && parseInt(newProjectId as string) !== currentProjectId.value) {
+    currentProjectId.value = parseInt(newProjectId as string)
+    loadProjectData(currentProjectId.value)
+  }
+})
+
+// 监听是否应该显示项目切换器
+watch(shouldShowProjectSwitcher, (shouldShow) => {
+  if (shouldShow && authStore.isAuth && projects.value.length === 0) {
+    // 当进入需要显示项目切换器的页面时，获取项目列表
+    fetchProjects()
+  }
+})
+
+// 组件挂载时
+onMounted(() => {
+  if (authStore.isAuth) {
+    fetchProjects()
+  }
+  
+  // 注册项目更新监听器
+  const cleanup = onProjectUpdate(() => {
+    console.log('[MainLayout] 收到项目更新通知，刷新项目列表')
+    if (authStore.isAuth) {
+      fetchProjects()
+    }
+  })
+  
+  // 组件卸载时清理监听器
+  onUnmounted(() => {
+    cleanup()
+  })
+})
+
 // 点击其他地方关闭用户下拉菜单
 document.addEventListener('click', (event) => {
   const userDropdown = document.querySelector('.user-dropdown')
   if (userDropdown && !userDropdown.contains(event.target as Node)) {
     showUserDropdown.value = false
+  }
+  
+  const projectDropdown = document.querySelector('.project-dropdown')
+  if (projectDropdown && !projectDropdown.contains(event.target as Node)) {
+    showProjectDropdown.value = false
   }
 })
 </script>
@@ -419,6 +582,131 @@ document.addEventListener('click', (event) => {
   display: none;
 }
 
+/* 项目切换器样式 */
+.project-switcher {
+  margin-left: 2rem;
+}
+
+.project-dropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: background-color 0.3s;
+  border: 1px solid var(--border-color);
+  background-color: var(--color-background);
+  min-width: 150px;
+}
+
+.project-dropdown:hover {
+  background-color: var(--vt-c-white-mute);
+}
+
+.current-project {
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--color-text);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.project-dropdown .dropdown-icon {
+  transition: transform 0.3s;
+  flex-shrink: 0;
+}
+
+.project-dropdown:hover .dropdown-icon {
+  transform: rotate(180deg);
+}
+
+.project-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: var(--color-background);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 250px;
+  max-width: 350px;
+  z-index: 1000;
+  margin-top: 0.5rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.project-dropdown-menu .dropdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  text-decoration: none;
+  color: var(--color-text-mute);
+  font-size: 14px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 0;
+  transition: all 0.2s;
+}
+
+.project-dropdown-menu .dropdown-item:hover {
+  background-color: var(--vt-c-white-mute);
+  color: var(--color-text);
+}
+
+.project-dropdown-menu .dropdown-item.active {
+  background-color: var(--vt-c-white-soft);
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.project-dropdown-menu .dropdown-item.active::before {
+  content: '✓';
+  margin-right: 0.5rem;
+  color: #2563eb;
+}
+
+.project-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.project-count {
+  font-size: 12px;
+  color: var(--color-text-mute);
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 0.5rem 0;
+}
+
+.project-dropdown-menu .create-project {
+  color: #2563eb;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.project-dropdown-menu .create-project:hover {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+}
+
 /* 媒体查询：当屏幕宽度较小时隐藏搜索框 */
 @media (max-width: 600px) {
   .search-container {
@@ -428,6 +716,14 @@ document.addEventListener('click', (event) => {
   .nav-links {
     width: auto;
     min-width: unset;
+  }
+  
+  .project-switcher {
+    margin-left: 1rem;
+  }
+  
+  .project-dropdown {
+    min-width: 120px;
   }
 }
 </style>

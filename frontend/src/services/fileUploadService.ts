@@ -35,13 +35,13 @@ export function inferSchema(items: any[]): any {
   }
 
   const firstItem = items[0];
-  const columns = Object.keys(firstItem).map(key => ({
-    name: key,
+  const fields = Object.keys(firstItem).map(key => ({
+    label: key,  // 使用 label 而不是 name
     key: key,
     type: inferType(firstItem[key])
   }));
 
-  return { columns };
+  return { fields };  // 使用 fields 而不是 columns
 }
 
 /**
@@ -148,7 +148,7 @@ export async function uploadFile(
     const body: any = {
       projectName,
       items,
-      schema
+      schema  // 使用 schema 字段名而不是 table_schema
     };
 
     if (projectId) {
@@ -199,6 +199,6 @@ export function autoDetectFieldMapping(headers: string[]): Record<string, number
 }
 
 export function isMappingComplete(mapping: Record<string, number>): boolean {
-  // 总是返回 true，因为不再需要映射
+  // 不再需要字段映射检查，总是返回true
   return true;
 }

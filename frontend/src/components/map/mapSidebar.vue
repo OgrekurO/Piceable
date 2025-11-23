@@ -82,7 +82,7 @@
         @toggle="toggleModule('viz')" 
       />
       <div v-if="openModules['viz']" class="module-content has-spacing">
-        <div v-if="rawData.length === 0" class="empty-state-text">
+        <div v-if="entities.length === 0" class="empty-state-text">
           请先上传数据以使用分析功能
         </div>
         <template v-else>
@@ -243,59 +243,9 @@
         </div>
       </div>
 
-      <!-- 4. Annotations -->
-      <ModuleHeader 
-        :title="'标注与标记'" 
-        :icon="MapPin" 
-        :is-open="!!openModules['annotations']" 
-        @toggle="toggleModule('annotations')" 
-      />
-      <div v-if="openModules['annotations']" class="module-content">
-          <button 
-              @click="setIsAnnotationMode(!isAnnotationMode)"
-              class="mode-toggle-btn"
-              :class="{ 'active': isAnnotationMode }"
-          >
-              {{ isAnnotationMode ? '点击地图放置标记 (ESC 取消)' : '新增标注' }}
-              <Plus v-if="!isAnnotationMode" :size="16" class="ml-2"/>
-          </button>
+      <!-- 4. Annotations (Merged into Items) -->
+      <!-- Removed specific Annotation module as it is now integrated into the main data flow -->
 
-          <div v-if="isAnnotationMode" class="instruction-text animate-in fade-in">
-            鼠标变为十字准星时，点击地图任意位置即可添加。
-          </div>
-
-          <div class="space-y-2">
-            <div v-if="annotations.length === 0 && !isAnnotationMode" class="empty-state-text py-2">暂无手动标记</div>
-            <div 
-              v-for="a in annotations" 
-              :key="a.id" 
-              class="list-item-card group flex justify-between items-center"
-            >
-              <div 
-                class="flex-1 cursor-pointer"
-                @click="flyTo(a.lat, a.lng, 15)"
-              >
-                <div class="item-title">
-                   <span v-if="a.category && a.category !== 'default'" class="category-badge">
-                     {{ 
-                       a.category === 'landmark' ? '🏛️' :
-                       a.category === 'home' ? '🏠' :
-                       a.category === 'work' ? '💼' : '🚩'
-                     }}
-                   </span>
-                   {{ a.label }}
-                </div>
-                <div class="item-subtitle truncate">{{ a.note || '无备注' }}</div>
-              </div>
-              <button 
-                  @click="removeAnnotation(a.id)" 
-                  class="icon-btn hover-danger opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <Trash2 :size="14" />
-              </button>
-            </div>
-          </div>
-      </div>
 
       <!-- 5. Upload & Data -->
       <ModuleHeader 
@@ -328,9 +278,9 @@
         </div>
 
         <!-- Data Actions -->
-        <div v-if="rawData.length > 0" class="p-4 bg-gray-50">
+        <div v-if="entities.length > 0" class="p-4 bg-gray-50">
           <div class="flex justify-between items-center mb-3 text-xs text-gray-500">
-            <span>已加载 {{ rawData.length }} 条记录</span>
+            <span>已加载 {{ entities.length }} 条记录</span>
             <button @click="clearData" class="text-red-500 hover:text-red-700 flex items-center">
               <Trash2 :size="12" class="mr-1" /> 清空
             </button>
@@ -381,7 +331,7 @@
     <!-- Data Table Modal -->
     <DataTableModal 
       :is-open="isDataTableOpen"
-      :data="rawData"
+      :data="entities.map(e => e.data)"
       :columns="columns"
       @close="isDataTableOpen = false"
     />
@@ -397,26 +347,24 @@ import { Search, Bookmark, MapPin, UploadCloud, Share2, ChevronDown, ChevronRigh
 import ModuleHeader from './ModuleHeader.vue';
 import DataTableModal from './DataTableModal.vue';
 import { toPng, toSvg } from 'html-to-image';
+import type { BaseItem } from '@/types/entity';
 
 // 使用 mapStore
 const mapStore = useMapStore();
 const {
-  rawData,
-  columns,
+  entities, // Replaces rawData
   searchTerm,
-  filteredData,
-  selectedRecordId,
+  filteredEntities, // Replaces filteredData
+  selectedEntityId, // Replaces selectedRecordId
   isSidebarOpen,
   bookmarks,
-  annotations,
-  isAnnotationMode,
   currentView,
   activeLayer,
   searchResult,
   groupByColumn,
   categoryColors,
   hiddenCategories,
-  relationColumn
+  // relationColumn // Removed from store, now derived from schema or data
 } = storeToRefs(mapStore);
 
 const {
@@ -424,15 +372,33 @@ const {
   addBookmark,
   updateBookmark,
   removeBookmark,
-  removeAnnotation,
-  setIsAnnotationMode,
+  removeItem, // Replaces removeAnnotation
   setActiveLayer,
   setSearchResult,
   setGroupByColumn,
   toggleCategoryVisibility,
-  setRawData,
-  setSelectedRecordId
+  loadItems, // Replaces setRawData
+  setSelectedEntityId // Replaces setSelectedRecordId
 } = mapStore;
+
+// Computed Columns (derived from first entity's data)
+const columns = computed(() => {
+  const first = entities.value[0];
+  if (first && first.data) {
+    return Object.keys(first.data);
+  }
+  return [];
+});
+
+// Computed Relation Column (Simple heuristic: find column ending in 'Id' or 'ID' that is not 'id')
+const relationColumn = computed(() => {
+    if (columns.value.length === 0) return null;
+    return columns.value.find(col => 
+        (col.toLowerCase().endsWith('id') && col.toLowerCase() !== 'id') || 
+        col === 'parent' || 
+        col === 'target'
+    ) || null;
+});
 
 // Accordion State
 const openModules = ref<Record<string, boolean>>({
@@ -571,6 +537,7 @@ const handleFiles = async (event: Event) => {
       const record: Record<string, any> = { id: `record-${index}` };
       headers.forEach((header, i) => {
         const val = values[i] || '';
+        // Normalize lat/lng keys
         if (header.toLowerCase() === 'lat' || header.toLowerCase() === 'latitude') {
           record.lat = parseFloat(val);
         } else if (header.toLowerCase() === 'lng' || header.toLowerCase() === 'longitude') {
@@ -582,22 +549,39 @@ const handleFiles = async (event: Event) => {
       return record;
     }).filter(record => record.lat !== undefined && record.lng !== undefined && !isNaN(record.lat) && !isNaN(record.lng));
     
-    mapStore.setRawData(data as any[]);
+    // Convert to BaseItem[]
+    const items: BaseItem[] = data.map(d => ({
+        id: d.id,
+        data: d
+    }));
+
+    // Define Schema based on headers
+    const schema = {
+        fields: headers.map(h => {
+            let type = 'text';
+            const lower = h.toLowerCase();
+            if (lower === 'lat' || lower === 'latitude' || lower === 'lng' || lower === 'longitude') type = 'geo_point';
+            return { key: h, label: h, type: type as any };
+        })
+    };
+
+    mapStore.loadItems(items, schema as any);
   } catch (err) {
     alert("CSV 解析错误");
+    console.error(err);
   }
 };
 
 const clearData = () => {
-  mapStore.setRawData([]);
+  mapStore.loadItems([], { fields: [] });
 };
 
 // --- Other Actions ---
 const selectRecord = (id: string) => {
-  mapStore.setSelectedRecordId(id);
-  const record = mapStore.rawData.find(r => r.id === id);
-  if (record) {
-    window.dispatchEvent(new CustomEvent('map:flyTo', { detail: { lat: record.lat, lng: record.lng, zoom: 14 } }));
+  mapStore.setSelectedEntityId(id);
+  const entity = mapStore.entities.find(e => e.id === id);
+  if (entity && entity.geo) {
+    window.dispatchEvent(new CustomEvent('map:flyTo', { detail: { lat: entity.geo.lat, lng: entity.geo.lng, zoom: 14 } }));
   }
 };
 

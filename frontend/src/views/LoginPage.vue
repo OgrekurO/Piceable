@@ -67,6 +67,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
+import { setAccessToken } from '@/services/authService'
 
 // 获取认证存储和路由实例
 const authStore = useAuthStore()
@@ -119,6 +120,9 @@ const handleLogin = async () => {
         const data = await response.json()
         
         if (response.ok) {
+          // 设置访问令牌到localStorage
+          setAccessToken(data.access_token)
+          
           // 获取用户信息
           const userResponse = await fetch('http://localhost:8001/api/auth/users/me', {
             headers: {
@@ -133,8 +137,8 @@ const handleLogin = async () => {
           
           ElMessage.success('登录成功')
           // 登录成功后返回之前的页面或主页
-          const redirect = route.query.redirect || '/'
-          router.push(redirect as string)
+          const redirect = route.query.redirect as string || '/'
+          router.push(redirect)
         } else {
           ElMessage.error(data.detail || '登录失败')
         }
@@ -171,7 +175,8 @@ const goToRegister = () => {
 // 检查是否已登录，如果已登录则重定向到主页
 onMounted(() => {
   if (authStore.isAuth) {
-    router.push('/')
+    const redirect = route.query.redirect as string || '/'
+    router.push(redirect)
   }
 })
 </script>
@@ -219,13 +224,11 @@ onMounted(() => {
 
 .submit-btn {
   width: 100%;
-  margin-bottom: 16px;
   background-color: var(--color-button); /* 浅灰色背景 */
   color: var(--color-text-button); /* 黑色字体 */
   border: none; /* 去除描边 */
   font-weight: bold;
 }
-
 
 
 </style>

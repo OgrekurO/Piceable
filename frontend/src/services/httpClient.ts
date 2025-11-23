@@ -17,7 +17,7 @@ export async function requestToEaglePlugin(endpoint: string, options: RequestIni
   try {
     const url = `${EAGLE_PLUGIN_BASE_URL}${endpoint}`;
     console.log(`[HTTP_CLIENT] 发送请求到Eagle插件: ${options.method || 'GET'} ${url}`);
-    
+
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -25,14 +25,14 @@ export async function requestToEaglePlugin(endpoint: string, options: RequestIni
         ...options.headers,
       },
     });
-    
+
     if (!response.ok) {
       throw new Error(`HTTP错误: ${response.status} ${response.statusText}`);
     }
-    
+
     const data = await response.json();
     console.log(`[HTTP_CLIENT] 收到响应:`, data);
-    
+
     return data;
   } catch (error) {
     console.error(`[HTTP_CLIENT] 请求失败:`, error);
@@ -50,30 +50,34 @@ export async function requestToBackend(endpoint: string, options: RequestInit = 
   try {
     const url = `${BACKEND_API_BASE_URL}${endpoint}`;
     console.log(`[HTTP_CLIENT] 发送请求到后端API: ${options.method || 'GET'} ${url}`);
-    
+
     // 添加认证头
     const token = getAccessToken();
+    console.log(`[HTTP_CLIENT] Token:`, token ? `存在 (${token.substring(0, 20)}...)` : '不存在');
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...options.headers,
     };
-    
+
     if (token && !headers['Authorization']) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
+    console.log(`[HTTP_CLIENT] Headers:`, headers);
+
     const response = await fetch(url, {
       ...options,
       headers,
     });
-    
+
     if (!response.ok) {
       throw new Error(`HTTP错误: ${response.status} ${response.statusText}`);
     }
-    
+
     const data = await response.json();
     console.log(`[HTTP_CLIENT] 收到响应:`, data);
-    
+
     return data;
   } catch (error) {
     console.error(`[HTTP_CLIENT] 请求失败:`, error);
@@ -136,6 +140,15 @@ export function putToBackend(endpoint: string, data: any) {
     method: 'PUT',
     body: JSON.stringify(data),
   });
+}
+
+/**
+ * DELETE请求到后端API
+ * @param endpoint API端点
+ * @returns Promise
+ */
+export function deleteFromBackend(endpoint: string) {
+  return requestToBackend(endpoint, { method: 'DELETE' });
 }
 
 /**

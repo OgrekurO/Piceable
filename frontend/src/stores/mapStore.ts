@@ -1,9 +1,8 @@
 import { defineStore } from 'pinia';
-// 修复导入路径，使用相对路径确保正确解析
-import type { DataRecord, Bookmark, Annotation, SearchResult } from '../types/map.ts';
-
-// 添加调试信息
-console.log('mapStore.ts: Successfully imported DataRecord, Bookmark, Annotation from ../types/map.ts');
+import type { Bookmark, SearchResult } from '../types/map.ts';
+import type { VisualEntity, BaseItem } from '../types/entity';
+import type { ProjectSchema } from '../types/schema';
+import { ItemTransformer } from '../services/itemTransformer';
 
 // Palladio-inspired Palette
 const COLOR_PALETTE = [
@@ -22,21 +21,23 @@ const COLOR_PALETTE = [
 
 export const useMapStore = defineStore('map', {
   state: () => ({
-    rawData: [] as DataRecord[],
-    columns: [] as string[],
-    selectedRecordId: null as string | null,
-    hoveredRecordId: null as string | null,
+    entities: [] as VisualEntity[], // Replaces rawData
+    currentSchema: null as ProjectSchema | null,
+
+    selectedEntityId: null as string | null,
+    hoveredEntityId: null as string | null,
+
     searchTerm: '',
     isSidebarOpen: true,
     targetLanguage: 'zh-CN',
     activeLayer: 'streets',
+
     groupByColumn: null as string | null,
     hiddenCategories: [] as string[],
     categoryColors: {} as Record<string, string>,
-    relationColumn: null as string | null,
+
     bookmarks: JSON.parse(localStorage.getItem('palladio_bookmarks') || '[]') as Bookmark[],
-    annotations: JSON.parse(localStorage.getItem('palladio_annotations') || '[]') as Annotation[],
-    isAnnotationMode: false,
+
     searchResult: null as (SearchResult | null),
     currentView: {
       center: [34.0, 108.0] as [number, number],
@@ -47,13 +48,14 @@ export const useMapStore = defineStore('map', {
   }),
 
   getters: {
-    filteredData: (state): DataRecord[] => {
-      let data = state.rawData;
+    filteredEntities: (state): VisualEntity[] => {
+      let data = state.entities;
 
       // Filter by Category (if grouping is active)
+      // Note: This logic might need adjustment based on how we define "grouping" in the new schema
       if (state.groupByColumn) {
-        data = data.filter(record => {
-          const val = String(record[state.groupByColumn!] || 'Unknown');
+        data = data.filter(entity => {
+          const val = String(entity.data[state.groupByColumn!] || 'Unknown');
           return !state.hiddenCategories.includes(val);
         });
       }
@@ -61,26 +63,41 @@ export const useMapStore = defineStore('map', {
       // Filter by Search Term
       if (!state.searchTerm) return data;
       const lowerTerm = state.searchTerm.toLowerCase();
-      return data.filter(record => {
-        return Object.values(record).some(val =>
+      return data.filter(entity => {
+        // Search in primary label and raw data values
+        if (entity.primaryLabel.toLowerCase().includes(lowerTerm)) return true;
+        return Object.values(entity.data).some(val =>
           String(val).toLowerCase().includes(lowerTerm)
         );
       });
+    },
+
+    // Helper to get selected entity object
+    selectedEntity: (state) => {
+      return state.entities.find(e => e.id === state.selectedEntityId);
     }
   },
 
   actions: {
-    setRawData(data: DataRecord[]) {
-      this.rawData = data;
-      this.columns = Object.keys(data[0] || {});
+    /**
+     * Load raw items and transform them based on the provided schema
+     */
+    loadItems(items: BaseItem[], schema: ProjectSchema) {
+      this.currentSchema = schema;
+      this.entities = ItemTransformer.transformList(items, schema);
+
+      // Initialize colors if grouping is active (logic preserved but adapted)
+      if (this.groupByColumn) {
+        this.setGroupByColumn(this.groupByColumn);
+      }
     },
 
-    setSelectedRecordId(id: string | null) {
-      this.selectedRecordId = id;
+    setSelectedEntityId(id: string | null) {
+      this.selectedEntityId = id;
     },
 
-    setHoveredRecordId(id: string | null) {
-      this.hoveredRecordId = id;
+    setHoveredEntityId(id: string | null) {
+      this.hoveredEntityId = id;
     },
 
     setSearchTerm(term: string) {
@@ -89,10 +106,6 @@ export const useMapStore = defineStore('map', {
 
     setIsSidebarOpen(isOpen: boolean) {
       this.isSidebarOpen = isOpen;
-    },
-
-    setTargetLanguage(lang: string) {
-      this.targetLanguage = lang;
     },
 
     setActiveLayer(layer: string) {
@@ -108,7 +121,8 @@ export const useMapStore = defineStore('map', {
         return;
       }
 
-      const uniqueValues = Array.from(new Set(this.rawData.map(r => String(r[col] || 'Unknown'))));
+      // Extract unique values from raw data
+      const uniqueValues = Array.from(new Set(this.entities.map(e => String(e.data[col] || 'Unknown'))));
       const newColors: Record<string, string> = {};
       uniqueValues.forEach((val, index) => {
         newColors[val] = COLOR_PALETTE[index % COLOR_PALETTE.length] || '#000000';
@@ -149,26 +163,47 @@ export const useMapStore = defineStore('map', {
       localStorage.setItem('palladio_bookmarks', JSON.stringify(this.bookmarks));
     },
 
-    addAnnotation(annotation: Annotation) {
-      this.annotations.push(annotation);
-      localStorage.setItem('palladio_annotations', JSON.stringify(this.annotations));
+    /**
+     * Add a single item (useful for local annotations/creations)
+     */
+    addItem(item: BaseItem) {
+      // Ensure ID exists
+      if (!item.id) {
+        item.id = `item-${Date.now()}`;
+      }
+      const entity = ItemTransformer.transform(item, this.currentSchema || { fields: [] });
+      this.entities.push(entity);
     },
 
-    updateAnnotation(id: string, data: Partial<Annotation>) {
-      const annotation = this.annotations.find(a => a.id === id);
-      if (annotation) {
-        Object.assign(annotation, data);
-        localStorage.setItem('palladio_annotations', JSON.stringify(this.annotations));
+    /**
+     * Update an item
+     */
+    updateItem(id: string, data: Partial<BaseItem['data']>) {
+      const index = this.entities.findIndex(e => e.id === id);
+      if (index !== -1) {
+        const currentEntity = this.entities[index];
+        if (currentEntity) {
+          const updatedItem: BaseItem = {
+            id: currentEntity.id,
+            data: { ...currentEntity.data, ...data },
+            project_id: currentEntity.project_id,
+            created_at: currentEntity.created_at,
+            updated_at: new Date().toISOString()
+          };
+          // Re-transform to ensure visual properties are updated
+          this.entities[index] = ItemTransformer.transform(updatedItem, this.currentSchema || { fields: [] });
+        }
       }
     },
 
-    removeAnnotation(id: string) {
-      this.annotations = this.annotations.filter(a => a.id !== id);
-      localStorage.setItem('palladio_annotations', JSON.stringify(this.annotations));
-    },
-
-    setIsAnnotationMode(isMode: boolean) {
-      this.isAnnotationMode = isMode;
+    /**
+     * Remove an item
+     */
+    removeItem(id: string) {
+      this.entities = this.entities.filter(e => e.id !== id);
+      if (this.selectedEntityId === id) {
+        this.selectedEntityId = null;
+      }
     },
 
     setSearchResult(result: SearchResult | null) {

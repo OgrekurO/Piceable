@@ -77,7 +77,7 @@ import type { DataRecord } from '@/types/index';
 
 const props = defineProps<{
   isOpen: boolean;
-  data: DataRecord[];
+  data: any[];
   columns: string[];
 }>();
 

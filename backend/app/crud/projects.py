@@ -32,7 +32,19 @@ def get_projects_from_db(user_id: int) -> List[Project]:
                 pass # Keep as string if not valid JSON
         if isinstance(project_dict.get('schema'), str):
              try:
-                project_dict['schema'] = json.loads(project_dict['schema'])
+                schema_data = json.loads(project_dict['schema'])
+                # Adapter for legacy schema format (columns -> fields)
+                if isinstance(schema_data, dict) and 'columns' in schema_data and 'fields' not in schema_data:
+                    schema_data['fields'] = schema_data['columns']
+                    # Ensure field structure matches FieldDefinition
+                    for field in schema_data['fields']:
+                        if 'name' in field and 'key' not in field:
+                            field['key'] = field['name']
+                        # Add label field (required by FieldDefinition)
+                        if 'name' in field and 'label' not in field:
+                            field['label'] = field['name']
+                
+                project_dict['schema'] = schema_data
              except:
                 pass
         projects.append(Project(**project_dict))
@@ -62,9 +74,36 @@ def get_project_from_db(project_id: int, user_id: int) -> Optional[Project]:
         if isinstance(project_dict.get('source_metadata'), str):
              try:
                 project_dict['source_metadata'] = json.loads(project_dict['source_metadata'])
-             except:
+             except Exception as e:
+                print(f"Error parsing source_metadata: {e}")
                 pass
-        return Project(**project_dict)
+        if isinstance(project_dict.get('schema'), str):
+             try:
+                schema_data = json.loads(project_dict['schema'])
+                # Adapter for legacy schema format (columns -> fields)
+                if isinstance(schema_data, dict) and 'columns' in schema_data and 'fields' not in schema_data:
+                    schema_data['fields'] = schema_data['columns']
+                    # Ensure field structure matches FieldDefinition
+                    for field in schema_data['fields']:
+                        if 'name' in field and 'key' not in field:
+                            field['key'] = field['name']
+                        # Add label field (required by FieldDefinition)
+                        if 'name' in field and 'label' not in field:
+                            field['label'] = field['name']
+                        if 'type' in field:
+                            # Map legacy types if needed
+                            pass
+                
+                project_dict['schema'] = schema_data
+             except Exception as e:
+                print(f"Error parsing schema: {e}")
+                pass
+        try:
+            return Project(**project_dict)
+        except Exception as e:
+            print(f"Error creating Project model: {e}")
+            print(f"Project dict: {project_dict}")
+            raise e
     return None
 
 def create_project_in_db(name: str, user_id: int, description: Optional[str] = None, source_type: str = "manual", source_metadata: Optional[Any] = None, schema: Optional[dict] = None) -> Project:
@@ -112,7 +151,19 @@ def create_project_in_db(name: str, user_id: int, description: Optional[str] = N
                 pass
         if isinstance(project_dict.get('schema'), str):
              try:
-                project_dict['schema'] = json.loads(project_dict['schema'])
+                schema_data = json.loads(project_dict['schema'])
+                # Adapter for legacy schema format (columns -> fields)
+                if isinstance(schema_data, dict) and 'columns' in schema_data and 'fields' not in schema_data:
+                    schema_data['fields'] = schema_data['columns']
+                    # Ensure field structure matches FieldDefinition
+                    for field in schema_data['fields']:
+                        if 'name' in field and 'key' not in field:
+                            field['key'] = field['name']
+                        # Add label field (required by FieldDefinition)
+                        if 'name' in field and 'label' not in field:
+                            field['label'] = field['name']
+                
+                project_dict['schema'] = schema_data
              except:
                 pass
         return Project(**project_dict)

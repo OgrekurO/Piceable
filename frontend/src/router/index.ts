@@ -85,9 +85,7 @@ router.beforeEach(async (to, from, next) => {
   if (to.meta.requiresAuth) {
     // 如果未认证，尝试从本地存储恢复
     if (!authStore.isAuthenticated) {
-      if (authStore.restoreAuth) {
-        await authStore.restoreAuth()
-      }
+      await authStore.restoreAuth()
     }
 
     // 如果仍然未认证，重定向到登录页
@@ -101,9 +99,7 @@ router.beforeEach(async (to, from, next) => {
   if (to.meta.requiresAdmin) {
     // 确保用户信息已加载
     if (!authStore.user) {
-      if (authStore.restoreAuth) {
-        await authStore.restoreAuth()
-      }
+      await authStore.restoreAuth()
     }
 
     // 检查是否为管理员

@@ -20,6 +20,16 @@ app.add_middleware(
     expose_headers=["Access-Control-Allow-Origin"]
 )
 
+# 添加一个专门的CORS处理中间件，确保所有响应都包含正确的头部
+@app.middleware("http")
+async def add_cors_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Allow-Methods"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
+
 # 包含路由
 app.include_router(auth.router)
 app.include_router(items.router)
