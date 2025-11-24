@@ -328,6 +328,18 @@ const handleOpenAddNode = () => {
 
 // ========== 生命周期 ==========
 
+// 监听路由变化，以便在项目切换时重新加载数据
+watch(() => route.query.projectId, async (newProjectId, oldProjectId) => {
+  console.log('[MindMapPage] 项目ID变更:', oldProjectId, '->', newProjectId)
+  if (newProjectId && newProjectId !== oldProjectId) {
+    const projectId = parseInt(newProjectId as string)
+    currentProjectId.value = projectId
+    
+    // 重新加载项目表格和数据
+    await loadProjectTables(projectId)
+  }
+})
+
 onMounted(async () => {
   console.log('[MindMapPage] 组件挂载', route.fullPath)
   
