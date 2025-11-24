@@ -101,137 +101,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue';
-import * as d3 from 'd3';
+import { onMounted } from 'vue';
 import Coordinate3D from '@/components/visualizers/Coordinate/Coordinate3D.vue';
 import Coordinate2D from '@/components/visualizers/Coordinate/Coordinate2D.vue';
+import { useCoordinateData } from '@/composables/coordinate/useCoordinateData';
+import { useCoordinateConfig } from '@/composables/coordinate/useCoordinateConfig';
+import { useResizablePanel } from '@/composables/coordinate/useResizablePanel';
 
-// 数据点类型定义
-interface DataPoint {
-  [key: string]: any;
-}
-
-// 配置类型定义
-interface Config {
-  xAxis: string;
-  yAxis: string;
-  zAxis: string;
-  colorBy: string;
-  shapeBy: string;
-  planeMode: 'XY' | 'XZ' | 'YZ';
-}
-
-// 状态管理
-const data = ref<DataPoint[]>([]); // 存储加载的数据
-const columns = ref<string[]>([]); // 存储数据的列名
-const hoveredNode = ref<DataPoint | null>(null); // 存储当前悬停的节点
-
-// 配置对象，使用reactive使其具有响应性
-const config = reactive<Config>({
-  xAxis: '',
-  yAxis: '',
-  zAxis: '',
-  colorBy: '',
-  shapeBy: '',
-  planeMode: 'XY'
-});
-
-/**
- * 加载数据函数
- * 从/people.csv文件加载数据并进行初步处理
- */
-const loadData = async () => {
-  try {
-    const response = await fetch('/People.csv');
-    const text = await response.text();
-    const parsedData = d3.csvParse(text);
-    
-    if (parsedData.length > 0) {
-      data.value = parsedData;
-      columns.value = parsedData.columns;
-      
-      // 设置默认映射：优先选择数值型列作为坐标轴
-      const numericCols = columns.value.filter(col => {
-        const row = parsedData[0];
-        if (!row) return false;
-        const val = parseFloat(row[col] || '');
-        return !isNaN(val);
-      });
-      
-      if (numericCols.length >= 2) {
-        config.xAxis = numericCols[0] || '';
-        config.yAxis = numericCols[1] || '';
-        if (numericCols.length >= 3) config.zAxis = numericCols[2] || '';
-      }
-      
-      // 设置默认的分类映射：选择非数值型列作为颜色和形状映射
-      const catCols = columns.value.filter(col => !numericCols.includes(col));
-      if (catCols.length > 0) {
-        config.colorBy = catCols[0] || '';
-        if (catCols.length > 1) config.shapeBy = catCols[1] || '';
-      }
-    }
-  } catch (error) {
-    console.error('Error loading data:', error);
-  }
-};
-
-/**
- * 节点悬停事件处理函数
- * @param node - 悬停的节点数据，如果未悬停则为null
- */
-const onNodeHover = (node: DataPoint | null) => {
-  hoveredNode.value = node;
-};
-
-// 可调整高度的逻辑
-const topHeight = ref(window.innerHeight * 0.5); // 默认50%高度
-let isResizing = false;
-let startY = 0;
-let startHeight = 0;
-
-/**
- * 开始调整大小事件处理函数
- * @param e - 鼠标事件
- */
-const startResize = (e: MouseEvent) => {
-  isResizing = true;
-  startY = e.clientY;
-  startHeight = topHeight.value;
-  e.preventDefault();
-  
-  // 添加鼠标移动和松开事件监听器
-  const onMouseMove = (moveEvent: MouseEvent) => {
-    if (!isResizing) return;
-    
-    // 计算鼠标移动的距离
-    const deltaY = moveEvent.clientY - startY;
-    const newHeight = startHeight + deltaY;
-    
-    // 限制最小和最大高度（20% - 80%）
-    const minHeight = window.innerHeight * 0.2;
-    const maxHeight = window.innerHeight * 0.8;
-    
-    if (newHeight >= minHeight && newHeight <= maxHeight) {
-      topHeight.value = newHeight;
-    }
-  };
-  
-  const onMouseUp = () => {
-    isResizing = false;
-    document.removeEventListener('mousemove', onMouseMove);
-    document.removeEventListener('mouseup', onMouseUp);
-  };
-  
-  document.addEventListener('mousemove', onMouseMove);
-  document.addEventListener('mouseup', onMouseUp);
-};
+// 使用 Composables
+const { data, columns, hoveredNode, loadData, onNodeHover } = useCoordinateData();
+const { config, setDefaultConfig } = useCoordinateConfig();
+const { topHeight, startResize } = useResizablePanel();
 
 // 生命周期钩子
 onMounted(() => {
-  loadData();
+  loadData((cols, firstRow) => {
+    setDefaultConfig(cols, firstRow);
+  });
 });
-
 </script>
 
 <style scoped>

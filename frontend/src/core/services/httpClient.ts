@@ -13,7 +13,7 @@ const BACKEND_API_BASE_URL = 'http://localhost:8001';
  * @param options 请求选项
  * @returns Promise
  */
-export async function requestToEaglePlugin(endpoint: string, options: RequestInit = {}) {
+export async function requestToEaglePlugin<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
   try {
     const url = `${EAGLE_PLUGIN_BASE_URL}${endpoint}`;
     console.log(`[HTTP_CLIENT] 发送请求到Eagle插件: ${options.method || 'GET'} ${url}`);
@@ -52,19 +52,21 @@ export async function requestToBackend(endpoint: string, options: RequestInit = 
     console.log(`[HTTP_CLIENT] 发送请求到后端API: ${options.method || 'GET'} ${url}`);
 
     // 添加认证头
+    // 添加认证头
     const token = getAccessToken();
     console.log(`[HTTP_CLIENT] Token:`, token ? `存在 (${token.substring(0, 20)}...)` : '不存在');
 
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
-
-    if (token && !headers['Authorization']) {
-      headers['Authorization'] = `Bearer ${token}`;
+    const headers = new Headers(options.headers);
+    if (!headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
     }
 
-    console.log(`[HTTP_CLIENT] Headers:`, headers);
+    if (token && !headers.has('Authorization')) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    // Convert Headers to Record<string, string> for logging if needed, or just log
+    // console.log(`[HTTP_CLIENT] Headers:`, headers); 
 
     const response = await fetch(url, {
       ...options,
@@ -186,7 +188,8 @@ export interface EagleItem {
 }
 
 // API响应类型
-interface ApiResponse<T> {
+// API响应类型
+export interface ApiResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
@@ -200,9 +203,9 @@ interface ApiResponse<T> {
  */
 export async function getItems(): Promise<EagleItem[]> {
   console.log('[HTTP_CLIENT] 获取项目列表');
-  const response = await requestToEaglePlugin<{ success: boolean; data: EagleItem[]; count: number }>('/api/items');
+  const response = await requestToEaglePlugin<ApiResponse<EagleItem[]>>('/api/items');
   if (response.success) {
-    return response.data;
+    return response.data || [];
   }
   throw new Error(response.error || '获取项目列表失败');
 }
@@ -214,8 +217,8 @@ export async function getItems(): Promise<EagleItem[]> {
  */
 export async function getItem(id: string): Promise<EagleItem> {
   console.log(`[HTTP_CLIENT] 获取项目 ${id}`);
-  const response = await requestToEaglePlugin<{ success: boolean; data: EagleItem }>('/api/item/' + id);
-  if (response.success) {
+  const response = await requestToEaglePlugin<ApiResponse<EagleItem>>('/api/item/' + id);
+  if (response.success && response.data) {
     return response.data;
   }
   throw new Error(response.error || '获取项目失败');
@@ -266,7 +269,7 @@ export async function deleteItem(id: string): Promise<any> {
  */
 export async function getLibraryInfo(): Promise<any> {
   console.log('[HTTP_CLIENT] 获取库信息');
-  const response = await requestToEaglePlugin<{ success: boolean; data: any }>('/api/library');
+  const response = await requestToEaglePlugin<ApiResponse<any>>('/api/library');
   if (response.success) {
     return response.data;
   }

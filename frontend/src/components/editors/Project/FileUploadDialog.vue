@@ -112,14 +112,9 @@ const closeDialog = () => {
   // 重置表单
   form.value = {
     projectName: '',
+    description: '',
     file: null
   };
-  // 重置CSV数据
-  csvHeaders.value = [];
-  csvData.value = [];
-  autoMapping.value = {};
-  userMapping.value = null;
-  userMapping.value = null;
 };
 
 // 下载模板

@@ -50,7 +50,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
+import type { VisualEntity } from '@/core/models/entity';
 
 interface AnnotationFormData {
   label: string;
@@ -64,7 +65,7 @@ const props = defineProps({
     required: true
   },
   initialData: {
-    type: Object as () => any,
+    type: Object as () => VisualEntity | null,
     default: null
   },
   location: {
@@ -90,9 +91,9 @@ const editing = computed(() => props.initialData !== null);
 watch(() => props.initialData, (newVal) => {
   if (newVal) {
     formData.value = {
-      label: newVal.label || '',
-      note: newVal.note || '',
-      category: newVal.category || 'default'
+      label: newVal.primaryLabel || '',
+      note: newVal.data?.note || '',
+      category: newVal.data?.category || 'default'
     };
   } else {
     // 新建模式重置表单
@@ -122,8 +123,7 @@ const handleSubmit = () => {
   });
 };
 
-// 导入watch
-import { watch } from 'vue';
+
 </script>
 
 <style scoped>

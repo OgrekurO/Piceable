@@ -73,7 +73,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { X, Database, Search } from 'lucide-vue-next';
-import type { DataRecord } from '@/types/index';
+import type { VisualEntity } from '@/core/models/entity';
 
 const props = defineProps<{
   isOpen: boolean;

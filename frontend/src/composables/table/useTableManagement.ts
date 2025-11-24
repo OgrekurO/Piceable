@@ -61,7 +61,7 @@ export function useTableManagement() {
                     fields: [
                         { key: 'From', label: '源节点', type: 'text' as any },
                         { key: 'To', label: '目标节点', type: 'text' as any },
-                        { key: 'Direction', label: '方向', type: 'select' as any, options: ['directed', 'undirected'] },
+                        { key: 'Direction', label: '方向', type: 'select' as any, options: [{ id: 'directed', label: 'Directed', color: '#000' }, { id: 'undirected', label: 'Undirected', color: '#000' }] },
                         { key: 'Label', label: '标签', type: 'text' as any },
                         { key: 'Type', label: '类型', type: 'text' as any },
                         { key: 'Tags', label: '标签', type: 'multi_select' as any },
@@ -93,7 +93,7 @@ export function useTableManagement() {
      */
     const createNewTable = async (projectId: number, tableName: string, schema?: ProjectSchema) => {
         try {
-            const newTable = await createTable(projectId, tableName, schema)
+            const newTable = await createTable(projectId, tableName, schema || null)
             tables.value.push(newTable)
             return newTable
         } catch (error) {

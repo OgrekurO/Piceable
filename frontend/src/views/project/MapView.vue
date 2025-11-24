@@ -75,7 +75,7 @@ import LayerSwitcher from '@/components/visualizers/Map/LayerSwitcher.vue';
 import LanguageSwitcher from '@/components/visualizers/Map/LanguageSwitcher.vue';
 import LabelToggle from '@/components/visualizers/Map/LabelToggle.vue';
 import MapSidebar from '@/components/visualizers/Map/mapSidebar.vue';
-import type { Annotation, SearchResult } from '@/types/map';
+import type { SearchResult } from '@/types/map';
 import type { VisualEntity } from '@/types/entity';
 import { parseCSV } from '@/core/services/fileUploadService';
 import { MAP_STYLES } from '@/core/constants/map';
@@ -261,7 +261,7 @@ watch(searchResult, (result) => {
         popupAnchor: [0, -24]
     });
 
-    const marker = L.marker([result.record.lat, result.record.lng], { icon: searchIcon });
+    const marker = L.marker([result.record.geo!.lat, result.record.geo!.lng], { icon: searchIcon });
     
     const popup = bindVuePopup(marker, PopupCard, {
         data: result,

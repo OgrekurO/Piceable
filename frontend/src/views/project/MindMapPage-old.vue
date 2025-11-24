@@ -955,7 +955,6 @@ const createNewLink = async (sourceNode: GraphNode, targetNode: GraphNode) => {
       source: sourceNode.id,
       target: targetNode.id,
       type: relationshipData.Type,
-      Direction: relationshipData.Direction,
       direction: relationshipData.Direction,
       ...relationshipData
     });

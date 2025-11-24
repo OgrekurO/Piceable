@@ -195,7 +195,10 @@ const fetchProjects = async () => {
       currentProjectId.value = parseInt(routeProjectId as string)
     } else if (projects.value.length > 0 && !currentProjectId.value) {
       // 否则默认选择第一个项目
-      currentProjectId.value = projects.value[0].id
+      const firstProject = projects.value[0];
+      if (firstProject) {
+        currentProjectId.value = firstProject.id;
+      }
     }
     
     // 加载当前项目数据

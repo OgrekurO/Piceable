@@ -455,12 +455,16 @@ const handleSelectSuggestion = (item: any) => {
   mapStore.setSearchResult({
     record: {
       id: `search-${Date.now()}`,
-      lat,
-      lng,
-      label: item.display_name.split(',')[0],
-      address: item.display_name,
-      type: item.type
-    },
+      primaryLabel: item.display_name.split(',')[0],
+      data: {
+        address: item.display_name,
+        type: item.type
+      },
+      geo: {
+        lat,
+        lng
+      }
+    } as any,
     score: 1
   });
 

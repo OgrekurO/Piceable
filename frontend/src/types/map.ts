@@ -1,2 +1,2 @@
 // Re-export from core models
-export * from '@/core/models/map'
+export * from '@/core/models/view'

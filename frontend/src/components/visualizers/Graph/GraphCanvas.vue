@@ -436,28 +436,28 @@ const drawArrowhead = (ctx: CanvasRenderingContext2D, source: GraphNode, target:
   
   if (curvature) {
     // For curved links, calculate tangent at end point
-    const dx = target.x - source.x;
-    const dy = target.y - source.y;
-    const cx = (source.x + target.x) / 2 - dy * curvature;
-    const cy = (source.y + target.y) / 2 + dx * curvature;
+    const dx = (target.x || 0) - (source.x || 0);
+    const dy = (target.y || 0) - (source.y || 0);
+    const cx = ((source.x || 0) + (target.x || 0)) / 2 - dy * curvature;
+    const cy = ((source.y || 0) + (target.y || 0)) / 2 + dx * curvature;
     
     // Calculate tangent at t=0.95
     const t = 0.95;
-    const px = (1 - t) * (1 - t) * source.x + 2 * (1 - t) * t * cx + t * t * target.x;
-    const py = (1 - t) * (1 - t) * source.y + 2 * (1 - t) * t * cy + t * t * target.y;
+    const px = (1 - t) * (1 - t) * (source.x || 0) + 2 * (1 - t) * t * cx + t * t * (target.x || 0);
+    const py = (1 - t) * (1 - t) * (source.y || 0) + 2 * (1 - t) * t * cy + t * t * (target.y || 0);
     
-    angle = Math.atan2(target.y - py, target.x - px);
+    angle = Math.atan2((target.y || 0) - py, (target.x || 0) - px);
     
     // Arrow position at node edge
-    arrowX = target.x - Math.cos(angle) * getNodeRadius(target);
-    arrowY = target.y - Math.sin(angle) * getNodeRadius(target);
+    arrowX = (target.x || 0) - Math.cos(angle) * getNodeRadius(target);
+    arrowY = (target.y || 0) - Math.sin(angle) * getNodeRadius(target);
   } else {
     // For straight links
-    angle = Math.atan2(target.y - source.y, target.x - source.x);
+    angle = Math.atan2((target.y || 0) - (source.y || 0), (target.x || 0) - (source.x || 0));
     
     // Arrow position at node edge
-    arrowX = target.x - Math.cos(angle) * getNodeRadius(target);
-    arrowY = target.y - Math.sin(angle) * getNodeRadius(target);
+    arrowX = (target.x || 0) - Math.cos(angle) * getNodeRadius(target);
+    arrowY = (target.y || 0) - Math.sin(angle) * getNodeRadius(target);
   }
   
   // Draw arrowhead

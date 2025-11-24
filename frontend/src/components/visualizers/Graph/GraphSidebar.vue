@@ -307,9 +307,9 @@
               <h4>关系字段识别</h4>
               <p>系统已识别以下字段用于表示关系：</p>
               <ul>
-                <li><strong>源节点字段:</strong> {{ relationshipFields.source || '未识别' }}</li>
-                <li><strong>目标节点字段:</strong> {{ relationshipFields.target || '未识别' }}</li>
-                <li><strong>关系类型字段:</strong> {{ relationshipFields.type || '未识别' }}</li>
+                <li><strong>源节点字段:</strong> {{ relationshipFields?.source || '未识别' }}</li>
+                <li><strong>目标节点字段:</strong> {{ relationshipFields?.target || '未识别' }}</li>
+                <li><strong>关系类型字段:</strong> {{ relationshipFields?.type || '未识别' }}</li>
               </ul>
             </div>
           </div>

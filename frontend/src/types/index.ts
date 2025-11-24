@@ -1,2 +1,2 @@
 // Re-export from core models
-export * from '@/core/models/user'
+export * from '@/core/models'

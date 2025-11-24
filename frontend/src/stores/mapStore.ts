@@ -220,6 +220,10 @@ export const useMapStore = defineStore('map', {
 
     setShowRoads(show: boolean) {
       this.showRoads = show;
+    },
+
+    setTargetLanguage(lang: string) {
+      this.targetLanguage = lang;
     }
   }
 });

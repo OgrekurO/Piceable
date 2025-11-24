@@ -151,8 +151,8 @@ const handlePhoneLogin = async () => {
             id: 1,
             username: 'user',
             email: '',
-            is_active: true,
-            is_superuser: false
+            isActive: true,
+            roleId: 1
           }, 'fake_token')
           
           // 登录成功后返回之前的页面或主页

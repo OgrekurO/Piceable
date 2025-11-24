@@ -127,7 +127,9 @@ const changeUserRole = async (user: User) => {
       // 更新本地数据
       const index = users.value.findIndex(u => u.id === user.id)
       if (index !== -1) {
-        users.value[index] = { ...users.value[index], roleId: newRoleId }
+        if (users.value[index]) {
+          users.value[index] = { ...users.value[index], roleId: newRoleId }
+        }
       }
     } else {
       ElMessage.error(result.message || '角色更新失败')

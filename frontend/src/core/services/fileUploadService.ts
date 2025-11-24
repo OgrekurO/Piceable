@@ -53,11 +53,17 @@ export function parseCSV(content: string): any[] {
     return [];
   }
 
-  const headers = lines[0].split(',').map(h => h.trim());
+  if (lines.length === 0) {
+    return [];
+  }
+
+  const firstLine = lines[0];
+  if (!firstLine) return [];
+  const headers = firstLine.split(',').map(h => h.trim());
   const items: any[] = [];
 
   for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
+    const line = lines[i]?.trim();
     if (!line) continue;
 
     const values = line.split(',').map(v => v.trim());

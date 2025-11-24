@@ -194,7 +194,7 @@ const initThree = () => {
   const axesHelper = new THREE.AxesHelper(1.2); // 略大于1
 
   const material = axesHelper.material;
-  material.color = "#555"; // 总是渲染在其他几何体之上
+  material.color.set("#555"); // 总是渲染在其他几何体之上
 
 
   scene.add(axesHelper);
@@ -317,7 +317,7 @@ const updateScene = () => {
             const shapes = ['Circle', 'Ring', 'Square', 'Triangle', 'Star'];
             const val = d[shapeBy];
             const hash = Math.abs(hashCode(String(val)));
-            shapeType = shapes[hash % shapes.length];
+            shapeType = shapes[hash % shapes.length] || 'Circle';
         }
         
         const texture = getShapeTexture(shapeType, String(color));
@@ -414,9 +414,12 @@ const onMouseMove = (event: MouseEvent) => {
   const intersects = raycaster.intersectObjects(nodes);
 
   if (intersects.length > 0) {
-    const nodeData = intersects[0].object.userData;
-    emit('node-hover', nodeData);
-    document.body.style.cursor = 'pointer';
+    const intersection = intersects[0];
+    if (intersection) {
+      const nodeData = (intersection.object as any).userData;
+      emit('node-hover', nodeData);
+      document.body.style.cursor = 'pointer';
+    }
   } else {
     emit('node-hover', null);
     document.body.style.cursor = 'default';
@@ -503,6 +506,5 @@ watch(() => [props.data, props.config], () => {
     background: #666;
     cursor: pointer;
     border-radius: 50%;
-    title: "Reset View";
 }
 </style>

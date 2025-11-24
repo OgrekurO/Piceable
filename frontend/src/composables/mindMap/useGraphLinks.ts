@@ -196,7 +196,6 @@ export function useGraphLinks(
                 source: sourceNode.id,
                 target: targetNode.id,
                 type: relationshipData.Type,
-                Direction: relationshipData.Direction,
                 direction: relationshipData.Direction,
                 ...relationshipData
             })

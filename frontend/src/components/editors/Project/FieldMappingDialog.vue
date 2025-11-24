@@ -110,7 +110,9 @@ watch(() => props.modelValue, (newValue) => {
     mappingFields.value.forEach(field => {
       if (props.autoMapping[field.systemField] !== undefined) {
         const columnIndex = props.autoMapping[field.systemField];
-        field.selectedColumn = props.csvHeaders[columnIndex] || '';
+        if (typeof columnIndex === 'number') {
+           field.selectedColumn = props.csvHeaders[columnIndex] || '';
+        }
       } else {
         field.selectedColumn = '';
       }
