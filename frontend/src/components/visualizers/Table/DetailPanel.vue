@@ -1,87 +1,165 @@
 <template>
   <div class="detail-panel">
+    <!-- 顶部图片区域 -->
     <div class="detail-header">
-      <img v-if="selectedRow && selectedRow.thumbnail" :src="selectedRow.thumbnail" alt="预览" class="detail-image" />
+      <img v-if="selectedRow && (selectedRow.data?.thumbnail || selectedRow.thumbnail)" :src="selectedRow.data?.thumbnail || selectedRow.thumbnail" alt="预览" class="detail-image" />
       <div v-else class="detail-image-placeholder"></div>
     </div>
+    
     <div class="detail-body">
-      <div class="detail-item">
-        <input 
-          :value="selectedRow ? selectedRow.name : ''" 
-          @input="updateField('name', $event)" 
-          type="text" 
-          placeholder="名称"
-          class="centered-input"
-        />
-      </div>
-      <div class="detail-item">
-        <input 
-          :value="selectedRow ? formatValue(selectedRow.folders) : ''" 
-          @input="updateField('folders', $event)" 
-          type="text" 
-          placeholder="文件夹"
-        />
-      </div>
-      <div class="detail-item">
-        <input 
-          :value="selectedRow ? formatValue(selectedRow.tags) : ''" 
-          @input="updateField('tags', $event)" 
-          type="text" 
-          placeholder="标签"
-        />
-      </div>
-      <div class="annotation-section">
-        <div class="divider"></div>
-        <div class="detail-item">
-          <textarea 
-            :value="selectedRow ? selectedRow.annotation : ''" 
-            @input="updateField('annotation', $event)" 
-            rows="3"
-            placeholder="注释"
-          ></textarea>
-        </div>
-        <div class="divider"></div>
-      </div>
-      <div class="detail-item meta-info">
-        <input 
-          :value="selectedRow ? selectedRow.lastModified : ''" 
-          @input="updateField('lastModified', $event)" 
-          type="text" 
-          placeholder="最后修改"
-          readonly
-        />
+      <!-- 动态渲染所有字段 -->
+      <div 
+        v-for="col in displayColumns" 
+        :key="col.field"
+        :class="col.field === 'annotation' ? 'annotation-section' : 'detail-item'"
+      >
+        <!-- 分隔线（注释前） -->
+        <div v-if="col.field === 'annotation'" class="divider"></div>
+        
+        <!-- 缩略图字段跳过（已在header显示） -->
+        <template v-if="col.field !== 'thumbnail'">
+          <!-- 注释字段 (Textarea) -->
+          <div v-if="col.field === 'annotation'" class="detail-item">
+            <textarea 
+              :value="selectedRow ? (selectedRow.data?.[col.field] || selectedRow[col.field] || '') : ''" 
+              @input="updateField(col.field, $event)" 
+              @blur="handleBlur(col.field, $event)"
+              @dblclick="enableEdit($event)"
+              rows="3"
+              :placeholder="col.title"
+              readonly
+              class="editable-field"
+            ></textarea>
+          </div>
+          
+          <!-- 其他字段 (Input) -->
+          <input 
+            v-else
+            :value="selectedRow ? formatValue(selectedRow.data?.[col.field] || selectedRow[col.field]) : ''" 
+            @input="updateField(col.field, $event)" 
+            @blur="handleBlur(col.field, $event)"
+            @dblclick="enableEdit($event)"
+            type="text" 
+            :placeholder="col.title"
+            :class="{ 
+              'centered-input': col.field === 'name',
+              'meta-info': col.field === 'lastModified',
+              'editable-field': col.field !== 'lastModified'
+            }"
+            :readonly="true"
+          />
+        </template>
+        
+        <!-- 分隔线（注释后） -->
+        <div v-if="col.field === 'annotation'" class="divider"></div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// 定义数据类型
+import { defineProps, defineEmits, watch, computed, ref } from 'vue'
+
 interface Item {
-  id: string
+  id: string | number
   thumbnail?: string
-  name?: string
-  folders?: string[] | string
-  tags?: string[] | string
-  annotation?: string
-  lastModified?: number | string
-  url?: string
   [key: string]: any
 }
 
 // 定义属性
 const props = defineProps<{
   selectedRow: Item | null
+  columns?: any[]
 }>()
+
+// Debug logging
+watch(() => props.selectedRow, (newVal) => {
+  console.log('[DetailPanel] selectedRow changed:', newVal)
+  if (newVal) {
+    console.log('[DetailPanel] selectedRow.data:', newVal.data)
+    console.log('[DetailPanel] selectedRow keys:', Object.keys(newVal))
+    if (newVal.data) {
+      console.log('[DetailPanel] data keys:', Object.keys(newVal.data))
+    }
+  }
+})
+watch(() => props.columns, (newVal) => {
+  console.log('[DetailPanel] columns changed:', newVal)
+}, { immediate: true })
+
+// 计算显示的列：优先从 selectedRow.data 生成，否则使用 props.columns
+const displayColumns = computed(() => {
+  // 优先从 selectedRow.data 生成列（使用实际的字段名）
+  if (props.selectedRow && props.selectedRow.data) {
+    const cols = Object.keys(props.selectedRow.data)
+      .filter(key => key !== '') // 过滤空键
+      .map(key => ({
+        field: key,
+        title: key // 直接使用字段名作为标题
+      }))
+    console.log('[DetailPanel] Generated columns from selectedRow.data:', cols)
+    return cols
+  }
+  
+  // 回退到 props.columns
+  if (props.columns && props.columns.length > 0) {
+    console.log('[DetailPanel] Using props.columns:', props.columns)
+    return props.columns
+  }
+  
+  console.log('[DetailPanel] No columns available')
+  return []
+})
 
 // 定义事件
 const emit = defineEmits<{
   (e: 'field-update', field: string, event: Event): void
+  (e: 'save'): void
 }>()
 
-// 更新字段
+// 更新字段 - 修复为支持 data 对象
 const updateField = (field: string, event: Event) => {
+  if (!props.selectedRow) return
+  
+  const target = event.target as HTMLInputElement | HTMLTextAreaElement
+  const value = target.value
+  
+  console.log('[DetailPanel] Updating field:', field, 'to value:', value)
+  
+  // 优先更新 data 对象中的字段
+  if (props.selectedRow.data && field in props.selectedRow.data) {
+    props.selectedRow.data[field] = value
+    console.log('[DetailPanel] Updated selectedRow.data[' + field + ']')
+  } else {
+    // 回退到直接更新 selectedRow
+    props.selectedRow[field] = value
+    console.log('[DetailPanel] Updated selectedRow[' + field + ']')
+  }
+  
   emit('field-update', field, event)
+}
+
+// 启用编辑（双击）
+const enableEdit = (event: Event) => {
+  const target = event.target as HTMLInputElement | HTMLTextAreaElement
+  target.removeAttribute('readonly')
+  target.focus()
+  // 选中所有文本
+  target.select()
+}
+
+// 失焦处理（保存并恢复只读）
+const handleBlur = (field: string, event: Event) => {
+  const target = event.target as HTMLInputElement | HTMLTextAreaElement
+  // 保存数据
+  emit('save')
+  // 恢复只读状态
+  target.setAttribute('readonly', 'true')
+}
+
+// 保存
+const save = () => {
+  emit('save')
 }
 
 // 格式化数组值显示
@@ -90,7 +168,7 @@ const formatValue = (value: string[] | string | undefined): string => {
   if (Array.isArray(value)) {
     return value.join(', ')
   }
-  return value
+  return String(value)
 }
 </script>
 
@@ -132,33 +210,32 @@ const formatValue = (value: string[] | string | undefined): string => {
 }
 
 .detail-item {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-
+  margin-bottom: 6px;
 }
-
-
 
 .detail-item input,
 .detail-item textarea {
+  width: 100%;
   padding: 8px;
-  border: 0.5px solid var(--color-border);
+  border: 1px solid #eee;
   border-radius: 4px;
-  font-size: 13px;
-  background-color: var(--color-background);
+  font-size: 14px;
+  transition: border-color 0.2s;
 }
 
 .detail-item input:focus,
 .detail-item textarea:focus {
+  border-color: var(--color-primary);
   outline: none;
-  border-color: #409eff;
-  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
 }
 
-.detail-item input::placeholder,
-.detail-item textarea::placeholder {
-  color: #aaa;
+.centered-input {
+  text-align: center;
+  font-weight: bold;
+  font-size: 16px !important;
+  border: none !important;
+  background: transparent;
+  margin-bottom: 10px;
 }
 
 .annotation-section {
@@ -170,15 +247,26 @@ const formatValue = (value: string[] | string | undefined): string => {
 .divider {
   height: 0.5px;
   background-color: var(--color-border);
-  margin: 5px 0;
+  margin: 10px 0;
 }
 
 .meta-info {
+  color: #999;
+  font-size: 12px;
+  text-align: right;
+}
+
+.detail-item.meta-info {
   margin-top: auto;
 }
 
-.meta-info input {
-  color: #999;
-  font-size: 12px;
+.editable-field {
+  cursor: pointer;
+}
+
+.editable-field:not([readonly]) {
+  cursor: text;
+  background: #ffffff !important;
+  border-color: var(--color-primary) !important;
 }
 </style>

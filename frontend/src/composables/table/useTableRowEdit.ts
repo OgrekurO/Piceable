@@ -17,8 +17,8 @@ export function useTableRowEdit(
      */
     const handleCellClick = (row: any) => {
         console.log('[useTableRowEdit] 单元格点击，选中行:', row)
-        // 深拷贝行数据以避免直接修改原始数据
-        selectedRow.value = JSON.parse(JSON.stringify(row))
+        // 直接引用行数据以实现双向绑定
+        selectedRow.value = row
     }
 
     /**
@@ -30,11 +30,81 @@ export function useTableRowEdit(
         const target = event.target as HTMLInputElement | HTMLTextAreaElement
         const value = target.value
 
-        // 创建新的对象以触发响应式更新
-        selectedRow.value = {
-            ...selectedRow.value,
-            [field]: value
+        console.log('[useTableRowEdit] Updating field:', field, 'to value:', value)
+
+        // 优先更新 data 对象中的字段
+        if (selectedRow.value.data && field in selectedRow.value.data) {
+            selectedRow.value.data[field] = value
+            console.log('[useTableRowEdit] Updated selectedRow.data[' + field + ']')
+        } else {
+            // 回退到直接更新 selectedRow
+            selectedRow.value[field] = value
+            console.log('[useTableRowEdit] Updated selectedRow[' + field + ']')
         }
+    }
+
+    /**
+     * 保存当前选中行
+     */
+    const saveSelectedRow = async () => {
+        if (!selectedRow.value) return
+        await saveAndSync(selectedRow.value)
+    }
+
+    /**
+     * 自动登录并获取新token
+     */
+    const autoLogin = async () => {
+        try {
+            console.log('[useTableRowEdit] 开始自动登录...')
+            const params = new URLSearchParams()
+            params.append('username', 'admin')
+            params.append('password', 'admin')
+
+            const response = await fetch('http://localhost:8001/api/auth/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: params
+            })
+
+            if (!response.ok) {
+                throw new Error('自动登录失败')
+            }
+
+            const data = await response.json()
+            localStorage.setItem('access_token', data.access_token)
+            return data.access_token
+        } catch (error) {
+            console.error('[useTableRowEdit] 自动登录出错:', error)
+            throw error
+        }
+    }
+
+    /**
+     * 带自动重试的 Fetch
+     */
+    const authenticatedFetch = async (url: string, options: RequestInit) => {
+        let token = localStorage.getItem('access_token')
+
+        const makeRequest = async (token: string | null) => {
+            const headers = {
+                ...options.headers,
+                'Authorization': `Bearer ${token}`
+            }
+            return fetch(url, { ...options, headers })
+        }
+
+        let response = await makeRequest(token)
+
+        if (response.status === 401) {
+            console.log('[useTableRowEdit] Token失效，尝试自动登录...')
+            token = await autoLogin()
+            response = await makeRequest(token)
+        }
+
+        return response
     }
 
     /**
@@ -57,11 +127,10 @@ export function useTableRowEdit(
                     id: undefined // 不传递临时ID
                 }
 
-                const response = await fetch('http://localhost:8001/api/items', {
+                const response = await authenticatedFetch('http://localhost:8001/api/items', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         projectId: projectId.value,
@@ -84,11 +153,10 @@ export function useTableRowEdit(
 
                 const updatedData = { ...row.data }
 
-                const response = await fetch(`http://localhost:8001/api/item/${row.id}`, {
+                const response = await authenticatedFetch(`http://localhost:8001/api/item/${row.id}`, {
                     method: 'PUT',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(updatedData)
                 })
@@ -162,11 +230,10 @@ export function useTableRowEdit(
             const itemsData = newRows.map(row => row.data)
 
             // 调用后端 API 创建新 items
-            const response = await fetch('http://localhost:8001/api/upload', {
+            const response = await authenticatedFetch('http://localhost:8001/api/upload', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     projectId: projectIdValue,
@@ -196,6 +263,7 @@ export function useTableRowEdit(
         saveRowEdit,
         updateLocalData,
         saveAndSync,
-        saveNewRows
+        saveNewRows,
+        saveSelectedRow
     }
 }

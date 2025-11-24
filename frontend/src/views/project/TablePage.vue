@@ -17,7 +17,7 @@
         :columns="dynamicColumns"
         :pager-config="pagerConfig"
         :edit-config="editConfig"
-        @cell-click="handleCellClick"
+        @cell-click="(event) => handleCellClick(event.row)"
         @edit-closed="handleEditClosed"
         @edit-actived="handleEditActived"
         @add-row="handleAddRow"
@@ -27,7 +27,9 @@
       <!-- 右侧详情面板 -->
       <DetailPanel
         :selected-row="selectedRow"
+        :columns="dynamicColumns"
         @field-update="updateSelectedRowField"
+        @save="saveSelectedRow"
       />
     </div>
   </div>
@@ -99,7 +101,8 @@ const {
   selectedRow,
   handleCellClick,
   updateSelectedRowField,
-  saveAndSync
+  saveAndSync,
+  saveSelectedRow
 } = useTableRowEdit(currentProjectId, currentTableId, currentTableData)
 
 // ========== 列管理 ==========
@@ -109,13 +112,18 @@ const {
   addColumn
 } = useTableColumns()
 
+import { watch } from 'vue'
+watch(dynamicColumns, (newVal) => {
+  console.log('[TablePage] dynamicColumns updated:', newVal)
+})
+
 // ========== 本地状态 ==========
 const tableRef = ref()
 const showCreateTableDialog = ref(false)
 
 // ========== 编辑配置 ==========
 const editConfig = {
-  trigger: 'click',
+  trigger: 'dblclick',
   mode: 'cell',
   showStatus: true,
   keepSource: true
