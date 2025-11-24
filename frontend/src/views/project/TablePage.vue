@@ -28,6 +28,7 @@
       <DetailPanel
         :selected-row="selectedRow"
         @field-update="updateSelectedRowField"
+        @save="saveSelectedRow"
       />
     </div>
   </div>
@@ -99,7 +100,8 @@ const {
   selectedRow,
   handleCellClick,
   updateSelectedRowField,
-  saveAndSync
+  saveAndSync,
+  saveSelectedRow
 } = useTableRowEdit(currentProjectId, currentTableId, currentTableData)
 
 // ========== 列管理 ==========
@@ -115,7 +117,7 @@ const showCreateTableDialog = ref(false)
 
 // ========== 编辑配置 ==========
 const editConfig = {
-  trigger: 'click',
+  trigger: 'dblclick',
   mode: 'cell',
   showStatus: true,
   keepSource: true

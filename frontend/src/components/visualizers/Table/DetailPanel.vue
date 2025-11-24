@@ -9,6 +9,7 @@
         <input 
           :value="selectedRow ? selectedRow.name : ''" 
           @input="updateField('name', $event)" 
+          @change="save"
           type="text" 
           placeholder="名称"
           class="centered-input"
@@ -18,6 +19,7 @@
         <input 
           :value="selectedRow ? formatValue(selectedRow.folders) : ''" 
           @input="updateField('folders', $event)" 
+          @change="save"
           type="text" 
           placeholder="文件夹"
         />
@@ -26,6 +28,7 @@
         <input 
           :value="selectedRow ? formatValue(selectedRow.tags) : ''" 
           @input="updateField('tags', $event)" 
+          @change="save"
           type="text" 
           placeholder="标签"
         />
@@ -36,6 +39,7 @@
           <textarea 
             :value="selectedRow ? selectedRow.annotation : ''" 
             @input="updateField('annotation', $event)" 
+            @change="save"
             rows="3"
             placeholder="注释"
           ></textarea>
@@ -77,11 +81,17 @@ const props = defineProps<{
 // 定义事件
 const emit = defineEmits<{
   (e: 'field-update', field: string, event: Event): void
+  (e: 'save'): void
 }>()
 
 // 更新字段
 const updateField = (field: string, event: Event) => {
   emit('field-update', field, event)
+}
+
+// 保存
+const save = () => {
+  emit('save')
 }
 
 // 格式化数组值显示
