@@ -2,7 +2,7 @@
   <div class="detail-panel">
     <!-- 顶部图片区域 -->
     <div class="detail-header">
-      <img v-if="selectedRow && selectedRow.thumbnail" :src="selectedRow.thumbnail" alt="预览" class="detail-image" />
+      <img v-if="selectedRow && (selectedRow.data?.thumbnail || selectedRow.thumbnail)" :src="selectedRow.data?.thumbnail || selectedRow.thumbnail" alt="预览" class="detail-image" />
       <div v-else class="detail-image-placeholder"></div>
     </div>
     
@@ -21,7 +21,7 @@
           <!-- 注释字段 (Textarea) -->
           <div v-if="col.field === 'annotation'" class="detail-item">
             <textarea 
-              :value="selectedRow ? selectedRow[col.field] : ''" 
+              :value="selectedRow ? (selectedRow.data?.[col.field] || selectedRow[col.field] || '') : ''" 
               @input="updateField(col.field, $event)" 
               @change="save"
               rows="3"
@@ -32,7 +32,7 @@
           <!-- 其他字段 (Input) -->
           <input 
             v-else
-            :value="selectedRow ? formatValue(selectedRow[col.field]) : ''" 
+            :value="selectedRow ? formatValue(selectedRow.data?.[col.field] || selectedRow[col.field]) : ''" 
             @input="updateField(col.field, $event)" 
             @change="save"
             type="text" 
@@ -158,7 +158,7 @@ const formatValue = (value: string[] | string | undefined): string => {
 }
 
 .detail-item {
-  margin-bottom: 15px;
+  margin-bottom: 6px;
 }
 
 .detail-item input,
