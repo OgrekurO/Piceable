@@ -117,8 +117,25 @@ const emit = defineEmits<{
   (e: 'save'): void
 }>()
 
-// 更新字段
+// 更新字段 - 修复为支持 data 对象
 const updateField = (field: string, event: Event) => {
+  if (!props.selectedRow) return
+  
+  const target = event.target as HTMLInputElement | HTMLTextAreaElement
+  const value = target.value
+  
+  console.log('[DetailPanel] Updating field:', field, 'to value:', value)
+  
+  // 优先更新 data 对象中的字段
+  if (props.selectedRow.data && field in props.selectedRow.data) {
+    props.selectedRow.data[field] = value
+    console.log('[DetailPanel] Updated selectedRow.data[' + field + ']')
+  } else {
+    // 回退到直接更新 selectedRow
+    props.selectedRow[field] = value
+    console.log('[DetailPanel] Updated selectedRow[' + field + ']')
+  }
+  
   emit('field-update', field, event)
 }
 
@@ -249,7 +266,7 @@ const formatValue = (value: string[] | string | undefined): string => {
 
 .editable-field:not([readonly]) {
   cursor: text;
-  background: #fffacd !important;
+  background: #ffffff !important;
   border-color: var(--color-primary) !important;
 }
 </style>

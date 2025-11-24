@@ -30,8 +30,17 @@ export function useTableRowEdit(
         const target = event.target as HTMLInputElement | HTMLTextAreaElement
         const value = target.value
 
-        // 直接修改对象属性，因为是引用，所以会同步更新 tableData
-        selectedRow.value[field] = value
+        console.log('[useTableRowEdit] Updating field:', field, 'to value:', value)
+
+        // 优先更新 data 对象中的字段
+        if (selectedRow.value.data && field in selectedRow.value.data) {
+            selectedRow.value.data[field] = value
+            console.log('[useTableRowEdit] Updated selectedRow.data[' + field + ']')
+        } else {
+            // 回退到直接更新 selectedRow
+            selectedRow.value[field] = value
+            console.log('[useTableRowEdit] Updated selectedRow[' + field + ']')
+        }
     }
 
     /**
