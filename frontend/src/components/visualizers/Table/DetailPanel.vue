@@ -23,9 +23,12 @@
             <textarea 
               :value="selectedRow ? (selectedRow.data?.[col.field] || selectedRow[col.field] || '') : ''" 
               @input="updateField(col.field, $event)" 
-              @change="save"
+              @blur="handleBlur(col.field, $event)"
+              @dblclick="enableEdit($event)"
               rows="3"
               :placeholder="col.title"
+              readonly
+              class="editable-field"
             ></textarea>
           </div>
           
@@ -34,14 +37,16 @@
             v-else
             :value="selectedRow ? formatValue(selectedRow.data?.[col.field] || selectedRow[col.field]) : ''" 
             @input="updateField(col.field, $event)" 
-            @change="save"
+            @blur="handleBlur(col.field, $event)"
+            @dblclick="enableEdit($event)"
             type="text" 
             :placeholder="col.title"
             :class="{ 
               'centered-input': col.field === 'name',
-              'meta-info': col.field === 'lastModified'
+              'meta-info': col.field === 'lastModified',
+              'editable-field': col.field !== 'lastModified'
             }"
-            :readonly="col.field === 'lastModified'"
+            :readonly="true"
           />
         </template>
         
@@ -115,6 +120,24 @@ const emit = defineEmits<{
 // 更新字段
 const updateField = (field: string, event: Event) => {
   emit('field-update', field, event)
+}
+
+// 启用编辑（双击）
+const enableEdit = (event: Event) => {
+  const target = event.target as HTMLInputElement | HTMLTextAreaElement
+  target.removeAttribute('readonly')
+  target.focus()
+  // 选中所有文本
+  target.select()
+}
+
+// 失焦处理（保存并恢复只读）
+const handleBlur = (field: string, event: Event) => {
+  const target = event.target as HTMLInputElement | HTMLTextAreaElement
+  // 保存数据
+  emit('save')
+  // 恢复只读状态
+  target.setAttribute('readonly', 'true')
 }
 
 // 保存
@@ -218,5 +241,15 @@ const formatValue = (value: string[] | string | undefined): string => {
 
 .detail-item.meta-info {
   margin-top: auto;
+}
+
+.editable-field {
+  cursor: pointer;
+}
+
+.editable-field:not([readonly]) {
+  cursor: text;
+  background: #fffacd !important;
+  border-color: var(--color-primary) !important;
 }
 </style>
