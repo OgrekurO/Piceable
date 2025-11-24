@@ -1,5 +1,6 @@
 <template>
   <button 
+    v-if="supportsLabels"
     class="label-toggle" 
     :class="{ 'active': showLabels }"
     @click="handleToggle"
@@ -16,9 +17,16 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useMapStore } from '@/stores/mapStore';
+import { useMapViewStore as useMapStore } from '@/stores/mapViewStore';
+import { useMapProviders } from '@/composables/map/useMapProviders';
 
 const mapStore = useMapStore();
+
+// 当前激活的图层
+const activeLayer = computed(() => mapStore.activeLayer);
+
+// 使用地图提供商管理
+const { supportsLabels } = useMapProviders(activeLayer);
 
 // 计算标签显示状态
 const showLabels = computed(() => mapStore.showLabels);

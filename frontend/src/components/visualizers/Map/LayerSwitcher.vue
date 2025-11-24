@@ -19,31 +19,36 @@
         <span>预览</span>
       </div>
       
-      <div class="layer-grid">
-        <div 
-          v-for="style in MAP_STYLES" 
-          :key="style.id"
-          @click="handleLayerSelect(style.id)"
-          class="layer-item"
-          :class="{ 'active': activeLayer === style.id }"
-        >
+      <!-- 按提供商分组显示 -->
+      <div v-for="provider in availableProviders" :key="provider.id" class="provider-group">
+        <div class="provider-name">{{ provider.name }}</div>
+        
+        <div class="layer-grid">
           <div 
-            class="layer-preview" 
-            :style="{ backgroundColor: style.previewColor }"
+            v-for="style in groupedStyles[provider.id]" 
+            :key="style.id"
+            @click="handleLayerSelect(style.id)"
+            class="layer-item"
+            :class="{ 'active': activeLayer === style.id }"
           >
             <div 
-              class="layer-filter" 
-              :style="{ filter: style.filter }"
-            ></div>
-            
-            <div v-if="activeLayer === style.id" class="layer-check">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
+              class="layer-preview" 
+              :style="{ backgroundColor: style.previewColor }"
+            >
+              <div 
+                class="layer-filter" 
+                :style="{ filter: style.filter }"
+              ></div>
+              
+              <div v-if="activeLayer === style.id" class="layer-check">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
             </div>
+            
+            <div class="layer-name">{{ style.name }}</div>
           </div>
-          
-          <div class="layer-name">{{ style.name.split(' ')[0] }}</div>
         </div>
       </div>
     </div>
@@ -52,52 +57,17 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { useMapStore } from '@/stores/mapStore';
-
-// 地图样式配置
-const MAP_STYLES = [
-  {
-    id: 'streets',
-    name: '标准 (Streets)',
-    type: 'm',
-    filter: '',
-    previewColor: '#f8f9fa',
-  },
-  {
-    id: 'satellite',
-    name: '卫星 (Satellite)',
-    type: 'y',
-    filter: '',
-    previewColor: '#0f172a',
-  },
-  {
-    id: 'terrain',
-    name: '地形 (Terrain)',
-    type: 'p',
-    filter: '',
-    previewColor: '#ecfccb',
-  },
-  {
-    id: 'light',
-    name: '淡色 (Light)',
-    type: 'm',
-    filter: 'grayscale(100%) contrast(90%) brightness(105%)',
-    previewColor: '#ffffff',
-  },
-  {
-    id: 'dark',
-    name: '深色 (Dark)',
-    type: 'm',
-    filter: 'invert(100%) hue-rotate(180deg) brightness(90%) contrast(90%) grayscale(20%)',
-    previewColor: '#171717',
-  }
-];
+import { useMapViewStore as useMapStore } from '@/stores/mapViewStore';
+import { useMapProviders } from '@/composables/map/useMapProviders';
 
 const showPanel = ref(false);
 const mapStore = useMapStore();
 
-// 计算当前激活的图层
+// 当前激活的图层
 const activeLayer = computed(() => mapStore.activeLayer);
+
+// 使用地图提供商管理
+const { groupedStyles, availableProviders, getProviderName } = useMapProviders(activeLayer);
 
 // 处理图层选择
 const handleLayerSelect = (layerId: string) => {
@@ -164,6 +134,24 @@ const handleLayerSelect = (layerId: string) => {
 .panel-header span {
   font-size: 10px;
   color: #999;
+}
+
+.provider-group {
+  margin-bottom: 16px;
+}
+
+.provider-group:last-child {
+  margin-bottom: 0;
+}
+
+.provider-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 8px;
+  padding-left: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .layer-grid {

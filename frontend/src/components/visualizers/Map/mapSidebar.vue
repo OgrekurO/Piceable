@@ -341,7 +341,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { useMapStore } from '@/stores/mapStore';
+import { useProjectStore } from '@/stores/projectStore';
+import { useMapViewStore } from '@/stores/mapViewStore';
 import { storeToRefs } from 'pinia';
 import { Search, Bookmark, MapPin, UploadCloud, Share2, ChevronDown, ChevronRight, Trash2, Plus, Download, ExternalLink, ChevronLeft, X, Loader2, Edit2, Check, Save, PieChart, GitMerge, Eye, EyeOff, Table } from 'lucide-vue-next';
 import ModuleHeader from './ModuleHeader.vue';
@@ -349,37 +350,44 @@ import DataTableModal from './DataTableModal.vue';
 import { toPng, toSvg } from 'html-to-image';
 import type { BaseItem } from '@/types/entity';
 
-// 使用 mapStore
-const mapStore = useMapStore();
+// 使用 Store
+const projectStore = useProjectStore();
+const mapViewStore = useMapViewStore();
+
 const {
-  entities, // Replaces rawData
+  entities,
   searchTerm,
-  filteredEntities, // Replaces filteredData
-  selectedEntityId, // Replaces selectedRecordId
-  isSidebarOpen,
+  filteredEntities,
+  selectedEntityId,
   bookmarks,
-  currentView,
-  activeLayer,
   searchResult,
   groupByColumn,
   categoryColors,
-  hiddenCategories,
-  // relationColumn // Removed from store, now derived from schema or data
-} = storeToRefs(mapStore);
+  hiddenCategories
+} = storeToRefs(projectStore);
 
 const {
-  setIsSidebarOpen,
+  isSidebarOpen,
+  currentView,
+  activeLayer
+} = storeToRefs(mapViewStore);
+
+const {
   addBookmark,
   updateBookmark,
   removeBookmark,
-  removeItem, // Replaces removeAnnotation
-  setActiveLayer,
+  removeItem,
   setSearchResult,
   setGroupByColumn,
   toggleCategoryVisibility,
-  loadItems, // Replaces setRawData
-  setSelectedEntityId // Replaces setSelectedRecordId
-} = mapStore;
+  loadItems,
+  setSelectedEntityId
+} = projectStore;
+
+const {
+  setIsSidebarOpen,
+  setActiveLayer
+} = mapViewStore;
 
 // Computed Columns (derived from first entity's data)
 const columns = computed(() => {
@@ -452,7 +460,7 @@ const handleSelectSuggestion = (item: any) => {
   const lng = parseFloat(item.lon);
 
   // Update Context State
-  mapStore.setSearchResult({
+  projectStore.setSearchResult({
     record: {
       id: `search-${Date.now()}`,
       primaryLabel: item.display_name.split(',')[0],
@@ -485,7 +493,7 @@ const editName = ref('');
 
 const handleAddBookmark = () => {
   if (!newBookmarkName.value.trim()) return;
-  mapStore.addBookmark(newBookmarkName.value, { ...currentView.value, layer: activeLayer.value });
+  projectStore.addBookmark(newBookmarkName.value, { ...currentView.value, layer: activeLayer.value });
   newBookmarkName.value = '';
   isAddingBookmark.value = false;
 };
@@ -497,14 +505,14 @@ const startEditBookmark = (b: typeof bookmarks.value[0]) => {
 
 const saveEditBookmark = () => {
   if (editingBookmarkId.value && editName.value.trim()) {
-      mapStore.updateBookmark(editingBookmarkId.value, editName.value);
+      projectStore.updateBookmark(editingBookmarkId.value, editName.value);
       editingBookmarkId.value = null;
   }
 };
 
 const handleRestoreBookmark = (b: typeof bookmarks.value[0]) => {
   if (editingBookmarkId.value) return; // Don't restore if editing
-  mapStore.setActiveLayer(b.view.layer); // Restore layer
+  mapViewStore.setActiveLayer(b.view.layer); // Restore layer
   window.dispatchEvent(new CustomEvent('map:flyTo', { 
       detail: { 
           lat: b.view.center[0], 
@@ -569,7 +577,7 @@ const handleFiles = async (event: Event) => {
         })
     };
 
-    mapStore.loadItems(items, schema as any);
+    projectStore.loadItems(items, schema as any);
   } catch (err) {
     alert("CSV 解析错误");
     console.error(err);
@@ -577,13 +585,13 @@ const handleFiles = async (event: Event) => {
 };
 
 const clearData = () => {
-  mapStore.loadItems([], { fields: [] });
+  projectStore.loadItems([], { fields: [] });
 };
 
 // --- Other Actions ---
 const selectRecord = (id: string) => {
-  mapStore.setSelectedEntityId(id);
-  const entity = mapStore.entities.find(e => e.id === id);
+  projectStore.setSelectedEntityId(id);
+  const entity = projectStore.entities.find(e => e.id === id);
   if (entity && entity.geo) {
     window.dispatchEvent(new CustomEvent('map:flyTo', { detail: { lat: entity.geo.lat, lng: entity.geo.lng, zoom: 14 } }));
   }

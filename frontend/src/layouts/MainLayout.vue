@@ -111,7 +111,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { useMapStore } from '@/stores/mapStore'
+import { useProjectStore } from '@/stores/projectStore'
 import { getProjects, type Project, onProjectUpdate } from '@/core/services/projectService'
 import { getUploadedItems } from '@/core/services/uploadedItemsService'
 
@@ -119,106 +119,83 @@ import { getUploadedItems } from '@/core/services/uploadedItemsService'
 const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
-const mapStore = useMapStore()
+const projectStore = useProjectStore()
 
-// 搜索文本
-const searchText = ref('')
-
-// 控制导航链接显示状态
+// ========== 本地状态 ==========
 const showSidebar = ref(false)
-
-// 控制用户下拉菜单显示状态
+const searchText = ref('')
 const showUserDropdown = ref(false)
-
-// 项目相关状态
+const showProjectDropdown = ref(false)
 const projects = ref<Project[]>([])
 const currentProjectId = ref<number | null>(null)
-const showProjectDropdown = ref(false)
 
-// 计算属性：是否显示项目切换器（非主页时显示）
+// ========== Computed 属性 ==========
 const shouldShowProjectSwitcher = computed(() => {
-  const viewPages = ['/coordinate', '/table', '/mindmap', '/map']
-  return viewPages.some(page => route.path.startsWith(page))
+  const projectRoutes = ['/coordinate', '/table', '/mindmap', '/map']
+  return projectRoutes.some(path => route.path.startsWith(path))
 })
 
-// 计算属性：当前项目名称
 const currentProjectName = computed(() => {
   if (!currentProjectId.value) return '选择项目'
   const project = projects.value.find(p => p.id === currentProjectId.value)
-  return project?.name || '选择项目'
+  return project?.name || '未知项目'
 })
 
-// 计算属性：当前项目来源类型
 const currentSource = computed(() => {
-  if (!currentProjectId.value) return 'upload'
-  const project = projects.value.find(p => p.id === currentProjectId.value)
-  return project?.source_type === 'eagle' ? 'eagle' : 'upload'
+  return route.query.source as string || 'default'
 })
 
-// 切换导航链接显示状态
+// ========== 方法 ==========
 const toggleSidebar = () => {
   showSidebar.value = !showSidebar.value
 }
 
-// 切换用户下拉菜单显示状态
 const toggleUserDropdown = () => {
   showUserDropdown.value = !showUserDropdown.value
 }
 
-// 切换项目下拉菜单显示状态
 const toggleProjectDropdown = () => {
   showProjectDropdown.value = !showProjectDropdown.value
 }
 
-// 搜索处理函数
 const onSearch = () => {
-  // 发送搜索事件给子组件
+  // 实现搜索逻辑
   console.log('搜索:', searchText.value)
-  // 这里可以使用事件总线或Vuex/Pinia状态管理来传递搜索事件
 }
 
-// 处理用户登出
-const handleLogout = () => {
-  showUserDropdown.value = false
-  authStore.logout()
+const handleLogout = async () => {
+  await authStore.logout()
   router.push('/login')
 }
 
-// 获取项目列表
 const fetchProjects = async () => {
   try {
-    projects.value = await getProjects()
+    const fetchedProjects = await getProjects()
+    projects.value = fetchedProjects
     
-    // 如果有路由参数中的 projectId，使用它
-    const routeProjectId = route.query.projectId
-    if (routeProjectId) {
-      currentProjectId.value = parseInt(routeProjectId as string)
-    } else if (projects.value.length > 0 && !currentProjectId.value) {
-      // 否则默认选择第一个项目
-      const firstProject = projects.value[0];
-      if (firstProject) {
-        currentProjectId.value = firstProject.id;
-      }
+    // 如果有路由参数中的 projectId,使用它
+    if (route.query.projectId) {
+      currentProjectId.value = parseInt(route.query.projectId as string)
+    } else if (fetchedProjects.length > 0 && fetchedProjects[0]) {
+      // 否则使用第一个项目
+      currentProjectId.value = fetchedProjects[0].id
     }
     
-    // 加载当前项目数据
-    if (currentProjectId.value !== null) {
-      await loadProjectData(currentProjectId.value)
-    }
+    console.log('[MainLayout] 已加载项目列表:', projects.value.length)
   } catch (error) {
     console.error('获取项目列表失败:', error)
   }
 }
 
-// 加载项目数据到 mapStore
+// 加载项目数据到 projectStore
 const loadProjectData = async (projectId: number) => {
   try {
     const items = await getUploadedItems(projectId)
     const project = projects.value.find(p => p.id === projectId)
     
     if (project && project.schema) {
-      // 更新 mapStore
-      mapStore.loadItems(items, project.schema)
+      // 更新 projectStore
+      projectStore.loadItems(items, project.schema)
       
       console.log(`[MainLayout] 已加载项目 ${project.name} 的数据，共 ${items.length} 项`)
     }

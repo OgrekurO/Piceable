@@ -171,7 +171,7 @@ import { Loader2, Plus, X, PlusCircle, Share2, Upload } from 'lucide-vue-next'
 import GraphCanvas from '@/components/visualizers/Graph/GraphCanvas.vue'
 import GraphSidebar from '@/components/visualizers/Graph/GraphSidebar.vue'
 import GraphLegend from '@/components/visualizers/Graph/GraphLegend.vue'
-import { useMapStore } from '@/stores/mapStore'
+import { useProjectStore } from '@/stores/projectStore'
 import { storeToRefs } from 'pinia'
 
 // Composables - 数据层
@@ -188,8 +188,8 @@ import { useDataImportExport } from '@/composables/mindMap/useDataImportExport'
 import { useGraphUI } from '@/composables/mindMap/useGraphUI'
 
 const route = useRoute()
-const mapStore = useMapStore()
-const { entities } = storeToRefs(mapStore)
+const projectStore = useProjectStore()
+const { entities } = storeToRefs(projectStore)
 
 // 临时数据存储
 const tempNodes = ref<any[]>([])
@@ -236,28 +236,15 @@ const {
   loadDefaultTestData,
   triggerImport,
   showImportTip
-} = useDataImportExport(mapStore, graphData, tempNodes, tempLinks)
+} = useDataImportExport(projectStore, graphData, tempNodes, tempLinks)
 
-// ========== 4. 项目数据 ==========
-const projectDataComposable = useProjectData(tableMapping, handleImportData)
-// 使用项目数据 composable 返回的值来更新我们的 ref
+// ========== 4. 项目数据加载 ==========
 const {
-  currentProjectId: projectId,
-  availableTables: projectTables,
-  loading: projectLoading,
   loadProjectTables,
   loadProjectData
-} = projectDataComposable
+} = useProjectData(tableMapping, handleImportData)
 
-// 同步 projectId 和 availableTables 到我们的 ref
-// 这样 useTableMapping 和 useGraphLinks 就能使用它们了
-const syncProjectData = () => {
-  currentProjectId.value = projectId.value
-  availableTables.value = projectTables.value
-}
-
-// 监听变化并同步
-watch([projectId, projectTables], syncProjectData, { deep: true })
+// ... (rest of the code)
 
 // ========== 5. 节点管理 ==========
 const {
@@ -271,7 +258,7 @@ const {
   confirmAddNode,
   handleNodeClick,
   handleBackgroundClick
-} = useGraphNodes(mapStore, updateGraphData)
+} = useGraphNodes(projectStore, updateGraphData)
 
 // ========== 6. 关系管理 ==========
 const {

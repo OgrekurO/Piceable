@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>高德地图瓦片测试</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map { height: 600px; width: 100%; }
+        .info { padding: 10px; background: white; margin: 10px; }
+    </style>
+</head>
+<body>
+    <div class="info">
+        <h2>高德地图瓦片测试</h2>
+        <p>当前使用的 URL: <code id="current-url"></code></p>
+        <button onclick="switchMap('amap-streets')">标准地图</button>
+        <button onclick="switchMap('amap-satellite')">卫星地图</button>
+        <button onclick="switchMap('amap-satellite-label')">卫星+标注</button>
+    </div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([39.9, 116.4], 10);
+        let currentLayer = null;
+
+        const urls = {
+            'amap-streets': 'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=7&x={x}&y={y}&z={z}',
+            'amap-satellite': 'https://webst0{s}.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}',
+            'amap-satellite-label': 'https://webst0{s}.is.autonavi.com/appmaptile?style=8&x={x}&y={y}&z={z}'
+        };
+
+        function switchMap(type) {
+            if (currentLayer) {
+                map.removeLayer(currentLayer);
+            }
+            
+            const url = urls[type];
+            document.getElementById('current-url').textContent = url;
+            
+            currentLayer = L.tileLayer(url, {
+                maxZoom: 18,
+                minZoom: 3,
+                subdomains: ['1', '2', '3', '4'],
+                attribution: '© 高德地图'
+            }).addTo(map);
+        }
+
+        // 默认加载标准地图
+        switchMap('amap-streets');
+    </script>
+</body>
+</html>

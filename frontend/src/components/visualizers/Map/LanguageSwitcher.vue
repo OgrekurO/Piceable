@@ -1,5 +1,5 @@
 <template>
-  <div class="language-switcher">
+  <div v-if="supportsLanguage" class="language-switcher">
     <button 
       class="switcher-btn" 
       @click="showMenu = !showMenu"
@@ -38,19 +38,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useMapStore } from '@/stores/mapStore';
-
-// 语言选项
-const LANGUAGES = [
-  { code: 'zh-CN', label: '中文 (简体)' },
-  { code: 'en', label: 'English' },
-  { code: 'ja', label: '日本語' },
-  { code: 'fr', label: 'Français' },
-];
+import { ref, computed } from 'vue';
+import { useMapViewStore as useMapStore } from '@/stores/mapViewStore';
+import { useMapProviders } from '@/composables/map/useMapProviders';
+import { LANGUAGES } from '@/core/constants/map';
 
 const showMenu = ref(false);
 const mapStore = useMapStore();
+
+// 当前激活的图层
+const activeLayer = computed(() => mapStore.activeLayer);
+
+// 使用地图提供商管理
+const { supportsLanguage } = useMapProviders(activeLayer);
 
 // 计算当前目标语言
 const targetLanguage = computed(() => mapStore.targetLanguage);
@@ -60,9 +60,6 @@ const handleLanguageSelect = (langCode: string) => {
   mapStore.setTargetLanguage(langCode);
   showMenu.value = false;
 };
-
-// 导入computed
-import { computed } from 'vue';
 </script>
 
 <style scoped>
