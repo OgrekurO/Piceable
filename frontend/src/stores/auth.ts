@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import type { User } from '@/types'
-import { setAccessToken as saveToken, clearAccessToken, getAccessToken } from '@/services/authService'
-import { getCurrentUser } from '@/services/authService'
+import { setAccessToken as saveToken, clearAccessToken, getAccessToken } from '@/core/services/authService'
+import { getCurrentUser } from '@/core/services/authService'
 
 interface AuthState {
   user: User | null
@@ -15,7 +15,7 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: false,
     accessToken: null
   }),
-  
+
   actions: {
     /**
      * 用户登录
@@ -30,7 +30,7 @@ export const useAuthStore = defineStore('auth', {
         saveToken(token)
       }
     },
-    
+
     /**
      * 用户登出
      */
@@ -40,7 +40,7 @@ export const useAuthStore = defineStore('auth', {
       this.accessToken = null
       clearAccessToken()
     },
-    
+
     /**
      * 更新用户信息
      * @param user 用户信息
@@ -48,7 +48,7 @@ export const useAuthStore = defineStore('auth', {
     updateUserInfo(user: User) {
       this.user = user
     },
-    
+
     /**
      * 设置访问令牌
      * @param token 访问令牌
@@ -57,7 +57,7 @@ export const useAuthStore = defineStore('auth', {
       this.accessToken = token
       saveToken(token)
     },
-    
+
     /**
      * 从本地存储恢复认证状态
      */
@@ -67,15 +67,15 @@ export const useAuthStore = defineStore('auth', {
         // 从localStorage获取访问令牌
         const accessToken = getAccessToken()
         console.log('[AUTH] 从localStorage获取的访问令牌:', accessToken)
-        
+
         if (accessToken) {
           // 设置访问令牌到store
           this.accessToken = accessToken
-          
+
           // 验证令牌有效性并获取用户信息
           const user = await getCurrentUser()
           console.log('[AUTH] 获取到的用户信息:', user)
-          
+
           if (user) {
             this.user = user
             this.isAuthenticated = true
@@ -93,23 +93,23 @@ export const useAuthStore = defineStore('auth', {
         // 如果获取用户信息失败，清除令牌
         this.logout()
       }
-      
+
       console.log('[AUTH] 最终认证状态 - isAuthenticated:', this.isAuthenticated)
       return this.isAuthenticated
     }
   },
-  
+
   getters: {
     /**
      * 获取当前用户信息
      */
     currentUser: (state) => state.user,
-    
+
     /**
      * 检查用户是否已认证
      */
     isAuth: (state) => state.isAuthenticated,
-    
+
     /**
      * 获取访问令牌
      */

@@ -1,97 +1,7 @@
-# 前端应用 (Frontend)
-
-基于 Vue 3 + Vite 构建的现代化前端界面，用于展示和管理思维导图数据。
-
-## 技术栈
-
-- Vue 3
-- Vite
-- Element Plus
-- TypeScript
-- Pinia (状态管理)
-- Vue Router (路由管理)
-- D3.js (数据可视化)
-- Vxe-Table (表格组件)
-- Three.js (3D可视化)
-
-## 使用方法
-
-### 安装依赖
-
-```bash
-npm install
-```
-
-### 开发模式运行
-
-```bash
-npm run dev
-```
-
-默认会在 <http://localhost:5173> 启动开发服务器。
-
-### 构建生产版本
-
-```bash
-npm run build
-```
-
-构建后的文件会输出到 `dist` 目录。
-
-### 预览生产版本
-
-```bash
-npm run preview
-```
-
-### 代码检查
-
-```bash
-# 运行 ESLint 检查
-npm run lint
-
-# 格式化代码
-npm run format
-```
-
-## 项目结构概览
-
-```
-.
-├── public/                  # 静态资源目录
-├── src/                     # 源代码目录
-│   ├── assets/             # 静态资源（图片、样式等）
-│   ├── components/         # 可复用组件
-│   │   ├── common/        # 通用组件
-│   │   ├── editors/       # 编辑器组件
-│   │   └── visualizers/   # 可视化组件
-│   ├── composables/       # 组合式函数
-│   │   └── business/      # 业务相关组合式函数
-│   ├── core/              # 核心业务逻辑
-│   │   ├── constants/     # 常量定义
-│   │   ├── models/        # 数据模型
-│   │   ├── services/      # 服务层（API调用等）
-│   │   └── transformers/  # 数据转换器
-│   ├── layouts/           # 页面布局组件
-│   ├── router/            # 路由配置
-│   ├── stores/            # 状态管理(Pinia)
-│   ├── types/             # TypeScript类型定义
-│   ├── views/             # 页面组件
-│   │   ├── auth/          # 认证相关页面
-│   │   ├── dashboard/     # 仪表板页面
-│   │   └── project/       # 项目相关页面
-│   ├── App.vue            # 根组件
-│   └── main.ts            # 应用入口文件
-├── index.html             # HTML模板文件
-├── package.json           # 项目配置和依赖
-├── tsconfig.json          # TypeScript配置
-├── vite.config.ts         # Vite配置文件
-└── README.md              # 项目说明文档
-```
-
-### src文件夹说明
-
-这份文档旨在作为你项目的 **“导航指南”**。当你或你的 AI 助手需要创建新文件时，请查阅此表以决定文件的归属。
+---
+trigger: model_decision
+description: 这份文档旨在作为你项目的 **“导航指南”**。当你或你的 AI 助手需要创建新文件时，请查阅此表以决定文件的归属。
+---
 
 这套架构的核心逻辑是：**把“业务逻辑（Core）”、“交互逻辑（Composables）”和“界面展示（Components）”彻底分开。**
 
@@ -99,7 +9,8 @@ npm run format
 
 ### 📂 1. `src/assets/` —— 静态资源库
 
-* **简介**：存放项目中静态的文件，这些文件会被 Webpack/Vite 编译打包。
+- **简介**：存放项目中静态的文件，这些文件会被 Webpack/Vite 编译打包。
+
 - **判断标准**：
   - 如果是代码里引用的图片（如 `import logo from ...`），放这里。
   - 如果是全局的 SCSS 变量文件、Reset CSS，放这里。
@@ -107,7 +18,8 @@ npm run format
 
 ### 📂 2. `src/core/` —— 业务大脑 (纯 TS/JS)
 
-* **简介**：这是项目的**核心引擎**。这里存放的是**完全不依赖 Vue** 的纯 TypeScript 代码。即使你把界面换成 React 或 Angular，这里的代码应该能直接复用。
+- **简介**：这是项目的**核心引擎**。这里存放的是**完全不依赖 Vue** 的纯 TypeScript 代码。即使你把界面换成 React 或 Angular，这里的代码应该能直接复用。
+
 - **子目录辨析**：
   - `constants/`：**单一真理来源**。消灭代码里的“魔法值”。（例如：默认地图坐标、API 状态码、下拉框的选项列表）。
   - `models/`：**数据契约**。定义数据的形状（Interface）。所有业务对象（User, Project, VisualEntity）的类型定义都必须在这里。
@@ -117,7 +29,8 @@ npm run format
 
 ### 📂 3. `src/composables/` —— 交互技能包 (Vue Hooks)
 
-* **简介**：这是 Vue 的 **Composition API (Hooks)**。这里存放**包含 Vue 响应式特性**（`ref`, `computed`, `watch`）的逻辑复用代码。
+- **简介**：这是 Vue 的 **Composition API (Hooks)**。这里存放**包含 Vue 响应式特性**（`ref`, `computed`, `watch`）的逻辑复用代码。
+
 - **判断标准**：
   - 如果一段逻辑需要“记忆状态”（比如 `isLoading`）或者“监听变化”，放这里。
   - ❌ **不要放**：纯粹的数学计算（那是 `utils`）或纯粹的数据结构转换（那是 `core/transformers`）。
@@ -128,7 +41,8 @@ npm run format
 
 ### 📂 4. `src/stores/` —— 全局记忆 (Pinia)
 
-* **简介**：存放需要在**整个应用范围内共享**的数据。
+- **简介**：存放需要在**整个应用范围内共享**的数据。
+
 - **判断标准**：
   - 如果数据只在 A 组件和 B 组件（父子关系）之间用，用 Props。
   - 如果数据要在“地图组件”和“图谱组件”（兄弟关系）之间同步，必须放这里。
@@ -136,7 +50,8 @@ npm run format
 
 ### 📂 5. `src/components/` —— 视图积木 (Vue 组件)
 
-* **简介**：这里只放 `.vue` 文件。它们应该尽量保持“愚蠢”，只负责渲染数据和抛出事件，少写复杂的业务逻辑。
+- **简介**：这里只放 `.vue` 文件。它们应该尽量保持“愚蠢”，只负责渲染数据和抛出事件，少写复杂的业务逻辑。
+
 - **子目录辨析**：
   - `common/`：**通用组件**。假如明天你要开发一个“电商后台”，这里的组件（按钮、Loading、Toast）应该能直接拷过去用。**严禁包含业务逻辑**。
   - `visualizers/`：**核心特性组件**。地图、图谱、表格的具体实现。它们可以读取 `VisualEntity`，但具体的转换逻辑应该在 `core` 里。
@@ -145,7 +60,8 @@ npm run format
 
 ### 📂 6. `src/views/` —— 页面容器
 
-* **简介**：对应路由（Router）的页面级组件。
+- **简介**：对应路由（Router）的页面级组件。
+
 - **判断标准**：
   - `views` 是**容器**，`components` 是**内容**。
   - `views` 里的文件通常负责：1. 获取 URL 参数；2. 调用 Store 加载数据；3. 摆放 Components。
@@ -153,12 +69,13 @@ npm run format
 
 ### 📂 7. `src/utils/` —— 瑞士军刀 (通用工具)
 
-* **简介**：**完全通用的**纯函数工具库。
+- **简介**：**完全通用的**纯函数工具库。
+
 - **判断标准**：
   - **零依赖**：这里的代码**绝对不能**引用 `src/core` 或 `src/stores`。
   - **可移植**：这里的代码应该能直接复制到任何 JavaScript 项目中运行（如：日期格式化、深拷贝、生成随机 ID）。
 
-#### 📂 `src/layouts/` —— 页面框架
+#### 📂 8. `src/layouts/` —— 页面框架
 
 * **简介**：存放页面的**结构模版**。通常包含导航栏（Header）、侧边栏（Sidebar）、底部（Footer）以及内容插槽（`<slot />`）。
 - **使用场景**：
@@ -167,7 +84,7 @@ npm run format
   - `BlankLayout.vue`：全屏地图或大屏展示时的空白布局。
 
 
-#### 📂 `src/types/` —— 通用类型定义 (辅助)
+#### 📂 9.`src/types/` —— 通用类型定义 (辅助)
 
 * **简介**：存放**非业务核心**的 TypeScript 类型定义。
 - **判断标准**：
@@ -211,7 +128,9 @@ npm run format
     👉 先在 `src/core/services/dataService.ts` 定义函数，然后在 `src/composables/business/useProjectData.ts` 里调用它。
 
 ---
+
 ### 注意
+
 src/types/ 和 src/core/models/ 共存
 
 建议的分工：
@@ -221,9 +140,3 @@ src/core/models/：存放 “有血有肉的业务实体”。
 
 src/types/：存放 “通用的、辅助的类型”。
 例如：Pagination（分页参数结构）、ApiResponse（后端接口通用的 { code, msg, data } 壳子）、第三方库的补充类型声明（.d.ts）。
-
-
-
-## 环境要求
-
-- Node.js >= 20.19.0 或 >= 22.12.0

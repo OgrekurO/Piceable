@@ -44,9 +44,9 @@ import { ElMessage } from 'element-plus';
 // 引入 Vxe-Table
 import 'vxe-table/lib/style.css'
 import {VxeTable, VxeColumn } from 'vxe-table'
-import CreateProjectDialog from '@/components/uploadFile/CreateProjectDialog.vue';
-import DeleteConfirmDialog from '@/components/dialog/DeleteConfirmDialog.vue';
-import { getProjects, deleteProject } from '@/services/projectService';
+import CreateProjectDialog from '@/components/editors/Project/CreateProjectDialog.vue';
+import DeleteConfirmDialog from '@/components/common/feedback/DeleteConfirmDialog.vue';
+import { getProjects, deleteProject } from '@/core/services/projectService';
 
 const router = useRouter();
 

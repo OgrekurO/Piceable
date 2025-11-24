@@ -69,16 +69,16 @@ import "leaflet/dist/leaflet.css";
 import { useMapStore } from '@/stores/mapStore';
 import { storeToRefs } from "pinia";
 import { PanelLeftOpen, Route, RouteOff } from 'lucide-vue-next';
-import PopupCard from '@/components/map/PopupCard.vue';
-import AnnotationForm from '@/components/map/AnnotationForm.vue';
-import LayerSwitcher from '@/components/map/LayerSwitcher.vue';
-import LanguageSwitcher from '@/components/map/LanguageSwitcher.vue';
-import LabelToggle from '@/components/map/LabelToggle.vue';
-import MapSidebar from '@/components/map/mapSidebar.vue';
-import type { Annotation, SearchResult } from '../types/map.ts';
-import type { VisualEntity } from '../types/entity';
-import { parseCSV } from '@/services/fileUploadService';
-import { MAP_STYLES } from '@/constants/map';
+import PopupCard from '@/components/visualizers/Map/PopupCard.vue';
+import AnnotationForm from '@/components/visualizers/Map/AnnotationForm.vue';
+import LayerSwitcher from '@/components/visualizers/Map/LayerSwitcher.vue';
+import LanguageSwitcher from '@/components/visualizers/Map/LanguageSwitcher.vue';
+import LabelToggle from '@/components/visualizers/Map/LabelToggle.vue';
+import MapSidebar from '@/components/visualizers/Map/mapSidebar.vue';
+import type { Annotation, SearchResult } from '@/types/map';
+import type { VisualEntity } from '@/types/entity';
+import { parseCSV } from '@/core/services/fileUploadService';
+import { MAP_STYLES } from '@/core/constants/map';
 
 // --- Store ---
 const mapStore = useMapStore();

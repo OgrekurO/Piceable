@@ -67,7 +67,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
-import { setAccessToken } from '@/services/authService'
+import { setAccessToken } from '@/core/services/authService'
 
 // 获取认证存储和路由实例
 const authStore = useAuthStore()

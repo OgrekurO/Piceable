@@ -3,7 +3,7 @@
  */
 import { defineStore } from 'pinia'
 // import { User } from '../types/user.ts'
-import type { LibraryInfo } from '../types/index.ts'
+import type { LibraryInfo } from '@/types'
 
 interface AppState {
   // user: User | null;
@@ -20,12 +20,12 @@ export const useAppStore = defineStore('app', {
     loading: false,
     error: null
   }),
-  
+
   getters: {
     isAuthenticated: (state) => !!state.user,
     hasLibraryInfo: (state) => !!state.libraryInfo
   },
-  
+
   actions: {
     /**
      * 设置用户信息
@@ -35,7 +35,7 @@ export const useAppStore = defineStore('app', {
     setUser(user: any) {
       this.user = user
     },
-    
+
     /**
      * 设置库信息
      * @param libraryInfo 库信息
@@ -43,7 +43,7 @@ export const useAppStore = defineStore('app', {
     setLibraryInfo(libraryInfo: LibraryInfo | null) {
       this.libraryInfo = libraryInfo
     },
-    
+
     /**
      * 设置加载状态
      * @param loading 加载状态
@@ -51,7 +51,7 @@ export const useAppStore = defineStore('app', {
     setLoading(loading: boolean) {
       this.loading = loading
     },
-    
+
     /**
      * 设置错误信息
      * @param error 错误信息
@@ -59,7 +59,7 @@ export const useAppStore = defineStore('app', {
     setError(error: string | null) {
       this.error = error
     },
-    
+
     /**
      * 清除错误信息
      */

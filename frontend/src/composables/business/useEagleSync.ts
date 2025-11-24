@@ -1,6 +1,6 @@
-import { getLibraryInfo, getItems } from './pluginCommunication'
-import { getProjects, createProject, type Project } from './projectService'
-import type { ProjectSchema, FieldType } from '../types/schema'
+import { getLibraryInfo, getItems } from '@/core/services/pluginCommunication'
+import { getProjects, createProject, type Project } from '@/core/services/projectService'
+import type { ProjectSchema, FieldType } from '@/types/schema'
 
 /**
  * Eagle 同步服务

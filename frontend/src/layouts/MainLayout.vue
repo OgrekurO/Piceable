@@ -112,8 +112,8 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useMapStore } from '@/stores/mapStore'
-import { getProjects, type Project, onProjectUpdate } from '@/services/projectService'
-import { getUploadedItems } from '@/services/uploadedItemsService'
+import { getProjects, type Project, onProjectUpdate } from '@/core/services/projectService'
+import { getUploadedItems } from '@/core/services/uploadedItemsService'
 
 // 获取认证存储和路由实例
 const authStore = useAuthStore()

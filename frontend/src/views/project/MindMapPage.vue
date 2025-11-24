@@ -175,9 +175,9 @@ import { ref, onMounted, reactive, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { ArrowLeft, Loader2, Plus, X, PlusCircle, Share2, Upload } from 'lucide-vue-next';
 import { ElMessage } from 'element-plus';
-import GraphCanvas from '@/components/graph/GraphCanvas.vue';
-import GraphSidebar from '@/components/graph/GraphSidebar.vue';
-import GraphLegend from '@/components/graph/GraphLegend.vue';
+import GraphCanvas from '@/components/visualizers/Graph/GraphCanvas.vue';
+import GraphSidebar from '@/components/visualizers/Graph/GraphSidebar.vue';
+import GraphLegend from '@/components/visualizers/Graph/GraphLegend.vue';
 import * as d3 from 'd3';
 import { toPng } from 'html-to-image';
 import * as XLSX from 'xlsx';
@@ -186,7 +186,7 @@ import { storeToRefs } from 'pinia';
 import type { VisualEntity, BaseItem } from '@/types/entity';
 import type { ProjectSchema } from '@/types/schema';
 import { FieldType } from '@/types/schema';
-import { parseCSV } from '@/services/fileUploadService';
+import { parseCSV } from '@/core/services/fileUploadService';
 
 // Types
 interface GraphNode extends d3.SimulationNodeDatum {

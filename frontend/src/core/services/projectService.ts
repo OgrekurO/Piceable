@@ -1,6 +1,6 @@
 import { requestToBackend } from './httpClient';
 
-import type { ProjectSchema } from '../types/schema';
+import type { ProjectSchema } from '@/types/schema';
 
 export interface Project {
   id: number;

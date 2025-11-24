@@ -4,25 +4,10 @@
  */
 
 import { getFromEaglePlugin as get, postToEaglePlugin as post, putToEaglePlugin as put } from './httpClient';
+import type { EagleItem, LibraryInfo } from '@/core/models';
 
-// 定义项目数据类型
-export interface EagleItem {
-  id: string;
-  name: string;
-  folders: string[];
-  tags: string[];
-  annotation: string;
-  url: string;
-  lastModified: number;
-  thumbnail?: string;
-}
-
-// 定义库信息类型
-export interface LibraryInfo {
-  name: string;
-  path: string;
-  itemsCount: number;
-}
+// 重导出类型定义(实际定义在 core/models 中)
+export type { EagleItem, LibraryInfo } from '@/core/models';
 
 // 通信方式枚举
 export enum CommunicationMethod {
@@ -48,7 +33,7 @@ export function setCommunicationMethod(method: CommunicationMethod): void {
 export async function getLibraryInfo(): Promise<LibraryInfo> {
   try {
     console.log('[PLUGIN_COMM] 获取库信息');
-    
+
     if (currentMethod === CommunicationMethod.HttpApi) {
       const response = await get('/api/v1/library');
       if (response.success) {
@@ -72,11 +57,11 @@ export async function getLibraryInfo(): Promise<LibraryInfo> {
 export async function getItems(): Promise<EagleItem[]> {
   try {
     console.log('[PLUGIN_COMM] 获取项目列表');
-    
+
     if (currentMethod === CommunicationMethod.HttpApi) {
       const response = await get('/api/v1/items');
       console.log('[PLUGIN_COMM] API响应结构:', response);
-      
+
       if (response.success) {
         // 根据实际API响应结构调整
         // API返回格式: { success: true, count: number, data: EagleItem[] }
@@ -84,7 +69,7 @@ export async function getItems(): Promise<EagleItem[]> {
           // 如果response.data本身就是数组
           console.log('[PLUGIN_COMM] 项目数据格式正确，数组长度:', response.data.length);
           // 检查前几个项目的thumbnail字段
-          console.log('[PLUGIN_COMM] 前3个项目thumbnail字段:', 
+          console.log('[PLUGIN_COMM] 前3个项目thumbnail字段:',
             response.data.slice(0, 3).map((item: any) => ({
               id: item.id,
               thumbnail: item.thumbnail,
@@ -95,7 +80,7 @@ export async function getItems(): Promise<EagleItem[]> {
           // 如果response.data.data是数组（嵌套结构）
           console.log('[PLUGIN_COMM] 项目数据格式为嵌套结构，数组长度:', response.data.data.length);
           // 检查前几个项目的thumbnail字段
-          console.log('[PLUGIN_COMM] 前3个项目thumbnail字段:', 
+          console.log('[PLUGIN_COMM] 前3个项目thumbnail字段:',
             response.data.data.slice(0, 3).map((item: any) => ({
               id: item.id,
               thumbnail: item.thumbnail,
@@ -127,7 +112,7 @@ export async function getItems(): Promise<EagleItem[]> {
 export async function getItem(id: string): Promise<EagleItem> {
   try {
     console.log(`[PLUGIN_COMM] 获取项目，ID: ${id}`);
-    
+
     if (currentMethod === CommunicationMethod.HttpApi) {
       const response = await get(`/api/v1/item/${id}`);
       if (response.success) {
@@ -152,7 +137,7 @@ export async function getItem(id: string): Promise<EagleItem> {
 export async function updateItem(itemData: EagleItem): Promise<boolean> {
   try {
     console.log('[PLUGIN_COMM] 更新项目:', itemData);
-    
+
     if (currentMethod === CommunicationMethod.HttpApi) {
       const response = await put(`/api/v1/item/${itemData.id}`, itemData);
       if (response.success) {
@@ -177,7 +162,7 @@ export async function updateItem(itemData: EagleItem): Promise<boolean> {
 export async function syncDataToEagle(data: Record<string, any>): Promise<boolean> {
   try {
     console.log('[PLUGIN_COMM] 同步数据:', data);
-    
+
     if (currentMethod === CommunicationMethod.HttpApi) {
       const response = await post('/api/v1/sync', data);
       if (response.success) {

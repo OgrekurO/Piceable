@@ -84,8 +84,8 @@
 import { ref, watch } from 'vue';
 import { ElDialog, ElForm, ElFormItem, ElInput, ElButton, ElIcon, ElMessage } from 'element-plus';
 import { Upload, Refresh, Document, ArrowLeft } from '@element-plus/icons-vue';
-import { createProject } from '@/services/projectService';
-import FileUploadDialog from '@/components/uploadFile/FileUploadDialog.vue';
+import { createProject } from '@/core/services/projectService';
+import FileUploadDialog from '@/components/editors/Project/FileUploadDialog.vue';
 import { useRouter } from 'vue-router';
 
 // 定义组件属性

@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { isAdmin } from '@/services/authService'
+import { isAdmin } from '@/core/services/authService'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -11,36 +11,36 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'Home',
-        component: () => import('@/views/HomePage.vue')
+        component: () => import('@/views/dashboard/HomePage.vue')
       },
       {
         path: '/table',
         name: 'Table',
-        component: () => import('@/views/TablePage.vue'),
+        component: () => import('@/views/project/TablePage.vue'),
         meta: { requiresAuth: true }
       },
       {
         path: '/mindmap',
         name: 'MindMap',
-        component: () => import('@/views/MindMapPage.vue'),
+        component: () => import('@/views/project/MindMapPage.vue'),
         meta: { requiresAuth: false }
       },
       {
         path: '/admin',
         name: 'Admin',
-        component: () => import('@/views/AdminDashboard.vue'),
+        component: () => import('@/views/dashboard/AdminDashboard.vue'),
         meta: { requiresAuth: true, requiresAdmin: true }
       },
       {
         path: '/coordinate',
         name: 'Coordinate',
-        component: () => import('@/views/CoordinatePage.vue'),
+        component: () => import('@/views/project/CoordinatePage.vue'),
         meta: { requiresAuth: true }
       },
       {
         path: '/map',
         name: 'Map',
-        component: () => import('@/views/MapView.vue'),
+        component: () => import('@/views/project/MapView.vue'),
         meta: { requiresAuth: false }
       }
     ]
@@ -48,27 +48,27 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'Login',
-    component: () => import('@/views/LoginPage.vue')
+    component: () => import('@/views/auth/LoginPage.vue')
   },
   {
     path: '/settings',
     name: 'Settings',
-    component: () => import('@/views/SettingsPage.vue')
+    component: () => import('@/views/dashboard/SettingsPage.vue')
   },
   {
     path: '/phone-login',
     name: 'PhoneLogin',
-    component: () => import('@/views/PhoneLogin.vue')
+    component: () => import('@/views/auth/PhoneLogin.vue')
   },
   {
     path: '/register',
     name: 'Register',
-    component: () => import('@/views/RegisterPage.vue')
+    component: () => import('@/views/auth/RegisterPage.vue')
   },
   {
     path: '/forgot-password',
     name: 'ForgotPassword',
-    component: () => import('@/views/ForgotPassword.vue')
+    component: () => import('@/views/auth/ForgotPassword.vue')
   }
 ]
 

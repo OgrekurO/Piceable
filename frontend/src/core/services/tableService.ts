@@ -1,5 +1,5 @@
 import { requestToBackend } from './httpClient';
-import type { Table, ProjectSchema } from '../types/schema';
+import type { Table, ProjectSchema } from '@/types/schema';
 
 /**
  * 获取项目下的所有表格

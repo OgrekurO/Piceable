@@ -1,5 +1,5 @@
-import type { BaseItem, VisualEntity, GeoData, TimeData, LinkData } from '../types/entity';
-import { type ProjectSchema, FieldType } from '../types/schema';
+import type { BaseItem, VisualEntity, GeoData, TimeData, LinkData } from '@/types/entity';
+import { type ProjectSchema, FieldType } from '@/types/schema';
 
 export class ItemTransformer {
     /**

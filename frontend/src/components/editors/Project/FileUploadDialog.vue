@@ -61,7 +61,7 @@
 import { ref, watch } from 'vue';
 import { ElDialog, ElForm, ElFormItem, ElInput, ElUpload, ElButton, ElIcon, ElMessage, ElLink } from 'element-plus';
 import { UploadFilled } from '@element-plus/icons-vue';
-import { uploadFile } from '@/services/fileUploadService';
+import { uploadFile } from '@/core/services/fileUploadService';
 import type { UploadFile } from 'element-plus';
 import { useRouter } from 'vue-router';
 

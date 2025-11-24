@@ -83,7 +83,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
-import { register as registerApi } from '@/services/authService'
+import { register as registerApi } from '@/core/services/authService'
 
 // 获取认证存储和路由实例
 const authStore = useAuthStore()

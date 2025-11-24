@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
-import type { Bookmark, SearchResult } from '../types/map.ts';
-import type { VisualEntity, BaseItem } from '../types/entity';
-import type { ProjectSchema } from '../types/schema';
-import { ItemTransformer } from '../services/itemTransformer';
+import type { Bookmark, SearchResult } from '@/types/map';
+import type { VisualEntity, BaseItem } from '@/types/entity';
+import type { ProjectSchema } from '@/types/schema';
+import { ItemTransformer } from '@/core/transformers/itemTransformer';
 
 // Palladio-inspired Palette
 const COLOR_PALETTE = [

@@ -81,7 +81,7 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
-import MainLayout from '../layouts/MainLayout.vue'
+import MainLayout from '@/layouts/MainLayout.vue'
 
 // 默认设置
 const defaultSettings = {

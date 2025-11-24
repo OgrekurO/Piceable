@@ -103,8 +103,8 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
 import * as d3 from 'd3';
-import Coordinate3D from '../components/coordinate/Coordinate3D.vue';
-import Coordinate2D from '../components/coordinate/Coordinate2D.vue';
+import Coordinate3D from '@/components/visualizers/Coordinate/Coordinate3D.vue';
+import Coordinate2D from '@/components/visualizers/Coordinate/Coordinate2D.vue';
 
 // 数据点类型定义
 interface DataPoint {

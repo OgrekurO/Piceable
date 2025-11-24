@@ -1,29 +1,20 @@
 import { ref, computed } from 'vue'
-import { 
-  getItems, 
-  updateItem, 
+import {
+  getItems,
+  updateItem,
   CommunicationMethod,
   setCommunicationMethod,
   getLibraryInfo
-} from './pluginCommunication'
-import type { EagleItem, LibraryInfo as PluginLibraryInfo } from './pluginCommunication'
+} from '@/core/services/pluginCommunication'
+import type { EagleItem, LibraryInfo } from '@/core/models'
 import { ElMessage } from 'element-plus'
 
-// 定义数据类型
-interface Item {
-  id: string
+// Item 是 EagleItem 的 UI 适配版本,支持更灵活的数据格式
+interface Item extends Omit<EagleItem, 'folders' | 'tags' | 'lastModified'> {
   thumbnail: string
-  name: string
   folders: string[] | string
   tags: string[] | string
-  annotation: string
   lastModified: number | string
-  url: string
-}
-
-interface LibraryInfo {
-  name: string
-  itemsCount: number
 }
 
 // 定义响应类型
@@ -45,19 +36,19 @@ export function useItems() {
   const refreshData = async () => {
     loading.value = true
     error.value = null
-    
+
     try {
       // 获取项目列表
       const itemsData = await getItems()
       console.log('[DEBUG] API响应:', itemsData); // 调试日志
-      
+
       if (itemsData) {
         // 清空现有数据
         items.value = []
-        
+
         // 确保数据是数组
         const data = Array.isArray(itemsData) ? itemsData : []
-        
+
         // 处理每个项目
         data.forEach(item => {
           // 创建新的Item对象
@@ -71,25 +62,22 @@ export function useItems() {
             annotation: item.annotation || '',
             lastModified: item.lastModified || ''
           }
-          
+
           // 添加到items数组
           items.value.push(newItem)
         })
-        
+
         console.log('[DEBUG] 处理后的项目数据:', items.value); // 调试日志
       } else {
         items.value = []
       }
-      
+
       // 获取库信息
       const libraryData = await getLibraryInfo()
       if (libraryData) {
-        libraryInfo.value = {
-          name: libraryData.name,
-          itemsCount: libraryData.itemsCount || itemsData?.length || 0
-        }
+        libraryInfo.value = libraryData
       }
-      
+
       ElMessage.success('数据刷新成功')
     } catch (err) {
       error.value = err instanceof Error ? err.message : '获取数据失败'
@@ -103,10 +91,10 @@ export function useItems() {
   // 保存项目更改
   const saveItemChanges = async (row: Item) => {
     try {
-      const itemToUpdate: Partial<EagleItem> & {id: string} = { 
+      const itemToUpdate: Partial<EagleItem> & { id: string } = {
         id: row.id
       }
-      
+
       // 添加可能的更改字段
       if (row.name !== undefined) itemToUpdate.name = row.name as string
       if (row.annotation !== undefined) itemToUpdate.annotation = row.annotation as string
@@ -126,7 +114,7 @@ export function useItems() {
           itemToUpdate.tags = tags as string[]
         }
       }
-      
+
       await updateItem(itemToUpdate as EagleItem)
       delete editedItems.value[row.id]
       ElMessage.success('更改已保存')

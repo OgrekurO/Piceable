@@ -71,7 +71,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { User } from '@/types'
-import { getAllUsers, updateUserRole, isAdmin } from '@/services/authService'
+import { getAllUsers, updateUserRole, isAdmin } from '@/core/services/authService'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 
