@@ -1,82 +1,98 @@
 <template>
   <div class="detail-panel">
+    <!-- 顶部图片区域 -->
     <div class="detail-header">
       <img v-if="selectedRow && selectedRow.thumbnail" :src="selectedRow.thumbnail" alt="预览" class="detail-image" />
       <div v-else class="detail-image-placeholder"></div>
     </div>
+    
     <div class="detail-body">
-      <div class="detail-item">
-        <input 
-          :value="selectedRow ? selectedRow.name : ''" 
-          @input="updateField('name', $event)" 
-          @change="save"
-          type="text" 
-          placeholder="名称"
-          class="centered-input"
-        />
-      </div>
-      <div class="detail-item">
-        <input 
-          :value="selectedRow ? formatValue(selectedRow.folders) : ''" 
-          @input="updateField('folders', $event)" 
-          @change="save"
-          type="text" 
-          placeholder="文件夹"
-        />
-      </div>
-      <div class="detail-item">
-        <input 
-          :value="selectedRow ? formatValue(selectedRow.tags) : ''" 
-          @input="updateField('tags', $event)" 
-          @change="save"
-          type="text" 
-          placeholder="标签"
-        />
-      </div>
-      <div class="annotation-section">
-        <div class="divider"></div>
-        <div class="detail-item">
-          <textarea 
-            :value="selectedRow ? selectedRow.annotation : ''" 
-            @input="updateField('annotation', $event)" 
+      <!-- 动态渲染所有字段 -->
+      <div 
+        v-for="col in displayColumns" 
+        :key="col.field"
+        :class="col.field === 'annotation' ? 'annotation-section' : 'detail-item'"
+      >
+        <!-- 分隔线（注释前） -->
+        <div v-if="col.field === 'annotation'" class="divider"></div>
+        
+        <!-- 缩略图字段跳过（已在header显示） -->
+        <template v-if="col.field !== 'thumbnail'">
+          <!-- 注释字段 (Textarea) -->
+          <div v-if="col.field === 'annotation'" class="detail-item">
+            <textarea 
+              :value="selectedRow ? selectedRow[col.field] : ''" 
+              @input="updateField(col.field, $event)" 
+              @change="save"
+              rows="3"
+              :placeholder="col.title"
+            ></textarea>
+          </div>
+          
+          <!-- 其他字段 (Input) -->
+          <input 
+            v-else
+            :value="selectedRow ? formatValue(selectedRow[col.field]) : ''" 
+            @input="updateField(col.field, $event)" 
             @change="save"
-            rows="3"
-            placeholder="注释"
-          ></textarea>
-        </div>
-        <div class="divider"></div>
-      </div>
-      <div class="detail-item meta-info">
-        <input 
-          :value="selectedRow ? selectedRow.lastModified : ''" 
-          @input="updateField('lastModified', $event)" 
-          type="text" 
-          placeholder="最后修改"
-          readonly
-        />
+            type="text" 
+            :placeholder="col.title"
+            :class="{ 
+              'centered-input': col.field === 'name',
+              'meta-info': col.field === 'lastModified'
+            }"
+            :readonly="col.field === 'lastModified'"
+          />
+        </template>
+        
+        <!-- 分隔线（注释后） -->
+        <div v-if="col.field === 'annotation'" class="divider"></div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// 定义数据类型
+import { defineProps, defineEmits, watch, computed, ref } from 'vue'
+
 interface Item {
-  id: string
+  id: string | number
   thumbnail?: string
-  name?: string
-  folders?: string[] | string
-  tags?: string[] | string
-  annotation?: string
-  lastModified?: number | string
-  url?: string
   [key: string]: any
 }
 
 // 定义属性
 const props = defineProps<{
   selectedRow: Item | null
+  columns?: any[]
 }>()
+
+// Debug logging
+watch(() => props.selectedRow, (newVal) => {
+  console.log('[DetailPanel] selectedRow changed:', newVal)
+})
+watch(() => props.columns, (newVal) => {
+  console.log('[DetailPanel] columns changed:', newVal)
+}, { immediate: true })
+
+// 计算显示的列：如果 props.columns 存在则使用，否则从 selectedRow 生成
+const displayColumns = computed(() => {
+  if (props.columns && props.columns.length > 0) {
+    return props.columns
+  }
+  
+  if (props.selectedRow) {
+    // Fallback: generate columns from row keys
+    return Object.keys(props.selectedRow)
+      .filter(key => key !== 'id' && key !== 'data') // Filter out internal fields if needed
+      .map(key => ({
+        field: key,
+        title: key.charAt(0).toUpperCase() + key.slice(1) // Simple title generation
+      }))
+  }
+  
+  return []
+})
 
 // 定义事件
 const emit = defineEmits<{
@@ -100,7 +116,7 @@ const formatValue = (value: string[] | string | undefined): string => {
   if (Array.isArray(value)) {
     return value.join(', ')
   }
-  return value
+  return String(value)
 }
 </script>
 
@@ -142,33 +158,32 @@ const formatValue = (value: string[] | string | undefined): string => {
 }
 
 .detail-item {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-
+  margin-bottom: 15px;
 }
-
-
 
 .detail-item input,
 .detail-item textarea {
+  width: 100%;
   padding: 8px;
-  border: 0.5px solid var(--color-border);
+  border: 1px solid #eee;
   border-radius: 4px;
-  font-size: 13px;
-  background-color: var(--color-background);
+  font-size: 14px;
+  transition: border-color 0.2s;
 }
 
 .detail-item input:focus,
 .detail-item textarea:focus {
+  border-color: var(--color-primary);
   outline: none;
-  border-color: #409eff;
-  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
 }
 
-.detail-item input::placeholder,
-.detail-item textarea::placeholder {
-  color: #aaa;
+.centered-input {
+  text-align: center;
+  font-weight: bold;
+  font-size: 16px !important;
+  border: none !important;
+  background: transparent;
+  margin-bottom: 10px;
 }
 
 .annotation-section {
@@ -180,15 +195,16 @@ const formatValue = (value: string[] | string | undefined): string => {
 .divider {
   height: 0.5px;
   background-color: var(--color-border);
-  margin: 5px 0;
+  margin: 10px 0;
 }
 
 .meta-info {
-  margin-top: auto;
-}
-
-.meta-info input {
   color: #999;
   font-size: 12px;
+  text-align: right;
+}
+
+.detail-item.meta-info {
+  margin-top: auto;
 }
 </style>
