@@ -70,27 +70,39 @@ const props = defineProps<{
 // Debug logging
 watch(() => props.selectedRow, (newVal) => {
   console.log('[DetailPanel] selectedRow changed:', newVal)
+  if (newVal) {
+    console.log('[DetailPanel] selectedRow.data:', newVal.data)
+    console.log('[DetailPanel] selectedRow keys:', Object.keys(newVal))
+    if (newVal.data) {
+      console.log('[DetailPanel] data keys:', Object.keys(newVal.data))
+    }
+  }
 })
 watch(() => props.columns, (newVal) => {
   console.log('[DetailPanel] columns changed:', newVal)
 }, { immediate: true })
 
-// 计算显示的列：如果 props.columns 存在则使用，否则从 selectedRow 生成
+// 计算显示的列：优先从 selectedRow.data 生成，否则使用 props.columns
 const displayColumns = computed(() => {
+  // 优先从 selectedRow.data 生成列（使用实际的字段名）
+  if (props.selectedRow && props.selectedRow.data) {
+    const cols = Object.keys(props.selectedRow.data)
+      .filter(key => key !== '') // 过滤空键
+      .map(key => ({
+        field: key,
+        title: key // 直接使用字段名作为标题
+      }))
+    console.log('[DetailPanel] Generated columns from selectedRow.data:', cols)
+    return cols
+  }
+  
+  // 回退到 props.columns
   if (props.columns && props.columns.length > 0) {
+    console.log('[DetailPanel] Using props.columns:', props.columns)
     return props.columns
   }
   
-  if (props.selectedRow) {
-    // Fallback: generate columns from row keys
-    return Object.keys(props.selectedRow)
-      .filter(key => key !== 'id' && key !== 'data') // Filter out internal fields if needed
-      .map(key => ({
-        field: key,
-        title: key.charAt(0).toUpperCase() + key.slice(1) // Simple title generation
-      }))
-  }
-  
+  console.log('[DetailPanel] No columns available')
   return []
 })
 
