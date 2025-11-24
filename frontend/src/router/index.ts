@@ -25,6 +25,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/project/MindMapPage.vue'),
         meta: { requiresAuth: false }
       },
+
       {
         path: '/admin',
         name: 'Admin',
