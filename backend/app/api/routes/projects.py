@@ -5,6 +5,10 @@ from app.crud.projects import get_projects_from_db, get_project_from_db, create_
 from app.crud.tables import create_table, get_tables_by_project, get_table
 from app.api.dependencies import get_current_active_user
 from app.models.schemas import User
+from pydantic import BaseModel
+from app.services.geocoding_service import GeocodingService
+from app.database.session import get_db
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
@@ -111,3 +115,121 @@ async def create_project_table(project_id: int, table: TableCreate, current_user
         return new_table
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"创建表格失败: {str(e)}")
+
+# ========== 地理编码相关 API ==========
+
+from fastapi import BackgroundTasks
+
+class GeocodeRequest(BaseModel):
+    """地理编码请求"""
+    addresses: List[str]
+    field_name: str  # 地址字段名称
+    background: bool = False  # 是否后台处理
+    copy_to_project: bool = True  # 是否复制到项目本地表（默认复制）
+
+class GeocodeResponse(BaseModel):
+    """地理编码响应"""
+    results: dict  # 地址 -> 坐标映射
+    failed: List[str]  # 失败的地址列表
+    cached_count: int  # 缓存命中数量
+    new_count: int  # 新编码数量
+    message: str = "Success"  # 状态消息
+
+async def process_geocoding_background(
+    project_id: int,
+    addresses: List[str],
+    use_project_cache: bool
+):
+    """后台处理地理编码"""
+    try:
+        print(f"[Background] 开始后台地理编码 {len(addresses)} 个地址...")
+        # 注意：后台任务中无法使用依赖注入的 db，需要创建新的连接
+        from app.database.connection import get_db_connection
+        
+        # 创建 GeocodingService（使用项目缓存或全局缓存）
+        cache_project_id = project_id if use_project_cache else None
+        service = GeocodingService(db=None, project_id=cache_project_id)
+        
+        await service.batch_geocode(addresses)
+        print(f"[Background] 后台地理编码完成")
+    except Exception as e:
+        print(f"[Background] 后台地理编码失败: {str(e)}")
+
+@router.post("/{project_id}/geocode", response_model=GeocodeResponse)
+async def geocode_addresses(
+    project_id: int,
+    request: GeocodeRequest,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    批量地理编码
+    
+    Args:
+        project_id: 项目ID
+        request: 包含地址列表和字段名的请求
+        
+    Returns:
+        地理编码结果,包括成功和失败的地址
+    """
+    # 检查项目权限
+    project = get_project_from_db(project_id, current_user.id)
+    if not project:
+        raise HTTPException(status_code=404, detail="项目未找到")
+    
+    # 创建地理编码服务（始终使用全局缓存）
+    geocoding_service = GeocodingService(db=None)
+    
+    # 去重地址列表
+    unique_addresses = list(set(filter(None, request.addresses)))
+    
+    # 如果请求后台处理
+    if request.background:
+        # TODO: 更新后台任务以使用新方法
+        background_tasks.add_task(
+            process_geocoding_background,
+            project_id,
+            unique_addresses,
+            False  # 不再使用项目缓存参数
+        )
+        return GeocodeResponse(
+            results={},
+            failed=[],
+            cached_count=0,
+            new_count=0,
+            message=f"已启动后台处理，共 {len(unique_addresses)} 个地址"
+        )
+    
+    # 同步处理
+    try:
+        if request.copy_to_project:
+            # 使用新方法：地理编码 + 复制到项目本地
+            result = await geocoding_service.geocode_and_copy_to_project(
+                addresses=unique_addresses,
+                target_project_id=project_id,
+                field_name=request.field_name
+            )
+            
+            return GeocodeResponse(
+                results=result["results"],
+                failed=result["failed"],
+                cached_count=result["cached_count"],
+                new_count=result["new_count"],
+                message=f"已复制 {result['copied_count']} 条数据到项目本地表"
+            )
+        else:
+            # 仅地理编码，不复制
+            geocode_results = await geocoding_service.batch_geocode(unique_addresses)
+            
+            cached_count = sum(1 for r in geocode_results.values() if r and r.get('cached'))
+            new_count = len([r for r in geocode_results.values() if r]) - cached_count
+            failed = [addr for addr, r in geocode_results.items() if not r]
+            
+            return GeocodeResponse(
+                results=geocode_results,
+                failed=failed,
+                cached_count=cached_count,
+                new_count=new_count
+            )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"地理编码失败: {str(e)}")

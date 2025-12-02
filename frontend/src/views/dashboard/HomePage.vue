@@ -114,8 +114,10 @@ const handleSyncFromEagle = () => {
 // 处理项目点击事件
 const handleProjectClick = ({ row }: { row: any }) => {
   console.log('[HomePage] 点击项目:', row);
+  // 根据项目的 source_type 决定 source 参数
+  const source = row.source_type || 'upload';
   // 跳转到项目的表格页面
-  router.push(`/table?projectId=${row.id}&source=upload`);
+  router.push(`/table?projectId=${row.id}&source=${source}`);
 };
 
 // 处理右键菜单点击
@@ -159,12 +161,13 @@ const loadProjects = async () => {
     console.log('[HomePage] 开始加载项目列表...');
     const data = await getProjects();
     console.log('[HomePage] 获取到项目数据:', data);
-    // 转换数据格式以匹配现有表格，保留 id 用于导航
+    // 转换数据格式以匹配现有表格，保留 id 和 source_type 用于导航
     projects.value = data.map(project => ({
       id: project.id,
       name: project.name,
       description: project.description,
-      date: formatDate(project.last_modified)
+      date: formatDate(project.last_modified),
+      source_type: project.source_type || 'upload'  // 保留 source_type
     }));
     console.log('[HomePage] 项目列表已更新:', projects.value);
   } catch (error) {

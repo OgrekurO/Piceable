@@ -27,7 +27,6 @@ class User(UserBase):
 class UserInDB(User):
     hashed_password: str
 
-# 项目相关模型
 # 字段类型枚举
 from enum import Enum
 
@@ -60,7 +59,7 @@ class ProjectSchema(BaseModel):
     fields: List[FieldDefinition]
     view_settings: Optional[dict] = None
 
-# 表格模型
+# 2. 表格模型（必须在 Project 之前定义）
 class TableBase(BaseModel):
     name: str
     description: Optional[str] = None
@@ -73,12 +72,11 @@ class Table(TableBase):
     id: int
     project_id: int
     created_at: datetime
-    updated_at: datetime
     
     class Config:
         orm_mode = True
 
-# 项目相关模型
+# 1. 项目相关模型
 class ProjectBase(BaseModel):
     model_config = {"populate_by_name": True}
     
@@ -90,7 +88,7 @@ class ProjectBase(BaseModel):
     # or as a read-only view of the "main" table's schema
     
 class ProjectCreate(ProjectBase):
-    pass
+    table_schema: Optional[dict] = Field(None, alias="schema")
 
 class Project(ProjectBase):
     id: int
@@ -103,7 +101,9 @@ class Project(ProjectBase):
     class Config:
         orm_mode = True
 
-# 数据模型定义 - 动态 schema
+
+
+# 3. 数据模型定义 - 动态 schema
 class Item(BaseModel):
     id: str
     data: dict  # 动态数据

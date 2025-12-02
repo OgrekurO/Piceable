@@ -139,6 +139,48 @@ export const useProjectStore = defineStore('project', {
         },
         setTargetLanguage(lang: string) {
             this.targetLanguage = lang;
+        },
+        /**
+         * 更新字段的语义角色
+         * @param fieldKey 字段键名
+         * @param semanticRole 语义角色
+         * @param geocodingMetadata 地理编码元数据(可选)
+         */
+        updateFieldSemantic(
+            fieldKey: string,
+            semanticRole: string | null,
+            geocodingMetadata?: any
+        ) {
+            if (!this.currentSchema) return;
+
+            const field = this.currentSchema.fields.find(f => f.key === fieldKey);
+            if (field) {
+                if (semanticRole) {
+                    field.semantic_role = semanticRole as any;
+                    if (geocodingMetadata) {
+                        field.geocoding_metadata = geocodingMetadata;
+                    }
+                } else {
+                    // 清除语义角色
+                    delete field.semantic_role;
+                    delete field.geocoding_metadata;
+                }
+            }
+        },
+        /**
+         * 批量更新字段语义
+         * @param fields 更新后的字段定义数组
+         */
+        updateFieldSemantics(fields: any[]) {
+            if (!this.currentSchema) return;
+
+            fields.forEach(updatedField => {
+                const field = this.currentSchema!.fields.find(f => f.key === updatedField.key);
+                if (field) {
+                    field.semantic_role = updatedField.semantic_role;
+                    field.geocoding_metadata = updatedField.geocoding_metadata;
+                }
+            });
         }
     }
 });

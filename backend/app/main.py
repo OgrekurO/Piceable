@@ -38,7 +38,7 @@ app.include_router(projects.router)
 # 其他路由
 @app.get("/")
 async def root():
-    return {"message": "欢迎使用Eagle Ontology API"}
+    return {"message": "欢迎使用 Piceable"}
 
 # 如果需要通过 python main.py 启动，保留以下代码
 if __name__ == "__main__":

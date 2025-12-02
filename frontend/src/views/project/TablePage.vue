@@ -135,7 +135,7 @@ const editConfig = {
  * 切换表格
  */
 const handleSwitchTable = async (tableId: number) => {
-  if (!currentProjectId.value) return
+  if (currentProjectId.value === null) return
   
   await switchTable(tableId, currentProjectId.value)
   generateColumnsFromSchema(currentTableSchema.value)
@@ -155,10 +155,10 @@ const loadProjectData = async (projectId: number) => {
     
     // 选择默认表格
     if (tables.value.length > 0) {
-      const routeTableId = route.query.tableId 
+      const routeTableId = route.query.tableId !== undefined && route.query.tableId !== null
         ? parseInt(route.query.tableId as string) 
         : null
-      const targetTable = routeTableId 
+      const targetTable = routeTableId !== null
         ? tables.value.find(t => t.id === routeTableId) 
         : tables.value[0]
       
@@ -219,7 +219,7 @@ const loadDataBySource = async (source: string, projectId?: string) => {
     projectId: projectId ? parseInt(projectId) : undefined 
   })
   
-  if (projectId) {
+  if (projectId !== undefined && projectId !== null) {
     currentProjectId.value = parseInt(projectId)
   }
 
@@ -228,7 +228,7 @@ const loadDataBySource = async (source: string, projectId?: string) => {
     await refreshEagleData()
     dynamicColumns.value = []
   } else {
-    if (currentProjectId.value) {
+    if (currentProjectId.value !== null) {
       await loadProjectData(currentProjectId.value)
     }
   }

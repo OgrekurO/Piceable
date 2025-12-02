@@ -55,6 +55,13 @@
       </span>
     </template>
   </el-dialog>
+  
+  <!-- 字段语义选择器 - 独立对话框 -->
+  <FieldSemanticSelector
+    v-model="showSemanticSelector"
+    :fields="detectedFields"
+    @confirm="handleSemanticConfirm"
+  />
 </template>
 
 <script setup lang="ts">
@@ -64,6 +71,10 @@ import { UploadFilled } from '@element-plus/icons-vue';
 import { uploadFile } from '@/core/services/fileUploadService';
 import type { UploadFile } from 'element-plus';
 import { useRouter } from 'vue-router';
+import FieldSemanticSelector from './FieldSemanticSelector.vue';
+import type { FieldDefinition } from '@/core/models/schema';
+import { FieldType } from '@/core/models/schema';
+import { useGeocoding } from '@/composables/map/useGeocoding';
 
 const router = useRouter();
 
@@ -94,6 +105,68 @@ const form = ref({
 
 // 上传状态
 const uploading = ref(false);
+
+// 字段语义选择器
+const showSemanticSelector = ref(false);
+const detectedFields = ref<FieldDefinition[]>([]);
+const uploadedProjectId = ref<number | null>(null);
+
+// 地理编码
+const { geocodeAddresses } = useGeocoding();
+
+// 辅助函数：读取文件内容
+const readFileAsText = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        resolve(e.target.result as string);
+      } else {
+        reject(new Error('读取文件失败'));
+      }
+    };
+    reader.onerror = () => reject(new Error('读取文件失败'));
+    reader.readAsText(file);
+  });
+};
+
+// 辅助函数：解析 CSV
+const parseCSVContent = (content: string): any[] => {
+  const lines = content.split('\n').filter(line => line.trim() !== '');
+  if (lines.length === 0) return [];
+  
+  const firstLine = lines[0];
+  if (!firstLine) return [];
+  
+  const headers = firstLine.split(',').map(h => h.trim());
+  const items: any[] = [];
+  
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line) continue;
+    
+    const values = line.split(',').map(v => v.trim());
+    const item: any = {};
+    headers.forEach((header, index) => {
+      if (index < values.length) {
+        item[header] = values[index];
+      }
+    });
+    items.push(item);
+  }
+  
+  return items;
+};
+
+// 辅助函数：推断字段类型
+const inferFieldType = (value: any): FieldType => {
+  if (value === null || value === undefined || value === '') return FieldType.TEXT;
+  if (typeof value === 'boolean') return FieldType.TEXT;
+  if (typeof value === 'number') return FieldType.NUMBER;
+  if (!isNaN(Number(value)) && String(value).trim() !== '') return FieldType.NUMBER;
+  return FieldType.TEXT;
+};
+
 
 
 // 监听modelValue变化
@@ -148,8 +221,34 @@ const handleSubmit = async () => {
       return;
     }
     
-    
     uploading.value = true;
+    
+    // 在上传前，先读取文件并推断 schema
+    try {
+      const fileContent = await readFileAsText(form.value.file);
+      let items: any[] = [];
+      
+      if (form.value.file.name.endsWith('.csv')) {
+        items = parseCSVContent(fileContent);
+      } else if (form.value.file.name.endsWith('.json')) {
+        items = JSON.parse(fileContent);
+      }
+      
+      // 推断 schema
+      if (items && items.length > 0) {
+        const firstItem = items[0];
+        const fields = Object.keys(firstItem).map(key => ({
+          label: key,
+          key: key,
+          type: inferFieldType(firstItem[key])
+        }));
+        
+        detectedFields.value = fields;
+        console.log('[FileUploadDialog] 推断的字段:', fields);
+      }
+    } catch (error) {
+      console.error('[FileUploadDialog] Schema 推断失败:', error);
+    }
     
     // 上传文件
     const response = await uploadFile(
@@ -163,17 +262,134 @@ const handleSubmit = async () => {
     ElMessage.success('文件上传成功');
     uploading.value = false;
     
-    // 关闭弹窗并触发成功事件
-    closeDialog();
-    emit('success');
+    // 调试：打印响应数据
+    console.log('[FileUploadDialog] 上传响应:', response);
+    console.log('[FileUploadDialog] Schema:', response?.schema);
+    console.log('[FileUploadDialog] Fields:', response?.schema?.fields);
     
-    // 导航到表格页面,显示上传的数据
-    if (response && response.projectId) {
-      router.push(`/table?projectId=${response.projectId}&source=upload`);
+    // 检测字段并显示语义选择器
+    // 优先使用前端推断的字段，或者使用后端返回的字段
+    const hasFields = (detectedFields.value && detectedFields.value.length > 0) || 
+                     (response?.schema?.fields && Array.isArray(response.schema.fields) && response.schema.fields.length > 0);
+    
+    if (hasFields) {
+      console.log('[FileUploadDialog] 检测到字段，显示语义选择器');
+      
+      // 如果后端返回了字段，更新它（以防后端有更准确的处理）
+      if (response?.schema?.fields && Array.isArray(response.schema.fields)) {
+         detectedFields.value = response.schema.fields;
+      }
+      
+      uploadedProjectId.value = response.projectId;
+      
+      // 关闭上传对话框
+      closeDialog();
+      
+      // 显示字段语义选择器
+      showSemanticSelector.value = true;
+    } else {
+      // 没有字段信息,直接跳转
+      console.log('[FileUploadDialog] 未检测到字段，直接跳转');
+      closeDialog();
+      emit('success');
+      
+      if (response && response.projectId) {
+        router.push(`/table?projectId=${response.projectId}&source=upload`);
+      }
     }
   } catch (error: any) {
     uploading.value = false;
     ElMessage.error(error.message || '文件上传失败');
+  }
+};
+
+// 引入 store
+import { useProjectStore } from '@/stores/projectStore';
+
+// 处理字段语义确认
+const handleSemanticConfirm = async (fields: FieldDefinition[], enableGeocoding: boolean) => {
+  try {
+    // 确保在函数内部获取 store 实例，避免在 setup 之外重复调用 useProjectStore
+    const projectStore = useProjectStore();
+    
+    // 注意：目前后端暂不支持单独更新 Schema 的语义标注，所以这里的 Schema 更新仅在当前会话的 Store 中有效
+    // 且由于页面跳转后 Store 会重新加载，这些标注可能会丢失。
+    // 因此，我们主要依赖地理编码的"预热"效果。
+    
+    // 2. 如果启用地理编码
+    if (enableGeocoding && uploadedProjectId.value && form.value.file) {
+      // 找到所有标记为地址的字段
+      const addressFields = fields.filter(f => f.semantic_role === 'address');
+      
+      if (addressFields.length > 0) {
+        ElMessage.info(`正在对 ${addressFields.length} 个地址字段进行地理编码...`);
+        
+        // 解析文件获取地址列表
+        const fileContent = await readFileAsText(form.value.file);
+        let items: any[] = [];
+        
+        if (form.value.file.name.endsWith('.csv')) {
+          items = parseCSVContent(fileContent);
+        } else if (form.value.file.name.endsWith('.json')) {
+          items = JSON.parse(fileContent);
+        }
+        
+        // 遍历所有地址字段
+        for (const addressField of addressFields) {
+          console.log(`[FileUploadDialog] 处理地址字段: ${addressField.label} (${addressField.key})`);
+          
+          // 提取当前字段的地址列表 (去重且非空)
+          const addresses = items
+            .map(item => item[addressField.key])
+            .filter(addr => addr && typeof addr === 'string' && addr.trim() !== '');
+            
+          const uniqueAddresses = [...new Set(addresses)];
+          
+          if (uniqueAddresses.length > 0) {
+            console.log(`[FileUploadDialog] 字段 "${addressField.label}" 提取到 ${uniqueAddresses.length} 个唯一地址，启动后台地理编码...`);
+            
+            // 调用地理编码 API (后台处理)
+            fetch(`/api/projects/${uploadedProjectId.value}/geocode`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+              },
+              body: JSON.stringify({
+                addresses: uniqueAddresses,
+                field_name: addressField.key,
+                background: true
+              })
+            }).then(res => {
+               if (res.ok) {
+                 console.log(`[FileUploadDialog] 字段 "${addressField.label}" 后台地理编码已启动`);
+               }
+            }).catch(err => {
+               console.error(`[FileUploadDialog] 字段 "${addressField.label}" 启动后台地理编码失败:`, err);
+            });
+          } else {
+            console.warn(`[FileUploadDialog] 字段 "${addressField.label}" 未找到有效的地址数据`);
+          }
+        }
+        
+        ElMessage.success(`已启动 ${addressFields.length} 个地址字段的后台地理编码`);
+      }
+    }
+    
+    // 触发成功事件
+    emit('success');
+    
+    // 导航到表格页面
+    if (uploadedProjectId.value) {
+      router.push(`/table?projectId=${uploadedProjectId.value}&source=upload`);
+    }
+  } catch (error: any) {
+    console.error('[FileUploadDialog] 处理失败:', error);
+    ElMessage.error(error.message || '操作失败');
+    // 即使失败也跳转，避免卡住
+    if (uploadedProjectId.value) {
+      router.push(`/table?projectId=${uploadedProjectId.value}&source=upload`);
+    }
   }
 };
 </script>

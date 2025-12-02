@@ -35,7 +35,26 @@ export interface NumberConfig {
     unit?: string;      // 单位 (kg, m, $)
 }
 
-// 5. 核心字段定义
+// 5. 字段语义角色枚举
+export enum FieldSemanticRole {
+    PRIMARY_LABEL = 'primary_label',  // 主名称 - 用于节点/实体的主要显示名称
+    ADDRESS = 'address',               // 地址 - 用于地理编码和地图显示
+    TIMESTAMP = 'timestamp',           // 时间戳 - 用于时间轴视图
+    DESCRIPTION = 'description',       // 描述 - 详细说明文本
+    IMAGE_URL = 'image_url',          // 图片链接 - 实体的图片URL
+    CATEGORY = 'category',            // 分类 - 用于分组和颜色编码
+    CUSTOM = 'custom'                 // 自定义 - 用户自定义语义
+}
+
+// 6. 地理编码元数据
+export interface GeocodingMetadata {
+    last_geocoded_at?: string;        // 最后地理编码时间 (ISO 8601)
+    geocoding_confidence?: number;    // 地理编码置信度 (0-1)
+    manual_override?: boolean;        // 是否被用户手动修正过
+    geocoding_source?: string;        // 地理编码来源 (nominatim, google, etc.)
+}
+
+// 7. 核心字段定义
 export interface FieldDefinition {
     key: string;        // 数据库存储的键 (e.g., "col_u9a2")
     label: string;      // 用户看到的列名 (e.g., "价格")
@@ -53,13 +72,17 @@ export interface FieldDefinition {
     relation_config?: RelationConfig; // Relation 用
     number_config?: NumberConfig;   // Number 用
 
+    // --- 语义角色标注 (新增) ---
+    semantic_role?: FieldSemanticRole;  // 字段的语义角色
+    geocoding_metadata?: GeocodingMetadata; // 地理编码元数据 (当 semantic_role = ADDRESS 时)
+
     // --- UI 表现属性 ---
     width?: number;     // 表格列宽
     hidden?: boolean;   // 默认隐藏
     description?: string; // 字段说明
 }
 
-// 6. 视图配置 (增强版)
+// 8. 视图配置 (增强版)
 export interface ViewSettings {
     // 表格视图配置
     table?: {
@@ -87,7 +110,7 @@ export interface ViewSettings {
     };
 }
 
-// 7. 完整的 Schema
+// 9. 完整的 Schema
 export interface ProjectSchema {
     fields: FieldDefinition[];
     view_settings?: ViewSettings;

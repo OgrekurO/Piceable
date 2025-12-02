@@ -2,9 +2,11 @@
 
 #app {
 
-  padding: 0; /* 移除默认内边距 */
+  padding: 0;
+  /* 移除默认内边距 */
   font-weight: normal;
-  height: 100vh; /* 确保应用占满整个视口高度 */
+  height: 100vh;
+  /* 确保应用占满整个视口高度 */
 }
 
 a,
@@ -15,18 +17,22 @@ a,
   padding: 3px;
 }
 
-@media (hover: hover) {
-}
+@media (hover: hover) {}
 
 @media (min-width: 1024px) {
   body {
-    display: block; /* 改为block而不是flex */
-    place-items: unset; /* 取消居中对齐 */
+    display: block;
+    /* 改为block而不是flex */
+    place-items: unset;
+    /* 取消居中对齐 */
   }
 
   #app {
-    display: block; /* 改为block而不是grid */
-    padding: 0; /* 移除内边距 */
-    height: 100vh; /* 确保应用占满整个视口高度 */
+    display: block;
+    /* 改为block而不是grid */
+    padding: 0;
+    /* 移除内边距 */
+    height: 100vh;
+    /* 确保应用占满整个视口高度 */
   }
 }

@@ -32,6 +32,15 @@
         @submit="handleAnnotationSubmit"
       />
 
+      <!-- 坐标编辑器 -->
+      <CoordinateEditor
+        v-model="isCoordinateEditorOpen"
+        :entity="editingCoordinateEntity"
+        :address-field="addressFieldName"
+        :project-id="currentProjectId"
+        @save="handleCoordinateSave"
+      />
+
       <!-- 地图控件区域 -->
       <div class="map-controls-wrapper">
         <div class="controls-group">
@@ -65,11 +74,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { useProjectStore } from '@/stores/projectStore';
 import { useMapViewStore } from '@/stores/mapViewStore';
 import { storeToRefs } from "pinia";
 import { PanelLeftOpen, Route, RouteOff } from 'lucide-vue-next';
+import type { VisualEntity } from '@/types/entity';
 import AnnotationForm from '@/components/visualizers/Map/AnnotationForm.vue';
+import CoordinateEditor from '@/components/editors/Map/CoordinateEditor.vue';
 import LayerSwitcher from '@/components/visualizers/Map/LayerSwitcher.vue';
 import LanguageSwitcher from '@/components/visualizers/Map/LanguageSwitcher.vue';
 import LabelToggle from '@/components/visualizers/Map/LabelToggle.vue';
@@ -85,6 +97,7 @@ import { useMapTestData } from '@/composables/map/useMapTestData';
 import { useMapProviders } from '@/composables/map/useMapProviders';
 
 // --- Stores ---
+const route = useRoute();
 const projectStore = useProjectStore();
 const mapViewStore = useMapViewStore();
 
@@ -154,8 +167,43 @@ const {
   handleAnnotationSubmit 
 } = useMapAnnotation(projectStore);
 
-// --- Test Data ---
-const { loadTestData } = useMapTestData(projectStore);
+// --- Coordinate Editor (新增) ---
+const isCoordinateEditorOpen = ref(false);
+const editingCoordinateEntity = ref<VisualEntity | undefined>(undefined);
+const addressFieldName = ref<string | undefined>(undefined);
+const currentProjectId = computed(() => {
+  return route.query.projectId ? parseInt(route.query.projectId as string) : undefined;
+});
+
+// 打开坐标编辑器
+const openCoordinateEditor = (entity: VisualEntity, addressField?: string) => {
+  editingCoordinateEntity.value = entity;
+  addressFieldName.value = addressField;
+  isCoordinateEditorOpen.value = true;
+};
+
+// 保存修正后的坐标
+const handleCoordinateSave = async (coords: { lat: number, lng: number, manual_override: boolean }) => {
+  if (!editingCoordinateEntity.value) return;
+  
+  // 更新实体的坐标和元数据
+  projectStore.updateItem(editingCoordinateEntity.value.id, {
+    geo: { lat: coords.lat, lng: coords.lng },
+    geocoding_metadata: {
+      ...editingCoordinateEntity.value.geocoding_metadata,
+      manual_override: coords.manual_override,
+      last_geocoded_at: new Date().toISOString()
+    }
+  });
+  
+  // 关闭编辑器
+  editingCoordinateEntity.value = undefined;
+  isCoordinateEditorOpen.value = false;
+};
+
+// --- Project Data ---
+import { useMapProjectData } from '@/composables/map/useMapProjectData';
+const { loadProjectData, isLoading } = useMapProjectData(projectStore);
 
 // --- Map Providers (特性检测) ---
 // activeLayer 已经从 storeToRefs 获取,直接使用
@@ -176,8 +224,19 @@ onMounted(async () => {
     openAnnotationForm({ lat: e.latlng.lat, lng: e.latlng.lng });
   });
 
-  // 加载测试数据
-  await loadTestData();
+  // 加载项目数据
+  // 如果 store 中已有数据（例如从列表页跳转），则不重复加载
+  if (entities.value.length === 0) {
+      await loadProjectData();
+  }
+});
+
+// 监听路由参数变化（项目切换）
+watch(() => route.query.projectId, async (newId, oldId) => {
+    if (newId && newId !== oldId) {
+        console.log(`[MapView] 项目切换: ${oldId} -> ${newId}`);
+        await loadProjectData();
+    }
 });
 
 // 监听侧边栏状态,调整地图大小
@@ -298,12 +357,6 @@ watch(isSidebarOpen, () => {
   cursor: pointer;
 }
 
-/* 鼠标悬停时放大并改变颜色 */
-:deep(.leaflet-interactive:hover) {
-  stroke: rgb(238, 238, 238);
-  stroke-width: 1px;
-  filter: drop-shadow(0 0 4px rgba(0,0,0,0.5));
-}
 
 /* --- Vue Transition 动画 --- */
 .fade-slide-enter-active,
@@ -361,5 +414,19 @@ watch(isSidebarOpen, () => {
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
   pointer-events: none;
   opacity: 0.9;
+}
+
+/* 去除 Leaflet 交互元素的 focus outline */
+:deep(.leaflet-interactive:focus) {
+  outline: none;
+}
+:deep(.map-connection-line:focus) {
+  outline: none;
+}
+
+/* 箭头图标样式 */
+:deep(.map-arrow-icon) {
+  background: none;
+  border: none;
 }
 </style>

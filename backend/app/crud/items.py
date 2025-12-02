@@ -8,20 +8,30 @@ from app.models.schemas import Item
 def get_all_items_from_db(user_id: int = 1, project_id: Optional[int] = None, table_id: Optional[int] = None) -> List[Item]:
     """
     从数据库获取所有项目，按用户ID过滤，可选按项目ID或表格ID过滤
+    特殊处理：当 project_id=0（系统项目）时，不过滤 user_id，允许所有用户查看全局缓存
     """
     conn = get_db_connection()
     cur = conn.cursor()
     
-    query = "SELECT id, data, created_at, updated_at, project_id, table_id FROM items WHERE user_id = ?"
-    params = [user_id]
-    
-    if project_id is not None:
-        query += " AND project_id = ?"
-        params.append(project_id)
+    # 如果查询系统项目（project_id=0），不过滤 user_id
+    if project_id == 0:
+        query = "SELECT id, data, created_at, updated_at, project_id, table_id FROM items WHERE project_id = ?"
+        params = [project_id]
         
-    if table_id is not None:
-        query += " AND table_id = ?"
-        params.append(table_id)
+        if table_id is not None:
+            query += " AND table_id = ?"
+            params.append(table_id)
+    else:
+        query = "SELECT id, data, created_at, updated_at, project_id, table_id FROM items WHERE user_id = ?"
+        params = [user_id]
+        
+        if project_id is not None:
+            query += " AND project_id = ?"
+            params.append(project_id)
+            
+        if table_id is not None:
+            query += " AND table_id = ?"
+            params.append(table_id)
         
     # 检查数据库类型
     if not conn.row_factory:  # PostgreSQL

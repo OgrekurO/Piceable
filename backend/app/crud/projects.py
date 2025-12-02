@@ -6,16 +6,27 @@ from app.models.schemas import Project
 
 def get_projects_from_db(user_id: int) -> List[Project]:
     """
-    从数据库获取用户的所有项目
+    从数据库获取用户的所有项目，包括系统项目（ID=0）
     """
     conn = get_db_connection()
     cur = conn.cursor()
     
     # 检查数据库类型
+    # 使用 UNION 同时获取用户项目和系统项目
     if conn.row_factory:  # SQLite
-        cur.execute("SELECT id, name, description, source_type, source_metadata, schema, created_at, last_modified, user_id, items_count FROM projects WHERE user_id = ?", (user_id,))
+        cur.execute("""
+            SELECT id, name, description, source_type, source_metadata, schema, created_at, last_modified, user_id, items_count 
+            FROM projects 
+            WHERE user_id = ? OR id = 0
+            ORDER BY id
+        """, (user_id,))
     else:  # PostgreSQL
-        cur.execute("SELECT id, name, description, source_type, source_metadata, schema, created_at, last_modified, user_id, items_count FROM projects WHERE user_id = %s", (user_id,))
+        cur.execute("""
+            SELECT id, name, description, source_type, source_metadata, schema, created_at, last_modified, user_id, items_count 
+            FROM projects 
+            WHERE user_id = %s OR id = 0
+            ORDER BY id
+        """, (user_id,))
     
     rows = cur.fetchall()
     cur.close()
@@ -54,15 +65,23 @@ def get_projects_from_db(user_id: int) -> List[Project]:
 def get_project_from_db(project_id: int, user_id: int) -> Optional[Project]:
     """
     从数据库获取单个项目
+    特殊处理：当 project_id=0（系统项目）时，不过滤 user_id，允许所有用户查看
     """
     conn = get_db_connection()
     cur = conn.cursor()
     
-    # 检查数据库类型
-    if conn.row_factory:  # SQLite
-        cur.execute("SELECT id, name, description, source_type, source_metadata, schema, created_at, last_modified, user_id, items_count FROM projects WHERE id = ? AND user_id = ?", (project_id, user_id))
-    else:  # PostgreSQL
-        cur.execute("SELECT id, name, description, source_type, source_metadata, schema, created_at, last_modified, user_id, items_count FROM projects WHERE id = %s AND user_id = %s", (project_id, user_id))
+    # 如果是系统项目（project_id=0），不过滤 user_id
+    if project_id == 0:
+        if conn.row_factory:  # SQLite
+            cur.execute("SELECT id, name, description, source_type, source_metadata, schema, created_at, last_modified, user_id, items_count FROM projects WHERE id = ?", (project_id,))
+        else:  # PostgreSQL
+            cur.execute("SELECT id, name, description, source_type, source_metadata, schema, created_at, last_modified, user_id, items_count FROM projects WHERE id = %s", (project_id,))
+    else:
+        # 检查数据库类型
+        if conn.row_factory:  # SQLite
+            cur.execute("SELECT id, name, description, source_type, source_metadata, schema, created_at, last_modified, user_id, items_count FROM projects WHERE id = ? AND user_id = ?", (project_id, user_id))
+        else:  # PostgreSQL
+            cur.execute("SELECT id, name, description, source_type, source_metadata, schema, created_at, last_modified, user_id, items_count FROM projects WHERE id = %s AND user_id = %s", (project_id, user_id))
     
     row = cur.fetchone()
     cur.close()

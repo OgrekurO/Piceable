@@ -9,11 +9,11 @@ export async function getUploadedItems(projectId?: number, tableId?: number): Pr
     let url = '/api/items';
     const params = new URLSearchParams();
 
-    if (projectId) {
+    if (projectId !== undefined) {
       params.append('projectId', projectId.toString());
     }
 
-    if (tableId) {
+    if (tableId !== undefined) {
       params.append('tableId', tableId.toString());
     }
 

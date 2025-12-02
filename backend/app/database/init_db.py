@@ -77,6 +77,56 @@ def init_db():
             )
         """)
         
+        # 创建 tables 表 (SQLite)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS tables (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                schema TEXT,
+                description TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (project_id) REFERENCES projects (id)
+            )
+        """)
+        
+        # 创建系统项目（用于全局地理编码缓存）
+        cur.execute("SELECT * FROM projects WHERE id = ?", (0,))
+        if cur.fetchone() is None:
+            # 获取 admin 用户 ID
+            cur.execute("SELECT id FROM users WHERE username = ?", ("admin",))
+            admin_user = cur.fetchone()
+            admin_id = admin_user[0] if admin_user else 1
+            
+            # 插入系统项目
+            cur.execute("""
+                INSERT INTO projects (id, name, description, source_type, user_id, items_count)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (0, "__SYSTEM_GEOCODE_CACHE__", "全局地理编码缓存（系统项目）", "system", admin_id, 0))
+            
+            # 创建 geocode_cache 表定义
+            import json
+            geocode_schema = json.dumps({
+                "fields": [
+                    {"key": "address", "label": "地址", "type": "text", "is_primary": True},
+                    {"key": "lat", "label": "纬度", "type": "number", "is_primary": False},
+                    {"key": "lng", "label": "经度", "type": "number", "is_primary": False},
+                    {"key": "confidence", "label": "置信度", "type": "number", "is_primary": False},
+                    {"key": "source", "label": "来源", "type": "text", "is_primary": False},
+                    {"key": "display_name", "label": "完整地址", "type": "text", "is_primary": False}
+                ],
+                "view_settings": {}
+            })
+            
+            cur.execute("""
+                INSERT INTO tables (project_id, name, schema, description)
+                VALUES (?, ?, ?, ?)
+            """, (0, "geocode_cache", geocode_schema, "全局地理编码缓存表"))
+            
+            print("系统项目和地理编码缓存表创建成功！")
+        else:
+            print("系统项目已存在。")
+        
         # 提交更改
         conn.commit()
         

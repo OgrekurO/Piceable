@@ -17,22 +17,24 @@ export function useMapTestData(projectStore: ProjectStore) {
             const csvContent = await response.text();
             const parsedData = parseCSV(csvContent);
 
-            // Convert legacy CSV data to BaseItems
+            // Convert legacy CSV data to BaseItems with GeoJSON coordinates
             const items = parsedData.map(record => ({
                 id: record.id,
                 data: {
                     ...record,
-                    // Ensure coordinates are in the expected format for the transformer if needed
-                    // But transformer also handles legacy lat/lng in data, so this might be fine
+                    // Combine lat/lng into a single GeoJSON field
+                    coordinates: {
+                        type: 'Point',
+                        coordinates: [parseFloat(record.lng), parseFloat(record.lat)]
+                    }
                 }
             }));
 
-            // Define a simple schema for CSV data
+            // Define schema with a single geo_point field
             const schema = {
                 fields: [
                     { key: 'label', label: 'Label', type: 'text', is_primary: true },
-                    { key: 'lat', label: 'Latitude', type: 'geo_point' }, // Transformer handles lat/lng in data
-                    { key: 'lng', label: 'Longitude', type: 'geo_point' }
+                    { key: 'coordinates', label: 'Location', type: 'geo_point' }
                 ]
             };
 

@@ -1,7 +1,10 @@
 import { shallowRef, onUnmounted, type Ref } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { MapViewStore } from '@/stores/mapViewStore';
+import { useMapViewStore } from '@/stores/mapViewStore';
+
+// 定义 MapViewStore 类型为 useMapViewStore 函数的返回类型
+type MapViewStore = ReturnType<typeof useMapViewStore>;
 
 /**
  * 地图核心管理 Composable

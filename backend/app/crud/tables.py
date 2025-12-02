@@ -114,3 +114,31 @@ def get_table(table_id: int) -> Optional[Table]:
                 pass
         return Table(**table_dict)
     return None
+
+def ensure_project_geocode_table(project_id: int) -> int:
+    """
+    确保项目有本地地理数据表，如果不存在则创建
+    返回表ID
+    """
+    # 检查是否已存在
+    tables = get_tables_by_project(project_id)
+    for table in tables:
+        if table.name == '_geocodes':
+            print(f"[ensure_project_geocode_table] 项目 {project_id} 已有地理数据表 (ID: {table.id})")
+            return table.id
+    
+    # 创建新表
+    schema = {
+        "fields": [
+            {"key": "address", "label": "地址", "type": "text", "is_primary": True},
+            {"key": "lat", "label": "纬度", "type": "number"},
+            {"key": "lng", "label": "经度", "type": "number"},
+            {"key": "confidence", "label": "置信度", "type": "number"},
+            {"key": "source", "label": "来源", "type": "text"},
+            {"key": "display_name", "label": "完整地址", "type": "text"},
+            {"key": "is_custom", "label": "用户自定义", "type": "text"}
+        ]
+    }
+    new_table = create_table(project_id, "_geocodes", schema, "项目地理数据（可自定义）")
+    print(f"[ensure_project_geocode_table] 为项目 {project_id} 创建地理数据表 (ID: {new_table.id})")
+    return new_table.id

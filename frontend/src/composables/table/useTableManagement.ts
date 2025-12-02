@@ -71,10 +71,33 @@ export function useTableManagement() {
                 }
             }
 
+            // 如果是 geocode_cache 表且没有 schema，使用默认 schema
+            if (!schema && table?.name === 'geocode_cache') {
+                schema = {
+                    fields: [
+                        { key: 'address', label: '地址', type: 'text' as any },
+                        { key: 'lat', label: '纬度', type: 'number' as any },
+                        { key: 'lng', label: '经度', type: 'number' as any },
+                        { key: 'full_response', label: '完整响应', type: 'json' as any },
+                        { key: 'source', label: '来源', type: 'text' as any },
+                        { key: 'created_at', label: '创建时间', type: 'date' as any }
+                    ]
+                }
+            }
+
             currentTableSchema.value = schema || null
 
             // 2. 获取表格数据
-            const items = await getUploadedItems(projectId, tableId)
+            let items = await getUploadedItems(projectId, tableId)
+
+            // 特殊处理 geocode_cache 数据，将其包装在 data 中以适配前端通用逻辑
+            if (table?.name === 'geocode_cache' && items.length > 0 && !items[0].data) {
+                items = items.map(item => ({
+                    id: item.id,
+                    data: { ...item }
+                }))
+            }
+
             currentTableData.value = items || []
 
             console.log(`[useTableManagement] 已加载表格 ${table?.name} (ID: ${tableId}) 的数据，共 ${items.length} 项`)

@@ -143,7 +143,8 @@ async def upload_project(data: ProjectUpload, current_user: User = Depends(get_c
         return {
             "message": f"项目 '{data.projectName}' 上传成功，共 {len(data.items)} 个项目",
             "projectId": project_id,
-            "tableId": table_id
+            "tableId": table_id,
+            "schema": schema  # 返回 schema 供前端使用
         }
     except Exception as e:
         import traceback

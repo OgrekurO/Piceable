@@ -1,4 +1,4 @@
-import type { ProjectSchema } from './schema';
+import type { ProjectSchema, GeocodingMetadata } from './schema';
 
 // 1. 基础存储单元 (对应数据库的一行)
 export interface BaseItem {
@@ -35,5 +35,6 @@ export interface VisualEntity extends BaseItem {
     geo?: GeoData;          // 地图用
     time?: TimeData;        // 时间轴用
     links?: LinkData[];     // 图谱用
+    geocoding_metadata?: GeocodingMetadata; // 地理编码元数据
     _schema?: ProjectSchema; // 方便反查定义
 }

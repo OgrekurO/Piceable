@@ -3,7 +3,7 @@ import { ref, computed, type Ref } from 'vue'
 /**
  * 数据源类型
  */
-export type DataSourceType = 'upload' | 'eagle' | 'manual' | null
+export type DataSourceType = 'upload' | 'eagle' | 'manual' | 'system' | null
 
 /**
  * 数据源配置
@@ -34,6 +34,7 @@ export function useUnifiedDataSource(
                 return eagleData.value
             case 'upload':
             case 'manual':
+            case 'system':
                 return projectData.value
             default:
                 return []
@@ -49,6 +50,7 @@ export function useUnifiedDataSource(
                 return eagleLoading.value
             case 'upload':
             case 'manual':
+            case 'system':
                 return projectLoading.value
             default:
                 return false
@@ -64,7 +66,9 @@ export function useUnifiedDataSource(
      * 是否是项目数据源
      */
     const isProjectSource = computed(() =>
-        currentSource.value === 'upload' || currentSource.value === 'manual'
+        currentSource.value === 'upload' ||
+        currentSource.value === 'manual' ||
+        currentSource.value === 'system'
     )
 
     /**
@@ -86,6 +90,8 @@ export function useUnifiedDataSource(
                 return '上传的项目数据'
             case 'manual':
                 return '手动创建的数据'
+            case 'system':
+                return '系统缓存数据'
             default:
                 return '未选择数据源'
         }

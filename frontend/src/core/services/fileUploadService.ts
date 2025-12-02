@@ -1,4 +1,5 @@
 import { requestToBackend } from './httpClient';
+import { FieldType } from '@/types/schema';
 
 /**
  * 推断数据类型
@@ -27,6 +28,15 @@ function inferType(value: any): string {
 }
 
 /**
+ * 检查是否为地理相关字段
+ */
+function isGeoField(key: string): boolean {
+  const lowerKey = key.toLowerCase();
+  // 匹配常见的地理字段名
+  return ['lat', 'lng', 'latitude', 'longitude', 'geo', 'location', 'address', '坐标', '经度', '纬度', '地址'].some(k => lowerKey.includes(k));
+}
+
+/**
  * 从数据推断 schema
  */
 export function inferSchema(items: any[]): any {
@@ -35,11 +45,22 @@ export function inferSchema(items: any[]): any {
   }
 
   const firstItem = items[0];
-  const fields = Object.keys(firstItem).map(key => ({
-    label: key,  // 使用 label 而不是 name
-    key: key,
-    type: inferType(firstItem[key])
-  }));
+  const fields = Object.keys(firstItem).map(key => {
+    // 检查是否为地理相关字段
+    if (isGeoField(key)) {
+      return {
+        label: key,
+        key: key,
+        type: FieldType.GEO_POINT
+      };
+    }
+
+    return {
+      label: key,  // 使用 label 而不是 name
+      key: key,
+      type: inferType(firstItem[key])
+    };
+  });
 
   return { fields };  // 使用 fields 而不是 columns
 }
